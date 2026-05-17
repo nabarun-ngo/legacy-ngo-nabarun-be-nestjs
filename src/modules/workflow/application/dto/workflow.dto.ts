@@ -343,24 +343,6 @@ export class WorkflowRefDataDto {
   completedTaskStatuses?: KeyValueDto[];
 }
 
-export class FieldAttributeDto {
-  @ApiProperty()
-  key: string;
-  @ApiProperty()
-  value: string;
-  @ApiProperty()
-  type: string;
-  @ApiProperty()
-  isMandatory: boolean;
-  @ApiProperty()
-  fieldOptions: string[];
-  @ApiProperty()
-  fieldType: string;
-  @ApiProperty()
-  isHidden: boolean;
-  @ApiProperty()
-  isEncrypted: boolean;
-}
 
 export class WorkflowFilterDto {
 
