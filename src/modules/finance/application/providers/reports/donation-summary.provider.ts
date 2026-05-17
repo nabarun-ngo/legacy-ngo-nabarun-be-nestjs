@@ -12,24 +12,32 @@ import { DocumentGeneratorService } from 'src/modules/shared/document-generator/
 import { Configkey } from 'src/shared/config-keys';
 import { groupBy } from 'lodash';
 import { IExcelRowData } from 'src/modules/shared/document-generator/interfaces/excel-generator.interface';
+import { FieldDef } from 'src/shared/models/custom-field-def';
 
 @Injectable()
 @ReportProvider()
 export class DonationSummaryReportProvider implements IReportProvider<{ startDate: Date; endDate: Date; }> {
     readonly reportCode = 'DONATION_SUMMARY_REPORT';
-    readonly description = 'This report provides a consolidated overview of all donations received during the mentioned period, including donor-wise transaction details and any outstanding donations.';
-    readonly displayName: string = 'Donation Summary Report';
-    readonly requiresApproval = true;
-    readonly approverRoles = [Role.TREASURER, Role.CASHIER, Role.ASSISTANT_CASHIER];
-    readonly visibleToRoles = [Role.MEMBER];
-    readonly isActive: boolean = true;
     constructor(
         @Inject(DONATION_REPOSITORY)
         private readonly donationRepository: IDonationRepository,
         private readonly documentGenerator: DocumentGeneratorService,
         private readonly configService: ConfigService,
     ) { }
-
+    reportParams: FieldDef<'startDate' | 'endDate'>[] = [
+        {
+            key: 'startDate',
+            label: 'Start Date',
+            defKey: 'INPUT_DATE_FIELD',
+            mandatory: true
+        },
+        {
+            key: 'endDate',
+            label: 'End Date',
+            defKey: 'INPUT_DATE_FIELD',
+            mandatory: true
+        }
+    ];
 
     async generate(params: { startDate: Date; endDate: Date; }): Promise<ReportGeneratedData> {
         const startDt = (typeof params.startDate === 'string'

@@ -9,6 +9,8 @@ import { IReportProvider } from '../../domain/reporting.interface';
 import { StartWorkflowUseCase } from 'src/modules/workflow/application/use-cases/start-workflow.use-case';
 import { PagedResult } from 'src/shared/models/paged-result';
 import { ReportCategoryDto, ReportDetailDto, ReportFilterDto } from '../dto/report.dto';
+import { ReportMetadataService } from '../../infrastructure/external/report-metadata.service';
+import { fieldAttributeDomainToDto, mapToAdditionalFields } from 'src/shared/utilities/additional-field.util';
 
 @Injectable()
 export class ReportingService {
@@ -21,20 +23,22 @@ export class ReportingService {
         private readonly reportRepository: IReportRepository,
         private readonly eventBus: EventEmitter2,
         private readonly startWorkflowUseCase: StartWorkflowUseCase,
+        private readonly metadataService: ReportMetadataService,
     ) { }
 
     async registeredReports(): Promise<ReportCategoryDto[]> {
-        const providers = this.registry.getAllProviders();
-        return providers
-            .filter(provider => provider.isActive)
-            .map(provider => ReportCategoryDto.fromDomain(provider));
+        const reports = await this.metadataService.getReportDefinations();
+        return reports
+            .filter(report => report.isActive)
+            .map(report => ReportCategoryDto.fromDomain(report));
     }
 
-    async generateReport<T>(reportCode: string, params: T, authUserId: string) {
+    async generateReport<T extends Record<string, any>>(reportCode: string, params: T, authUserId: string) {
         const provider = this.registry.getProvider(reportCode);
         if (!provider) {
             throw new NotFoundException(`Report provider for ${reportCode} not found`);
         }
+        const defination = await this.metadataService.getReportDefination(reportCode);
         const generatedData = await provider.generate(params);
 
 
@@ -43,9 +47,9 @@ export class ReportingService {
             reportName: generatedData.fileName,
             requestedById: authUserId,
             parameters: params as Record<string, any>,
-            needApproval: provider.requiresApproval,
-            approvers: provider.approverRoles,
-            viewers: provider.visibleToRoles,
+            needApproval: defination.requiresApproval,
+            approvers: defination.approverRoles,
+            viewers: defination.visibleToRoles,
         });
         await this.reportRepository.create(report);
 
@@ -66,7 +70,7 @@ export class ReportingService {
         if (!provider) {
             throw new NotFoundException(`Report provider for ${report.reportCode} not found`);
         }
-        const generatedData = await provider.generate(report.parameters);
+        const generatedData = await provider.generate(report.parameters ?? {});
 
         const result = await this.processAndSaveReportDocument(provider, report, generatedData, authUserId, true);
         return ReportDetailDto.fromDomain(result.report);
@@ -97,15 +101,15 @@ export class ReportingService {
         report.incrementVersion(doc.id);
 
         if (!isRegenerate) {
-            if (provider.requiresApproval) {
+            if (report.needApproval) {
                 console.error('authUserId', authUserId)
                 const workflow = await this.startWorkflowUseCase.execute({
                     type: 'REPORT_REVIEW',
                     data: {
                         reportCode: report.reportCode,
                         reportId: report.id,
-                        reportName: provider.displayName,
-                        roleNames: provider.approverRoles?.join(',') || '',
+                        reportName: report.reportName,
+                        roleNames: report.approvers?.join(',') || '',
                     },
                     requestedBy: authUserId,
                 });
@@ -178,5 +182,15 @@ export class ReportingService {
         );
     }
 
+    async getReportInputFields(reportCode: string) {
+        const additionalFieldDef = await this.metadataService.getAdditionalFieldDef();
+        const provider = this.registry.getProvider(reportCode);
+        if (!provider) {
+            throw new NotFoundException(`Report provider for ${reportCode} not found`);
+        }
+        return provider.reportParams
+            .map(m => mapToAdditionalFields(m, additionalFieldDef))
+            .map(fieldAttributeDomainToDto);
+    }
 
 }

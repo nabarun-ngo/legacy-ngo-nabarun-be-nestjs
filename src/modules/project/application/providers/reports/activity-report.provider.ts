@@ -4,17 +4,21 @@ import { IReportProvider, ReportGeneratedData } from '../../../../reporting/doma
 import { Role } from 'src/modules/user/domain/model/role.model';
 import { ACTIVITY_REPOSITORY, type IActivityRepository } from '../../../domain/repositories/activity.repository.interface';
 import { DocumentGeneratorService } from 'src/modules/shared/document-generator/services/document-generator.service';
+import { FieldDef } from 'src/shared/models/custom-field-def';
 
 @Injectable()
 @ReportProvider()
-export class ActivityReportProvider implements IReportProvider {
+export class ActivityReportProvider implements IReportProvider<{ activityId: string }> {
     readonly reportCode = 'ACTIVITY_REPORT';
-    readonly description = 'This report provides a consolidated status of all the activities under the project';
-    readonly requiresApproval = false;
-    readonly visibleToRoles: string[] = [Role.MEMBER];
-    readonly approverRoles: string[] | undefined = undefined;
-    readonly displayName: string = 'Activity Closure Report';
-    readonly isActive: boolean = true;
+
+    readonly reportParams: FieldDef<'activityId'>[] = [
+        {
+            key: 'activityId',
+            defKey: 'INPUT_TEXT_FIELD',
+            label: 'Activity ID',
+            mandatory: true,
+        },
+    ];
 
     constructor(
         @Inject(ACTIVITY_REPOSITORY)

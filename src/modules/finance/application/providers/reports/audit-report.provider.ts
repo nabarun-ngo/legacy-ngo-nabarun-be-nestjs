@@ -6,17 +6,14 @@ import { DateTime } from 'luxon';
 import { DONATION_REPOSITORY, type IDonationRepository } from 'src/modules/finance/domain/repositories/donation.repository.interface';
 import { EXPENSE_REPOSITORY, type IExpenseRepository } from 'src/modules/finance/domain/repositories/expense.repository.interface';
 import { DocumentGeneratorService } from 'src/modules/shared/document-generator/services/document-generator.service';
+import { FieldDef } from 'src/shared/models/custom-field-def';
 
 @Injectable()
 @ReportProvider()
-export class AuditReportProvider implements IReportProvider {
+export class AuditReportProvider implements IReportProvider<{ financialYear: string }> {
     readonly reportCode = 'ANNUAL_AUDIT_REPORT';
-    readonly displayName = 'Financial Year Audit Report';
-    readonly description = 'This report provides a consolidated overview of all financial activities of the organization during the mentioned financial year, including income and expenditure details.';
-    readonly requiresApproval = true;
-    readonly approverRoles = [Role.TREASURER];
-    readonly visibleToRoles = [Role.MEMBER];
-    readonly isActive: boolean = true;
+
+
 
     constructor(
         @Inject(DONATION_REPOSITORY)
@@ -25,9 +22,17 @@ export class AuditReportProvider implements IReportProvider {
         private readonly expenseRepository: IExpenseRepository,
         private readonly documentGenerator: DocumentGeneratorService,
     ) { }
-
+    readonly reportParams: FieldDef<'financialYear'>[] = [
+        {
+            key: 'financialYear',
+            defKey: 'INPUT_NUMBER_FIELD',
+            label: 'Financial Year',
+            mandatory: true,
+        },
+    ];
     async generate(params: { financialYear: string }): Promise<ReportGeneratedData> {
-        const buffer = await this.template({ financialYear: params.financialYear });
+        const financialYear = params.financialYear;
+        const buffer = await this.template({ financialYear });
 
         return {
             buffer,

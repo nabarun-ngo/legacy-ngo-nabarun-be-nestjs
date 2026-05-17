@@ -8,6 +8,7 @@ import { SuccessResponse } from 'src/shared/models/response-model';
 import { ReportCategoryDto, ReportDetailDto, ReportFilterDto } from '../../application/dto/report.dto';
 import { PagedResult } from 'src/shared/models/paged-result';
 import { RequirePermissions } from 'src/modules/shared/auth/application/decorators/require-permissions.decorator';
+import { FieldAttributeDto } from 'src/shared/utilities/additional-field.util';
 
 @ApiTags(ReportingController.name)
 @Controller('report')
@@ -114,6 +115,18 @@ export class ReportingController {
     ) {
         const result = await this.reportingService.regenerateReport(reportId, user.profile_id!);
         return new SuccessResponse(result);
+    }
+
+    @Get('static/reportInputs')
+    @ApiOperation({ summary: 'Get additional fields for report' })
+    @ApiAutoResponse(FieldAttributeDto, { description: 'Report inputs retrieved successfully', wrapInSuccessResponse: true, isArray: true })
+    @ApiQuery({ name: 'reportCode', required: true, description: 'Report code' })
+    async getReportInputs(
+        @Query('reportCode') reportCode: string,
+    ): Promise<SuccessResponse<FieldAttributeDto[]>> {
+        return new SuccessResponse<FieldAttributeDto[]>(
+            await this.reportingService.getReportInputFields(reportCode)
+        );
     }
 
 }

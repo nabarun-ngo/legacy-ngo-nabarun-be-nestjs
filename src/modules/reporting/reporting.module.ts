@@ -9,6 +9,8 @@ import { ReportingController } from './presentation/controllers/reporting.contro
 import { REPORT_REPOSITORY } from './domain/repositories/report.repository.interface';
 import { ReportRepository } from './infrastructure/report.repository';
 import { WorkflowModule } from '../workflow/workflow.module';
+import { FirebaseModule } from '../shared/firebase/firebase.module';
+import { ReportMetadataService } from './infrastructure/external/report-metadata.service';
 
 
 @Module({
@@ -18,10 +20,12 @@ import { WorkflowModule } from '../workflow/workflow.module';
         DMSModule,
         CorrespondenceModule,
         WorkflowModule,
+        FirebaseModule
     ],
     providers: [
         ReportingService,
         ReportRegistryService,
+        ReportMetadataService,
         ReportJobsProvider,
         {
             provide: REPORT_REPOSITORY,

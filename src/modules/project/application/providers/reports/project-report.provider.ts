@@ -5,17 +5,13 @@ import { ACTIVITY_REPOSITORY, type IActivityRepository } from '../../../domain/r
 import { type IProjectRepository, PROJECT_REPOSITORY } from '../../../domain/repositories/project.repository.interface';
 import { DocumentGeneratorService } from 'src/modules/shared/document-generator/services/document-generator.service';
 import { formatDate } from 'src/shared/utilities/common.util';
+import { FieldDef } from 'src/shared/models/custom-field-def';
 
 @Injectable()
 @ReportProvider()
-export class ProjectReportProvider implements IReportProvider {
+export class ProjectReportProvider implements IReportProvider<{ projectId: string }> {
     readonly reportCode = 'PROJECT_REPORT';
-    readonly displayName = 'Project Closure Report';
-    readonly description = 'This report provides a consolidated overview of all activities of the organization ';
-    readonly requiresApproval: boolean = false;
-    readonly visibleToRoles: string[] = [Role.MEMBER];
-    readonly approverRoles: string[] | undefined = undefined;
-    readonly isActive: boolean = false;
+
 
     constructor(
         @Inject(PROJECT_REPOSITORY)
@@ -24,6 +20,14 @@ export class ProjectReportProvider implements IReportProvider {
         private readonly activityRepository: IActivityRepository,
         private readonly documentGenerator: DocumentGeneratorService,
     ) { }
+    readonly reportParams: FieldDef<'projectId'>[] = [
+        {
+            key: 'projectId',
+            defKey: 'INPUT_TEXT_FIELD',
+            label: 'Project ID',
+            mandatory: true,
+        },
+    ];
 
     async generate(params: { projectId: string }): Promise<ReportGeneratedData> {
         const buffer = await this.template({ projectId: params.projectId });

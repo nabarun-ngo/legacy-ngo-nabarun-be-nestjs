@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { Report, ReportStatus } from '../../domain/models/report.model';
-import { IReportProvider } from '../../domain/reporting.interface';
+import { ReportDefination } from '../../domain/reporting.interface';
 
 export class ReportDetailDto {
     @ApiProperty({ description: 'The unique identifier of the report execution' })
@@ -116,7 +116,7 @@ export class ReportCategoryDto {
     isActive?: boolean;
 
 
-    static fromDomain(category: IReportProvider): ReportCategoryDto {
+    static fromDomain(category: ReportDefination): ReportCategoryDto {
         return {
             reportCode: category.reportCode,
             reportName: category.displayName,
