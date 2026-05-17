@@ -28,6 +28,15 @@ export class ReportDetailDto {
     @ApiProperty({ description: 'The ID of the user who approved the report' })
     approvedBy?: string;
 
+    @ApiProperty({ description: 'The ID of the user who approved the report' })
+    approvedById?: string;
+
+    @ApiProperty({ description: 'The name of the user who approved the report' })
+    approvedByName?: string;
+
+    @ApiProperty({ description: 'The name of the user who requested the report' })
+    requestedByName?: string;
+
     @ApiProperty({ description: 'The timestamp when the report was approved' })
     approvedAt?: Date;
 
@@ -51,27 +60,6 @@ export class ReportDetailDto {
 
     @ApiProperty({ description: 'The timestamp when the report was last updated' })
     updatedAt: Date;
-
-    static fromDomain(report: Report): ReportDetailDto {
-        return {
-            id: report.id,
-            reportCode: report.reportCode,
-            requestedById: report.requestedById,
-            status: report.status,
-            parameters: report.parameters,
-            needApproval: report.needApproval,
-            approvedBy: report.approvedBy,
-            approvedAt: report.approvedAt,
-            approvers: report.approvers,
-            viewers: report.viewers,
-            dmsDocumentId: report.dmsDocumentId,
-            version: report.version,
-            workflowId: report.workflowId,
-            createdAt: report.createdAt,
-            updatedAt: report.updatedAt,
-            reportName: report.reportName,
-        } as ReportDetailDto;
-    }
 }
 
 export class ReportFilterDto {
@@ -119,17 +107,4 @@ export class ReportCategoryDto {
     @IsBoolean()
     @IsOptional()
     isActive?: boolean;
-
-
-    static fromDomain(category: ReportDefination): ReportCategoryDto {
-        return {
-            reportCode: category.reportCode,
-            reportName: category.displayName,
-            description: category.description,
-            viewerRoles: category.visibleToRoles,
-            manageRoles: category.approverRoles,
-            isActive: category.isActive,
-        } as ReportCategoryDto;
-    }
-
 }

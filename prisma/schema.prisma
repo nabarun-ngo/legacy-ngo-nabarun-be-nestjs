@@ -58,6 +58,7 @@ model UserProfile {
   notifications      UserNotification[] @relation("UserNotificationsFor")
   fcmTokens          UserFcmToken[]     @relation("UserFcmTokens")
   requestedReports   Report[]           @relation("ReportRequestedBy")
+  approvedReports    Report[]           @relation("ReportApprovedBy")
 
   // Project module relations
   managedProjects     Project[]           @relation("ProjectManager")
@@ -1056,7 +1057,8 @@ model Report {
   status        String       @db.VarChar(20) // PENDING, IN_PROGRESS, COMPLETED, FAILED
   parameters    Json?
   needApproval  Boolean      @default(false)
-  approvedBy    String?      @db.VarChar(255)
+  approvedById  String?      @db.VarChar(255)
+  approvedBy    UserProfile? @relation("ReportApprovedBy", fields: [approvedById], references: [id])
   approvedAt    DateTime?
   approvers     String[]     @default([]) @db.VarChar(255)
   viewers       String[]     @default([]) @db.VarChar(255)

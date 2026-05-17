@@ -6,21 +6,35 @@ export type ReportPersistence = Prisma.ReportGetPayload<{
     select: {
         id: true,
         reportCode: true,
+        reportName: true,
         requestedById: true,
+        approvedById: true,
         status: true,
         parameters: true,
-        createdAt: true,
-        updatedAt: true,
-        docVersion: true,
         needApproval: true,
-        approvedBy: true,
         approvedAt: true,
         approvers: true,
         viewers: true,
         docId: true,
         workflowId: true,
-        reportName: true,
-    };
+        docVersion: true,
+        createdAt: true,
+        updatedAt: true,
+        requestedBy: {
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+            }
+        },
+        approvedBy: {
+            select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+            }
+        },
+    }
 }>;
 
 export class ReportInfraMapper {
@@ -32,11 +46,11 @@ export class ReportInfraMapper {
             p.id,
             p.reportCode,
             p.reportName,
-            MapperUtils.nullToUndefined(p.requestedById),
+            p.requestedBy ? { id: p.requestedBy.id, firstName: p.requestedBy.firstName, lastName: p.requestedBy.lastName } : undefined,
             p.status as ReportStatus,
             (p.parameters as Record<string, any>) ?? undefined,
             p.needApproval,
-            MapperUtils.nullToUndefined(p.approvedBy),
+            p.approvedBy ? { id: p.approvedBy.id, firstName: p.approvedBy.firstName, lastName: p.approvedBy.lastName } : undefined,
             MapperUtils.nullToUndefined(p.approvedAt),
             p.approvers ?? [],
             p.viewers ?? [],
@@ -52,15 +66,17 @@ export class ReportInfraMapper {
         return {
             id: domain.id,
             reportCode: domain.reportCode,
-            requestedBy: (domain.requestedById && domain.requestedById !== 'system')
-                ? { connect: { id: domain.requestedById } }
+            requestedBy: (domain.requestedBy?.id && domain.requestedBy.id !== 'system')
+                ? { connect: { id: domain.requestedBy.id } }
                 : undefined,
             status: domain.status,
             reportName: domain.reportName,
             parameters: domain.parameters ?? Prisma.DbNull,
             docId: MapperUtils.undefinedToNull(domain.dmsDocumentId),
             needApproval: domain.needApproval,
-            approvedBy: MapperUtils.undefinedToNull(domain.approvedBy),
+            approvedBy: (domain.approvedBy?.id && domain.approvedBy.id !== 'system')
+                ? { connect: { id: domain.approvedBy.id } }
+                : undefined,
             approvedAt: domain.approvedAt,
             approvers: domain.approvers,
             viewers: domain.viewers,
@@ -78,7 +94,9 @@ export class ReportInfraMapper {
             docId: MapperUtils.undefinedToNull(domain.dmsDocumentId),
             docVersion: domain.version,
             updatedAt: domain.updatedAt,
-            approvedBy: MapperUtils.undefinedToNull(domain.approvedBy),
+            approvedBy: domain.approvedBy
+                ? (domain.approvedBy.id === 'system' ? undefined : { connect: { id: domain.approvedBy.id } })
+                : { disconnect: true },
             workflowId: domain.workflowId,
             approvedAt: domain.approvedAt,
         };

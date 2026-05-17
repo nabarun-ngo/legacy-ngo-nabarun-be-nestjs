@@ -9,6 +9,7 @@ import { IReportProvider, ReportGeneratedData } from '../../domain/reporting.int
 import { StartWorkflowUseCase } from 'src/modules/workflow/application/use-cases/start-workflow.use-case';
 import { PagedResult } from 'src/shared/models/paged-result';
 import { ReportCategoryDto, ReportDetailDto, ReportFilterDto } from '../dto/report.dto';
+import { ReportDtoMapper } from '../dto/report-dto.mapper';
 import { ReportMetadataService } from '../../infrastructure/external/report-metadata.service';
 import { fieldAttributeDomainToDto, mapToAdditionalFields } from 'src/shared/utilities/additional-field.util';
 import { AuthUser } from 'src/modules/shared/auth/domain/models/api-user.model';
@@ -31,7 +32,7 @@ export class ReportingService {
         const reports = await this.metadataService.getReportDefinations();
         return reports
             .filter(report => report.isActive)
-            .map(report => ReportCategoryDto.fromDomain(report));
+            .map(report => ReportDtoMapper.toReportCategoryDTO(report));
     }
 
     async generateReport<T extends Record<string, any>>(reportCode: string, params: T, authUser: AuthUser) {
@@ -64,7 +65,7 @@ export class ReportingService {
         await this.reportRepository.create(report);
 
         const result = await this.processAndSaveReportDocument(report, generatedData, authUser.profile_id!);
-        return ReportDetailDto.fromDomain(result.report);
+        return ReportDtoMapper.toReportDetailDTO(result.report);
     }
 
     async regenerateReport(reportId: string, authUser: AuthUser) {
@@ -90,7 +91,7 @@ export class ReportingService {
         const generatedData = await provider.generate(report.parameters ?? {});
 
         const result = await this.processAndSaveReportDocument(report, generatedData, authUser.profile_id!, true);
-        return ReportDetailDto.fromDomain(result.report);
+        return ReportDtoMapper.toReportDetailDTO(result.report);
     }
 
     private async processAndSaveReportDocument(
@@ -136,13 +137,13 @@ export class ReportingService {
         }
         console.log('report update', report.id);
 
-        await this.reportRepository.update(report.id, report);
+        const updatedReport = await this.reportRepository.update(report.id, report);
 
         for (const event of report.domainEvents) {
             this.eventBus.emit(event.constructor.name, event);
         }
 
-        return { buffer, fileName, contentType, report: report };
+        return { buffer, fileName, contentType, report: updatedReport };
     }
 
     async updateStatus(reportId: string, status: ReportStatus, authUserId: string, userRoles: string[]) {
@@ -164,13 +165,13 @@ export class ReportingService {
             report.markDraft();
         }
 
-        await this.reportRepository.update(report.id, report);
+        const updatedReport = await this.reportRepository.update(report.id, report);
 
         for (const event of report.domainEvents) {
             this.eventBus.emit(event.constructor.name, event);
         }
 
-        return ReportDetailDto.fromDomain(report);
+        return ReportDtoMapper.toReportDetailDTO(updatedReport);
     }
 
     async findReports(
@@ -190,7 +191,7 @@ export class ReportingService {
         });
 
         return new PagedResult<ReportDetailDto>(
-            result.content.map(r => ReportDetailDto.fromDomain(r)),
+            result.content.map(r => ReportDtoMapper.toReportDetailDTO(r)),
             result.totalSize,
             result.pageIndex,
             result.pageSize,
