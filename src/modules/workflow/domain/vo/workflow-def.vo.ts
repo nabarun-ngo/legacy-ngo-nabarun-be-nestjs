@@ -1,3 +1,4 @@
+import { FieldDef } from "src/shared/models/custom-field-def";
 import { WorkflowTaskType } from "../model/workflow-task.model";
 
 // Base DTOs for reusability
@@ -6,12 +7,7 @@ export interface AssignedToDef {
   roleNames: string | string[];
 }
 
-export interface FieldDef {
-  key: string;
-  defKey: string;
-  label: string;
-  mandatory: boolean;
-}
+
 
 export interface TaskDetailDef {
   assignedTo?: AssignedToDef;

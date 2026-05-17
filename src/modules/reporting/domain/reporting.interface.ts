@@ -1,4 +1,5 @@
 import { SetMetadata, Type } from '@nestjs/common';
+import { FieldDef } from 'src/shared/models/custom-field-def';
 
 export const REPORT_PROVIDER_METADATA_KEY = 'REPORT_PROVIDER_METADATA_KEY';
 
@@ -13,17 +14,23 @@ export function ReportProvider(): <T extends Type<IReportProvider<any>>>(target:
 export interface ReportGeneratedData {
     buffer: Buffer;
     fileName: string;
+    fileExtension: string;
     contentType: string;
 }
 
-export interface IReportProvider<TParams = any> {
+export class ReportDefination {
+    reportCode: string;
+    displayName: string;
+    description: string;
+    requiresApproval: boolean;
+    approverRoles: string[] | undefined;
+    visibleToRoles: string[];
+    isActive: boolean;
+}
+
+export interface IReportProvider<TParams extends Record<string, any> = Record<string, any>> {
     readonly reportCode: string;
-    readonly displayName: string;
-    readonly description: string;
-    readonly requiresApproval: boolean;
-    readonly approverRoles: string[] | undefined;
-    readonly visibleToRoles: string[];
-    readonly isActive: boolean;
+    readonly reportParams: FieldDef<Extract<keyof TParams, string>>[];
     generate(params: TParams): Promise<ReportGeneratedData>;
 }
 

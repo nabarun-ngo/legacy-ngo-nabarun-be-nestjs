@@ -63,6 +63,4 @@ export class StaticDocsService {
         const docLinks = parseKeyValueConfigs(remoteConfig['DOCUMENT_LINKS'].value);
         return docLinks.find(f => f.KEY === id)
     }
-
-
 }

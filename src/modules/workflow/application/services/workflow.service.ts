@@ -15,6 +15,7 @@ import { WorkflowDefService } from '../../infrastructure/external/workflow-def.s
 import { toKeyValueDto } from 'src/shared/utilities/kv-config.util';
 import { ReassignTaskUseCase } from '../use-cases/reassign-task.use-case';
 import { CancelWorkflowUseCase } from '../use-cases/cancel-workflow.use-case';
+import { fieldAttributeDomainToDto } from 'src/shared/utilities/additional-field.util';
 
 @Injectable()
 export class WorkflowService {
@@ -132,7 +133,7 @@ export class WorkflowService {
 
   async getAdditionalFields(type: string, stepId?: string, taskId?: string) {
     const additionalFields = await this.workflowDefService.getAdditionalFields(type, stepId, taskId);
-    return additionalFields.map(WorkflowDtoMapper.fieldAttributeDomainToDto);
+    return additionalFields.map(m => fieldAttributeDomainToDto(m));
   }
 
   async reassignTask(instanceId: string, taskId: string, userId?: string, fromDefinition?: boolean): Promise<WorkflowTaskDto> {

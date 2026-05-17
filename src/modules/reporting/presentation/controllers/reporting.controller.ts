@@ -1,13 +1,14 @@
-import { Controller, Get, Post, Body, Param, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Delete } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiParam, ApiQuery, ApiSecurity, ApiBody } from '@nestjs/swagger';
 import { ReportingService } from '../../application/services/reporting.service';
 import { CurrentUser } from 'src/modules/shared/auth/application/decorators/current-user.decorator';
 import type { AuthUser } from 'src/modules/shared/auth/domain/models/api-user.model';
 import { ApiAutoPagedResponse, ApiAutoResponse } from 'src/shared/decorators/api-auto-response.decorator';
 import { SuccessResponse } from 'src/shared/models/response-model';
-import { ReportCategoryDto, ReportDetailDto, ReportFilterDto } from '../../application/dto/report.dto';
+import { ReportCategoryDto, ReportDetailDto, ReportFilterDto, UpdateReportDto } from '../../application/dto/report.dto';
 import { PagedResult } from 'src/shared/models/paged-result';
 import { RequirePermissions } from 'src/modules/shared/auth/application/decorators/require-permissions.decorator';
+import { FieldAttributeDto } from 'src/shared/utilities/additional-field.util';
 
 @ApiTags(ReportingController.name)
 @Controller('report')
@@ -37,7 +38,7 @@ export class ReportingController {
      * Uploads the result to DMS and sends email notifications.
      */
     @Post('generate/:reportCode')
-    @RequirePermissions('create:report')
+    //@RequirePermissions('create:report')
     @ApiOperation({ summary: 'generate a report' })
     @ApiBody({
         schema: {
@@ -53,7 +54,7 @@ export class ReportingController {
         @Body() params: any,
         @CurrentUser() user: AuthUser,
     ) {
-        const result = await this.reportingService.generateReport(reportCode, params, user.profile_id!);
+        const result = await this.reportingService.generateReport(reportCode, params, user);
         return new SuccessResponse(result);
     }
 
@@ -85,19 +86,36 @@ export class ReportingController {
     }
 
     /**
-     * POST /report/:reportId/approve
-     * Approves a specific report.
+     * POST /report/:reportId/status
+     * Updates status of a specific report.
      */
-    @Post(':reportId/approve')
-    @ApiOperation({ summary: 'Approve a report' })
-    @ApiParam({ name: 'reportId', description: 'The ID of the report to approve' })
-    @ApiAutoResponse(ReportDetailDto, { description: 'Report approved successfully', wrapInSuccessResponse: true })
-    async approveReport(
+    @Post(':reportId/updateStatus')
+    @ApiOperation({ summary: 'Update report status' })
+    @ApiParam({ name: 'reportId', description: 'The ID of the report' })
+    @ApiBody({ type: UpdateReportDto })
+    @ApiAutoResponse(ReportDetailDto, { description: 'Report status updated successfully', wrapInSuccessResponse: true })
+    async updateStatus(
         @Param('reportId') reportId: string,
+        @Body() body: UpdateReportDto,
         @CurrentUser() user: AuthUser,
     ) {
-        const result = await this.reportingService.approveReport(reportId, user.profile_id!, user.user_roles || []);
+        const result = await this.reportingService.updateStatus(reportId, body.status, user.profile_id!, user.user_roles || []);
         return new SuccessResponse(result);
+    }
+
+    /**
+     * DELETE /report/:reportId
+     * Deletes a specific report.
+     */
+    @Delete(':reportId')
+    @ApiOperation({ summary: 'Delete a report' })
+    @ApiParam({ name: 'reportId', description: 'The ID of the report to delete' })
+    @ApiAutoResponse(String, { description: 'Report deleted successfully', wrapInSuccessResponse: true })
+    async deleteReport(
+        @Param('reportId') reportId: string,
+    ) {
+        await this.reportingService.deleteReport(reportId);
+        return new SuccessResponse('Report deleted successfully');
     }
 
     /**
@@ -112,8 +130,20 @@ export class ReportingController {
         @Param('reportId') reportId: string,
         @CurrentUser() user: AuthUser,
     ) {
-        const result = await this.reportingService.regenerateReport(reportId, user.profile_id!);
+        const result = await this.reportingService.regenerateReport(reportId, user);
         return new SuccessResponse(result);
+    }
+
+    @Get('static/reportInputs')
+    @ApiOperation({ summary: 'Get additional fields for report' })
+    @ApiAutoResponse(FieldAttributeDto, { description: 'Report inputs retrieved successfully', wrapInSuccessResponse: true, isArray: true })
+    @ApiQuery({ name: 'reportCode', required: true, description: 'Report code' })
+    async getReportInputs(
+        @Query('reportCode') reportCode: string,
+    ): Promise<SuccessResponse<FieldAttributeDto[]>> {
+        return new SuccessResponse<FieldAttributeDto[]>(
+            await this.reportingService.getReportInputFields(reportCode)
+        );
     }
 
 }

@@ -7,7 +7,7 @@ import { CorrespondenceService } from "src/modules/shared/correspondence/applica
 import { EmailTemplateName } from "src/shared/email-keys";
 import { JobName } from "src/shared/job-names";
 import { formatDate } from "src/shared/utilities/common.util";
-import { StaticDocsService } from "src/modules/shared/dms/application/services/static-docs.service";
+import { StaticDocsService } from "src/modules/shared/static-docs/application/services/static-docs.service";
 import { UserDeletedEvent } from "../../domain/events/user-deleted.event";
 import { Role } from "../../domain/model/role.model";
 import { CreateWorkflowRequestEvent } from "src/modules/workflow/application/events/create-workflow-request.event";

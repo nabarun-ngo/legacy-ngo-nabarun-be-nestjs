@@ -9,7 +9,7 @@ import { Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { Configkey } from "src/shared/config-keys";
 
-import { StaticDocsService } from "src/modules/shared/dms/application/services/static-docs.service";
+import { StaticDocsService } from "src/modules/shared/static-docs/application/services/static-docs.service";
 import { JobName } from "src/shared/job-names";
 
 @Injectable()

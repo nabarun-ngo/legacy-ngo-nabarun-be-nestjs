@@ -17,6 +17,7 @@ import { CorrespondenceModule } from './modules/shared/correspondence/correspond
 import { CommunicationModule } from './modules/shared/communication/communication.module';
 import { CronModule } from './modules/shared/cron/cron.module';
 import { DocumentGeneratorModule } from './modules/shared/document-generator/document-generator.module';
+import { StaticDocsModule } from './modules/shared/static-docs/static-docs.module';
 import { CommentsModule } from './modules/shared/comments/comments.module';
 import { ReportingModule } from './modules/reporting/reporting.module';
 
@@ -83,6 +84,7 @@ Handlebars.registerHelper("not", (a) => !a);
     CronModule,
     CommentsModule,
     ReportingModule,
+    StaticDocsModule,
 
 
   ],

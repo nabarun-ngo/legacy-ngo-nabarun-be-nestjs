@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { SuccessResponse } from '../../../../shared/models/response-model';
-import { FieldAttributeDto, StartWorkflowDto, TaskFilterDto, UpdateTaskDto, WorkflowFilterDto, WorkflowInstanceDto, WorkflowRefDataDto, WorkflowTaskDto } from '../../application/dto/workflow.dto';
+import { StartWorkflowDto, TaskFilterDto, UpdateTaskDto, WorkflowFilterDto, WorkflowInstanceDto, WorkflowRefDataDto, WorkflowTaskDto } from '../../application/dto/workflow.dto';
 import { WorkflowService } from '../../application/services/workflow.service';
 import { CurrentUser } from 'src/modules/shared/auth/application/decorators/current-user.decorator';
 import { type AuthUser } from 'src/modules/shared/auth/domain/models/api-user.model';
@@ -17,6 +17,7 @@ import { RequireAllPermissions } from 'src/modules/shared/auth/application/decor
 import { ApiAutoResponse, ApiAutoPagedResponse, ApiAutoPrimitiveResponse } from 'src/shared/decorators/api-auto-response.decorator';
 import { WorkflowTask, WorkflowTaskStatus, WorkflowTaskType } from '../../domain/model/workflow-task.model';
 import { ApiSecurity } from '@nestjs/swagger';
+import { FieldAttributeDto } from 'src/shared/utilities/additional-field.util';
 
 @ApiTags(WorkflowController.name)
 @ApiBearerAuth('jwt')

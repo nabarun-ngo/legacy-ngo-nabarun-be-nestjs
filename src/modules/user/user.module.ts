@@ -18,11 +18,12 @@ import { AuthModule } from '../shared/auth/auth.module';
 import { Auth0UserCreationHandler } from './application/handlers/workflow/auth0-user-creation.handler';
 import { UserNotRegisteredTaskHandler } from './application/handlers/workflow/user-not-registered.handler';
 import { UserDeleteAndDataCleanupHandler } from './application/handlers/workflow/user-delete-and-data-cleanup.handler';
+import { StaticDocsModule } from '../shared/static-docs/static-docs.module';
 
 @Global()
 @Module({
   controllers: [UserController],
-  imports: [FirebaseModule, DMSModule, AuthModule],
+  imports: [FirebaseModule, DMSModule, AuthModule, StaticDocsModule],
   providers: [
     CreateUserUseCase,
     UpdateUserUseCase,

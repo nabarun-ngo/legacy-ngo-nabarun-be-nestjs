@@ -16,11 +16,27 @@ export class ReportRepository implements IReportRepository {
         return this.prisma.report.count({ where: this.whereQuery(filter) });
     }
 
+    private readonly includeUsers = {
+        requestedBy: {
+            select: {
+                firstName: true,
+                lastName: true,
+            }
+        },
+        approvedBy: {
+            select: {
+                firstName: true,
+                lastName: true,
+            }
+        }
+    };
+
     async findPaged(filter?: BaseFilter<ReportFilter>): Promise<PagedResult<Report>> {
         const where = this.whereQuery(filter?.props);
         const [data, total] = await Promise.all([
             this.prisma.report.findMany({
                 where,
+                include: this.includeUsers,
                 orderBy: { createdAt: 'desc' },
                 skip: (filter?.pageIndex ?? 0) * (filter?.pageSize ?? 20),
                 take: filter?.pageSize ?? 20,
@@ -29,7 +45,7 @@ export class ReportRepository implements IReportRepository {
         ]);
 
         return new PagedResult<Report>(
-            data.map(r => ReportInfraMapper.toDomain(r)!),
+            data.map(r => ReportInfraMapper.toDomain(r as any)!),
             total,
             filter?.pageIndex ?? 0,
             filter?.pageSize ?? 20,
@@ -39,37 +55,44 @@ export class ReportRepository implements IReportRepository {
     async findAll(filter?: ReportFilter): Promise<Report[]> {
         const data = await this.prisma.report.findMany({
             where: this.whereQuery(filter),
+            include: this.includeUsers,
             orderBy: { createdAt: 'desc' },
         });
-        return data.map(r => ReportInfraMapper.toDomain(r)!);
+        return data.map(r => ReportInfraMapper.toDomain(r as any)!);
     }
 
     async findById(id: string): Promise<Report | null> {
-        const data = await this.prisma.report.findUnique({ where: { id } });
-        return data ? ReportInfraMapper.toDomain(data) : null;
+        const data = await this.prisma.report.findUnique({
+            where: { id },
+            include: this.includeUsers,
+        });
+        return data ? ReportInfraMapper.toDomain(data as any) : null;
     }
 
     async findByReportCode(reportCode: string): Promise<Report[]> {
         const data = await this.prisma.report.findMany({
             where: { reportCode },
+            include: this.includeUsers,
             orderBy: { createdAt: 'desc' },
         });
-        return data.map(r => ReportInfraMapper.toDomain(r)!);
+        return data.map(r => ReportInfraMapper.toDomain(r as any)!);
     }
 
     async create(entity: Report): Promise<Report> {
         const created = await this.prisma.report.create({
             data: ReportInfraMapper.toCreatePersistence(entity),
+            include: this.includeUsers,
         });
-        return ReportInfraMapper.toDomain(created)!;
+        return ReportInfraMapper.toDomain(created as any)!;
     }
 
     async update(id: string, entity: Report): Promise<Report> {
         const updated = await this.prisma.report.update({
             where: { id },
             data: ReportInfraMapper.toUpdatePersistence(entity),
+            include: this.includeUsers,
         });
-        return ReportInfraMapper.toDomain(updated)!;
+        return ReportInfraMapper.toDomain(updated as any)!;
     }
 
     async delete(id: string): Promise<void> {

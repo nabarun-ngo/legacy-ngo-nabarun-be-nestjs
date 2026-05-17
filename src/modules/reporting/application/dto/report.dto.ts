@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { Report, ReportStatus } from '../../domain/models/report.model';
-import { IReportProvider } from '../../domain/reporting.interface';
+import { ReportDefination } from '../../domain/reporting.interface';
 
 export class ReportDetailDto {
     @ApiProperty({ description: 'The unique identifier of the report execution' })
@@ -28,6 +28,15 @@ export class ReportDetailDto {
     @ApiProperty({ description: 'The ID of the user who approved the report' })
     approvedBy?: string;
 
+    @ApiProperty({ description: 'The ID of the user who approved the report' })
+    approvedById?: string;
+
+    @ApiProperty({ description: 'The name of the user who approved the report' })
+    approvedByName?: string;
+
+    @ApiProperty({ description: 'The name of the user who requested the report' })
+    requestedByName?: string;
+
     @ApiProperty({ description: 'The timestamp when the report was approved' })
     approvedAt?: Date;
 
@@ -51,27 +60,6 @@ export class ReportDetailDto {
 
     @ApiProperty({ description: 'The timestamp when the report was last updated' })
     updatedAt: Date;
-
-    static fromDomain(report: Report): ReportDetailDto {
-        return {
-            id: report.id,
-            reportCode: report.reportCode,
-            requestedById: report.requestedById,
-            status: report.status,
-            parameters: report.parameters,
-            needApproval: report.needApproval,
-            approvedBy: report.approvedBy,
-            approvedAt: report.approvedAt,
-            approvers: report.approvers,
-            viewers: report.viewers,
-            dmsDocumentId: report.dmsDocumentId,
-            version: report.version,
-            workflowId: report.workflowId,
-            createdAt: report.createdAt,
-            updatedAt: report.updatedAt,
-            reportName: report.reportName,
-        } as ReportDetailDto;
-    }
 }
 
 export class ReportFilterDto {
@@ -86,6 +74,11 @@ export class ReportFilterDto {
     requestedById?: string;
 }
 
+export class UpdateReportDto {
+    @ApiProperty({ enum: ReportStatus, description: 'The current status of the report' })
+    @IsEnum(ReportStatus)
+    status: ReportStatus;
+}
 
 export class ReportCategoryDto {
     @ApiProperty({ description: 'The unique identifier of the category' })
@@ -114,17 +107,4 @@ export class ReportCategoryDto {
     @IsBoolean()
     @IsOptional()
     isActive?: boolean;
-
-
-    static fromDomain(category: IReportProvider): ReportCategoryDto {
-        return {
-            reportCode: category.reportCode,
-            reportName: category.displayName,
-            description: category.description,
-            viewerRoles: category.visibleToRoles,
-            manageRoles: category.approverRoles,
-            isActive: category.isActive,
-        } as ReportCategoryDto;
-    }
-
 }
