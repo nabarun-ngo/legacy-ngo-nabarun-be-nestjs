@@ -14,6 +14,7 @@ export function ReportProvider(): <T extends Type<IReportProvider<any>>>(target:
 export interface ReportGeneratedData {
     buffer: Buffer;
     fileName: string;
+    fileExtension: string;
     contentType: string;
 }
 

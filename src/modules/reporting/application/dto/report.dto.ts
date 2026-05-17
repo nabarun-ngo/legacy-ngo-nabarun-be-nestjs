@@ -86,6 +86,11 @@ export class ReportFilterDto {
     requestedById?: string;
 }
 
+export class UpdateReportDto {
+    @ApiProperty({ enum: ReportStatus, description: 'The current status of the report' })
+    @IsEnum(ReportStatus)
+    status: ReportStatus;
+}
 
 export class ReportCategoryDto {
     @ApiProperty({ description: 'The unique identifier of the category' })

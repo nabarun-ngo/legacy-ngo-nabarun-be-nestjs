@@ -34,7 +34,8 @@ export class ProjectReportProvider implements IReportProvider<{ projectId: strin
 
         return {
             buffer,
-            fileName: `Project_Closure_Report_${params.projectId}.xlsx`,
+            fileName: `Project_Closure_Report_${params.projectId}`,
+            fileExtension: 'xlsx',
             contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         };
     }

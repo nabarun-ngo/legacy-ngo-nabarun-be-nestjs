@@ -31,7 +31,8 @@ export class ActivityReportProvider implements IReportProvider<{ activityId: str
 
         return {
             buffer,
-            fileName: `Activity_Report_${params.activityId}.xlsx`,
+            fileName: `Activity_Report_${params.activityId}`,
+            fileExtension: 'xlsx',
             contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         };
     }

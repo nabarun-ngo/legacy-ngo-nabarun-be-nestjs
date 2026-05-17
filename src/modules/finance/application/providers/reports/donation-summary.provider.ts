@@ -59,10 +59,10 @@ export class DonationSummaryReportProvider implements IReportProvider<{ startDat
         // Check if period is exactly one full month
         const isExactFullMonth = startDt.day === 1 && endDt.toFormat('yyyy-MM-dd') === startDt.endOf('month').toFormat('yyyy-MM-dd');
         const fileName = isExactFullMonth
-            ? `Donation_Summary_Report-${startDt.toFormat('MMMM_yyyy')}.xlsx`
-            : `Donation_Summary_Report-${startDate}_${endDate}.xlsx`;
+            ? `Donation_Summary_Report-${startDt.toFormat('MMMM_yyyy')}`
+            : `Donation_Summary_Report-${startDate}_${endDate}`;
         const fileType = (await fileTypeFromBuffer(buffer))?.mime ?? 'application/octet-stream';
-        return { buffer, fileName, contentType: fileType };
+        return { buffer, fileName, contentType: fileType, fileExtension: 'xlsx' };
     }
 
 

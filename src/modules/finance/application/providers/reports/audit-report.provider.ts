@@ -36,7 +36,8 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
 
         return {
             buffer,
-            fileName: `Annual_Audit_Report_FY_${params.financialYear}.xlsx`,
+            fileName: `Annual_Audit_Report_FY_${params.financialYear}`,
+            fileExtension: 'xlsx',
             contentType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         };
     }

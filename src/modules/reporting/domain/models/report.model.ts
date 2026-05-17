@@ -1,5 +1,6 @@
 import { AggregateRoot } from 'src/shared/models/aggregate-root';
 import { ReportApprovedEvent } from '../events/report-approved.event';
+import { generateUniqueNDigitNumber } from 'src/shared/utilities/password-util';
 
 export enum ReportStatus {
     DRAFT = 'DRAFT',
@@ -79,7 +80,7 @@ export class Report extends AggregateRoot<string> {
         viewers: string[] | undefined;
     }): Report {
         return new Report(
-            crypto.randomUUID(),
+            `NRP${generateUniqueNDigitNumber(6)}`,
             props.reportCode,
             props.reportName,
             props.requestedById,
@@ -108,9 +109,18 @@ export class Report extends AggregateRoot<string> {
         this.addDomainEvent(new ReportApprovedEvent(this));
     }
 
-    incrementVersion(docId: string): void {
+    incrementVersion(): void {
         this.#version++;
-        this.#dmsDocumentId = docId;
+    }
+
+    markDraft() {
+        this.#status = ReportStatus.DRAFT;
+        this.#approvedBy = undefined;
+        this.#approvedAt = undefined;
+    }
+
+    set dmsDocumentId(id: string) {
+        this.#dmsDocumentId = id;
     }
 
     get reportName(): string {
