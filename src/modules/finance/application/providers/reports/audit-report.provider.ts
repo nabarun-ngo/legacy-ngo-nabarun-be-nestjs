@@ -1,6 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { IReportProvider, ReportGeneratedData, ReportProvider } from '../../../../reporting/domain/reporting.interface';
-import { Role } from 'src/modules/user/domain/model/role.model';
 import { formatDate } from 'src/shared/utilities/common.util';
 import { DateTime } from 'luxon';
 import { DONATION_REPOSITORY, type IDonationRepository } from 'src/modules/finance/domain/repositories/donation.repository.interface';
@@ -12,8 +11,6 @@ import { FieldDef } from 'src/shared/models/custom-field-def';
 @ReportProvider()
 export class AuditReportProvider implements IReportProvider<{ financialYear: string }> {
     readonly reportCode = 'ANNUAL_AUDIT_REPORT';
-
-
 
     constructor(
         @Inject(DONATION_REPOSITORY)
@@ -45,20 +42,22 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
 
 
     private async template(request: { financialYear: string }): Promise<Buffer> {
+        if (!/^\d{4}-\d{4}$/.test(request.financialYear)) {
+            throw new BadRequestException('Invalid financial year format. Expected format is YYYY-YYYY (e.g., 2025-2026).');
+        }
         const [startYear, endYear] = request.financialYear.split('-').map(y => parseInt(y));
         const startDate = DateTime.fromObject({ year: startYear, month: 4, day: 1 }).toJSDate();
         const endDate = DateTime.fromObject({ year: endYear, month: 3, day: 31 }).endOf('day').toJSDate();
 
         const donations = await this.donationRepository.findAll({
-            startDate_confirmedOn: startDate,
-            endDate_confirmedOn: endDate,
+            startDate_paidOn: startDate,
+            endDate_paidOn: endDate,
         });
 
         const expenses = await this.expenseRepository.findAll({
-            // Assuming expense has similar date filtering or I'll need to filter in memory
+            startDate: startDate,
+            endDate: endDate
         });
-        // For demo, I'll filter expenses in memory if repository doesn't support date range yet
-        const filteredExpenses = expenses.filter(e => e.createdAt >= startDate && e.createdAt <= endDate);
 
         const excelBuilder = this.documentGenerator.createExcelBuilder();
         const summarySheet = excelBuilder.addSheet({
@@ -69,7 +68,7 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
         const allborder: any = { bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' }, top: { style: 'thin' } };
 
         const totalDonations = donations.reduce((sum, d) => sum + d.amount, 0);
-        const totalExpenses = filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
+        const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
         summarySheet
             .setCell(1, 1, `Annual Audit Report - FY ${request.financialYear}`, { font: { bold: true, size: 16 } })
@@ -106,7 +105,7 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
                     { header: 'Description', key: 'description', width: 40 },
                 ]
             })
-            .addRows(filteredExpenses.map(e => ({
+            .addRows(expenses.map(e => ({
                 category: e.referenceType,
                 amount: e.amount,
                 date: formatDate(e.createdAt),
