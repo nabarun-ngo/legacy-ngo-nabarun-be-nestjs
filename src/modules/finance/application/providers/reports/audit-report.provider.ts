@@ -8,6 +8,10 @@ import { EARNING_REPOSITORY, type IEarningRepository } from 'src/modules/finance
 import { ACCOUNT_REPOSITORY, type IAccountRepository } from 'src/modules/finance/domain/repositories/account.repository.interface';
 import { DocumentGeneratorService } from 'src/modules/shared/document-generator/services/document-generator.service';
 import { FieldDef } from 'src/shared/models/custom-field-def';
+import { ExpenseStatus } from 'src/modules/finance/domain/model/expense.model';
+import { EarningStatus } from 'src/modules/finance/domain/model/earning.model';
+import { AccountStatus } from 'src/modules/finance/domain/model/account.model';
+import { DonationStatus } from 'src/modules/finance/domain/model/donation.model';
 
 @Injectable()
 @ReportProvider()
@@ -68,8 +72,8 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
         // Load all financial data streams in parallel
         const [donations, expenses, earnings, accounts] = await Promise.all([
             this.donationRepository.findAll({
-                startDate_paidOn: startDate,
-                endDate_paidOn: endDate,
+                startDate_raisedOn: startDate,
+                endDate_raisedOn: endDate,
             }),
             this.expenseRepository.findAll({
                 startDate: startDate,
@@ -79,24 +83,29 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
                 startDate: startDate,
                 endDate: endDate,
             }),
-            this.accountRepository.findAll(),
+            this.accountRepository.findAll({
+                status: [AccountStatus.ACTIVE]
+            }),
         ]);
 
         // Consolidated breakdown sums for Annual Summary sheet
-        const regDonAmt = donations.filter(d => d.type === 'REGULAR').reduce((sum, d) => sum + d.amount, 0);
-        const oneTimeDonAmt = donations.filter(d => d.type === 'ONETIME').reduce((sum, d) => sum + d.amount, 0);
+        const paidDons = donations.filter(d => d.status === DonationStatus.PAID);
+        const regDonAmt = paidDons.filter(d => d.type === 'REGULAR').reduce((sum, d) => sum + d.amount, 0);
+        const oneTimeDonAmt = paidDons.filter(d => d.type === 'ONETIME').reduce((sum, d) => sum + d.amount, 0);
 
-        const serviceEarnAmt = earnings.filter(e => e.category === 'SERVICE').reduce((sum, e) => sum + e.amount, 0);
-        const productEarnAmt = earnings.filter(e => e.category === 'PRODUCT').reduce((sum, e) => sum + e.amount, 0);
-        const grantEarnAmt = earnings.filter(e => e.category === 'GRANT').reduce((sum, e) => sum + e.amount, 0);
-        const sponsEarnAmt = earnings.filter(e => e.category === 'SPONSORSHIP').reduce((sum, e) => sum + e.amount, 0);
-        const otherEarnAmt = earnings.filter(e => e.category === 'OTHER').reduce((sum, e) => sum + e.amount, 0);
+        const receivedEarnings = earnings.filter(e => e.status === EarningStatus.RECEIVED);
+        const serviceEarnAmt = receivedEarnings.filter(e => e.category === 'SERVICE').reduce((sum, e) => sum + e.amount, 0);
+        const productEarnAmt = receivedEarnings.filter(e => e.category === 'PRODUCT').reduce((sum, e) => sum + e.amount, 0);
+        const grantEarnAmt = receivedEarnings.filter(e => e.category === 'GRANT').reduce((sum, e) => sum + e.amount, 0);
+        const sponsEarnAmt = receivedEarnings.filter(e => e.category === 'SPONSORSHIP').reduce((sum, e) => sum + e.amount, 0);
+        const otherEarnAmt = receivedEarnings.filter(e => e.category === 'OTHER').reduce((sum, e) => sum + e.amount, 0);
 
-        const opExpAmt = expenses.filter(e => e.referenceType === 'OPERATIONAL').reduce((sum, e) => sum + e.amount, 0);
-        const adminExpAmt = expenses.filter(e => e.referenceType === 'ADMINISTRATIVE').reduce((sum, e) => sum + e.amount, 0);
-        const eventExpAmt = expenses.filter(e => e.referenceType === 'EVENT').reduce((sum, e) => sum + e.amount, 0);
-        const adhocExpAmt = expenses.filter(e => e.referenceType === 'ADHOC').reduce((sum, e) => sum + e.amount, 0);
-        const otherExpAmt = expenses.filter(e => !['OPERATIONAL', 'ADMINISTRATIVE', 'EVENT', 'ADHOC'].includes(e.referenceType || '')).reduce((sum, e) => sum + e.amount, 0);
+        const settledExpenses = expenses.filter(e => e.status === ExpenseStatus.SETTLED);
+        const opExpAmt = settledExpenses.filter(e => e.referenceType === 'OPERATIONAL').reduce((sum, e) => sum + e.amount, 0);
+        const adminExpAmt = settledExpenses.filter(e => e.referenceType === 'ADMINISTRATIVE').reduce((sum, e) => sum + e.amount, 0);
+        const eventExpAmt = settledExpenses.filter(e => e.referenceType === 'EVENT').reduce((sum, e) => sum + e.amount, 0);
+        const adhocExpAmt = settledExpenses.filter(e => e.referenceType === 'ADHOC').reduce((sum, e) => sum + e.amount, 0);
+        const otherExpAmt = settledExpenses.filter(e => !['OPERATIONAL', 'ADMINISTRATIVE', 'EVENT', 'ADHOC'].includes(e.referenceType || '')).reduce((sum, e) => sum + e.amount, 0);
 
         const excelBuilder = this.documentGenerator.createExcelBuilder();
 
@@ -324,7 +333,7 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
         }));
 
         excelBuilder.addSheet({
-            name: 'Account Summary',
+            name: 'Active Account Summary',
             freezePane: { row: 1 },
             autoFilter: true,
             columns: [
