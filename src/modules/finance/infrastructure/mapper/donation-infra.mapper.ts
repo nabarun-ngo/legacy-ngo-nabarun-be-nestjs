@@ -40,6 +40,7 @@ export class DonationInfraMapper {
         AccountInfraMapper.toAccountDomain(p.paidToAccount as any)
       ), // paidToAccount
       MapperUtils.nullToUndefined(p.forEventId),
+      MapperUtils.nullToUndefined(p.activity?.name ?? null),
       MapperUtils.nullToUndefined(p.paidUsingUPI) as UPIPaymentType,
       p.isPaymentNotified ?? false,
       MapperUtils.nullToUndefined(p.remarks),

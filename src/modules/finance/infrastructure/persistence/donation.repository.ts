@@ -12,6 +12,7 @@ export type FullDonation = Prisma.DonationGetPayload<{
     donor: true;
     paidToAccount: true;
     confirmedBy: true;
+    activity: true;
   };
 }>;
 
@@ -45,13 +46,13 @@ class DonationRepository implements IDonationRepository {
           donor: true,
           paidToAccount: true,
           confirmedBy: true,
+          activity: true,
         },
         skip: (filter?.pageIndex ?? 0) * (filter?.pageSize ?? 1000),
         take: filter?.pageSize ?? 1000,
       }),
       this.prisma.donation.count({ where }),
     ]);
-
     return new PagedResult<Donation>(
       data.map(m => DonationInfraMapper.toDonationDomain(m)!),
       total,
@@ -70,10 +71,11 @@ class DonationRepository implements IDonationRepository {
         donor: true,
         paidToAccount: true,
         confirmedBy: true,
+        activity: true,
       },
     });
 
-    return donations.map(m => DonationInfraMapper.toDonationDomain(m)!);
+    return donations.map((m) => DonationInfraMapper.toDonationDomain(m)!);
   }
 
   private whereQuery(props?: DonationFilter): Prisma.DonationWhereInput {
@@ -138,10 +140,11 @@ class DonationRepository implements IDonationRepository {
         donor: true,
         paidToAccount: true,
         confirmedBy: true,
+        activity: true,
       },
     });
 
-    return DonationInfraMapper.toDonationDomain(donation!);
+    return DonationInfraMapper.toDonationDomain(donation as any);
   }
 
   async findByDonorId(donorId: string): Promise<Donation[]> {
@@ -152,6 +155,7 @@ class DonationRepository implements IDonationRepository {
         donor: true,
         paidToAccount: true,
         confirmedBy: true,
+        activity: true,
       },
     });
 
@@ -166,6 +170,7 @@ class DonationRepository implements IDonationRepository {
         donor: true,
         paidToAccount: true,
         confirmedBy: true,
+        activity: true,
       },
     });
 
@@ -180,6 +185,7 @@ class DonationRepository implements IDonationRepository {
         donor: true,
         paidToAccount: true,
         confirmedBy: true,
+        activity: true,
       },
     });
 
@@ -198,6 +204,7 @@ class DonationRepository implements IDonationRepository {
         donor: true,
         paidToAccount: true,
         confirmedBy: true,
+        activity: true,
       },
     });
 
@@ -218,6 +225,7 @@ class DonationRepository implements IDonationRepository {
         donor: true,
         paidToAccount: true,
         confirmedBy: true,
+        activity: true,
       },
     });
 
@@ -235,6 +243,7 @@ class DonationRepository implements IDonationRepository {
         donor: true,
         paidToAccount: true,
         confirmedBy: true,
+        activity: true,
       },
     });
 
@@ -253,6 +262,7 @@ class DonationRepository implements IDonationRepository {
         donor: true,
         paidToAccount: true,
         confirmedBy: true,
+        activity: true,
       },
     });
 

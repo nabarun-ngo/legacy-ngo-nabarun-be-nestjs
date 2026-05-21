@@ -261,6 +261,12 @@ export class DonationDto {
   @IsEnum(DonationStatus, { each: true })
   nextStatuses: DonationStatus[];
 
+  @ApiPropertyOptional({ description: 'Activity ID this donation is for' })
+  activityId?: string;
+
+  @ApiPropertyOptional({ description: 'Activity name this donation is for' })
+  activityName?: string;
+
 }
 
 export class UpdateDonationDto {

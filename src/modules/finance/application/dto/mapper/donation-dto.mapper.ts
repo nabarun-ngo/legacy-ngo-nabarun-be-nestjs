@@ -38,6 +38,8 @@ export class DonationDtoMapper {
       laterPaymentReason: donation.laterPaymentReason,
       paymentFailureDetail: donation.paymentFailureDetail,
       nextStatuses: donation.nextStatus(),
+      activityId: donation.forEventId,
+      activityName: donation.activityName,
     };
   }
 

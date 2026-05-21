@@ -46,11 +46,15 @@ export class ReportInfraMapper {
             p.id,
             p.reportCode,
             p.reportName,
-            p.requestedBy ? { id: p.requestedBy.id, firstName: p.requestedBy.firstName, lastName: p.requestedBy.lastName } : undefined,
+            p.requestedBy 
+                ? { id: p.requestedBy.id, firstName: p.requestedBy.firstName, lastName: p.requestedBy.lastName } 
+                : (p.requestedById ? { id: p.requestedById } : undefined),
             p.status as ReportStatus,
             (p.parameters as Record<string, any>) ?? undefined,
             p.needApproval,
-            p.approvedBy ? { id: p.approvedBy.id, firstName: p.approvedBy.firstName, lastName: p.approvedBy.lastName } : undefined,
+            p.approvedBy 
+                ? { id: p.approvedBy.id, firstName: p.approvedBy.firstName, lastName: p.approvedBy.lastName } 
+                : (p.approvedById ? { id: p.approvedById } : undefined),
             MapperUtils.nullToUndefined(p.approvedAt),
             p.approvers ?? [],
             p.viewers ?? [],
