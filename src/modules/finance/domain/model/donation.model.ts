@@ -79,6 +79,7 @@ export class Donation extends AggregateRoot<string> {
   #paymentMethod: PaymentMethod | undefined;
   #paidToAccount: Partial<Account> | undefined;
   #forEventId: string | undefined;
+  #activityName: string | undefined;
   #paidUsingUPI: UPIPaymentType | undefined;
   #isPaymentNotified: boolean;
   #transactionRef: string | undefined; // Legacy alias
@@ -94,7 +95,6 @@ export class Donation extends AggregateRoot<string> {
     DonationStatus.PAY_LATER,
     DonationStatus.UPDATE_MISTAKE,
   ];
-
 
   constructor(
     id: string,
@@ -117,6 +117,7 @@ export class Donation extends AggregateRoot<string> {
     paymentMethod?: PaymentMethod,
     paidToAccountId?: Account,
     forEventId?: string,
+    activityName?: string,
     paidUsingUPI?: UPIPaymentType,
     isPaymentNotified: boolean = false,
     remarks?: string,
@@ -153,6 +154,7 @@ export class Donation extends AggregateRoot<string> {
     this.#cancelletionReason = cancelletionReason;
     this.#laterPaymentReason = laterPaymentReason;
     this.#paymentFailureDetail = paymentFailureDetail;
+    this.#activityName = activityName;
   }
 
   /**
@@ -206,6 +208,7 @@ export class Donation extends AggregateRoot<string> {
       undefined, // paymentMethod
       undefined, // paidToAccountId
       undefined, // forEventId
+      undefined, // activityName
       undefined, // paidUsingUPI
       false, // isPaymentNotified
       undefined, // remarks
@@ -425,6 +428,7 @@ export class Donation extends AggregateRoot<string> {
   get paymentMethod(): PaymentMethod | undefined { return this.#paymentMethod; }
   get paidToAccount(): Partial<Account> | undefined { return this.#paidToAccount; }
   get forEventId(): string | undefined { return this.#forEventId; }
+  get activityName(): string | undefined { return this.#activityName; }
   get paidUsingUPI(): UPIPaymentType | undefined { return this.#paidUsingUPI; }
   get isPaymentNotified(): boolean { return this.#isPaymentNotified; }
   get transactionRef(): string | undefined { return this.#transactionRef; }

@@ -53,7 +53,6 @@ model UserProfile {
   receivedWorkflows  WorkflowInstance[] @relation("InitiatedFor")
   taskAssignments    TaskAssignment[]   @relation("taskAssignments")
   taskCompleted      WorkflowTask[]     @relation("taskCompletedBy")
-  noticesCreated     Notice[]           @relation("NoticeCreator")
   meetingsCreated    Meeting[]          @relation("MeetingCreator")
   notifications      UserNotification[] @relation("UserNotificationsFor")
   fcmTokens          UserFcmToken[]     @relation("UserFcmTokens")
@@ -61,29 +60,26 @@ model UserProfile {
   approvedReports    Report[]           @relation("ReportApprovedBy")
 
   // Project module relations
-  managedProjects     Project[]           @relation("ProjectManager")
-  sponsoredProjects   Project[]           @relation("ProjectSponsor")
-  assignedActivities  Activity[]          @relation("ActivityAssignee")
-  organizedActivities Activity[]          @relation("ActivityOrganizer")
-  projectTeamMembers  ProjectTeamMember[] @relation("ProjectTeamMember")
-  riskOwners          ProjectRisk[]       @relation("RiskOwner")
-  donations           Donation[]          @relation("Donation")
-  confirmedDonations  Donation[]          @relation("DonationConfirmedBy")
-  expenseCreator      Expense[]           @relation("ExpenseCreator")
-  expensePaidBy       Expense[]           @relation("ExpensePaidBy")
-  expenseSubmittedBy  Expense[]           @relation("ExpenseSubmittedBy")
-  expenseFinalizedBy  Expense[]           @relation("ExpenseFinalizedBy")
-  expenseSettledBy    Expense[]           @relation("ExpenseSettledBy")
-  expenseRejectedBy   Expense[]           @relation("ExpenseRejectedBy")
-  expenseUpdatedBy    Expense[]           @relation("ExpenseUpdatedBy")
+  managedProjects     Project[]  @relation("ProjectManager")
+  sponsoredProjects   Project[]  @relation("ProjectSponsor")
+  assignedActivities  Activity[] @relation("ActivityAssignee")
+  organizedActivities Activity[] @relation("ActivityOrganizer")
+  donations           Donation[] @relation("Donation")
+  confirmedDonations  Donation[] @relation("DonationConfirmedBy")
+  expenseCreator      Expense[]  @relation("ExpenseCreator")
+  expensePaidBy       Expense[]  @relation("ExpensePaidBy")
+  expenseSubmittedBy  Expense[]  @relation("ExpenseSubmittedBy")
+  expenseFinalizedBy  Expense[]  @relation("ExpenseFinalizedBy")
+  expenseSettledBy    Expense[]  @relation("ExpenseSettledBy")
+  expenseRejectedBy   Expense[]  @relation("ExpenseRejectedBy")
+  expenseUpdatedBy    Expense[]  @relation("ExpenseUpdatedBy")
 
   //workflowTasks      WorkflowTask[]
 
-  accountCreator     Account[]         @relation("AccountCreator")
-  transactionCreator Transaction[]     @relation("TransactionCreator")
+  accountCreator     Account[]     @relation("AccountCreator")
+  transactionCreator Transaction[] @relation("TransactionCreator")
   expenses           Expense[]
-  activityExpenses   ActivityExpense[]
-  comments           Comment[]         @relation("CommentAuthor")
+  comments           Comment[]     @relation("CommentAuthor")
 
   @@index([email])
   @@index([authUserId])
@@ -377,6 +373,7 @@ model Donation {
   confirmedOn          DateTime?
   paymentMethod        String?      @db.VarChar(20) // CASH, NETBANKING, UPI
   paidToAccountId      String?      @db.VarChar(255) // Account ID
+  activity             Activity?    @relation(fields: [forEventId], references: [id])
   forEventId           String?      @db.VarChar(255) // Event ID
   paidUsingUPI         String?      @db.VarChar(20) // GPAY, PAYTM, PHONEPE, BHARATPAY, UPI_OTH
   isPaymentNotified    Boolean?     @default(false)
@@ -448,8 +445,9 @@ model Expense {
   description String? @db.Text
 
   // Reference to project/event
-  referenceId   String? @db.VarChar(255)
-  referenceType String? @db.VarChar(50)
+  referenceId   String?   @db.VarChar(255)
+  referenceType String?   @db.VarChar(50)
+  activity      Activity? @relation(fields: [referenceId], references: [id])
 
   // Legacy fields
   isDelegated Boolean @default(false)
@@ -499,13 +497,12 @@ model Expense {
   // Dates
   remarks String? @db.Text
 
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  version          Int               @default(0)
-  deletedAt        DateTime?
-  userProfile      UserProfile?      @relation(fields: [userProfileId], references: [id])
-  userProfileId    String?
-  activityExpenses ActivityExpense[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  version       Int          @default(0)
+  deletedAt     DateTime?
+  userProfile   UserProfile? @relation(fields: [userProfileId], references: [id])
+  userProfileId String?
 
   @@index([status])
   @@index([createdById])
@@ -575,35 +572,6 @@ model DocumentMapping {
   @@map("document_mappings")
 }
 
-// ====================================
-// NOTICE MODULE MODELS
-// ====================================
-
-model Notice {
-  id          String    @id @default(uuid())
-  title       String    @db.VarChar(255)
-  description String    @db.Text
-  status      String    @db.VarChar(20) // ACTIVE, EXPIRED, DRAFT
-  noticeDate  DateTime
-  publishDate DateTime?
-  hasMeeting  Boolean   @default(false)
-
-  // Creator relation
-  creatorId       String       @db.VarChar(255)
-  creator         UserProfile? @relation("NoticeCreator", fields: [creatorId], references: [id])
-  creatorRoleCode String?      @db.VarChar(50)
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  version   Int       @default(0)
-  deletedAt DateTime?
-
-  @@index([status])
-  @@index([creatorId])
-  @@index([noticeDate])
-  @@map("notices")
-}
-
 model Meeting {
   id                     String    @id @default(uuid())
   extMeetingId           String?   @unique @db.VarChar(255) // Google Calendar event ID
@@ -670,14 +638,10 @@ model Project {
   metadata               Json?
 
   // Relations
-  manager       UserProfile         @relation("ProjectManager", fields: [managerId], references: [id])
-  sponsor       UserProfile?        @relation("ProjectSponsor", fields: [sponsorId], references: [id])
-  goals         Goal[]
+  manager       UserProfile   @relation("ProjectManager", fields: [managerId], references: [id])
+  sponsor       UserProfile?  @relation("ProjectSponsor", fields: [sponsorId], references: [id])
   activities    Activity[]
-  milestones    Milestone[]
-  teamMembers   ProjectTeamMember[]
   beneficiaries Beneficiary[]
-  risks         ProjectRisk[]
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -690,34 +654,6 @@ model Project {
   @@index([managerId])
   @@index([code])
   @@map("projects")
-}
-
-model Goal {
-  id           String    @id @default(uuid())
-  projectId    String    @db.VarChar(255)
-  title        String    @db.VarChar(255)
-  description  String?   @db.Text
-  targetValue  Decimal?  @db.Decimal(15, 2)
-  targetUnit   String?   @db.VarChar(50)
-  currentValue Decimal   @default(0) @db.Decimal(15, 2)
-  deadline     DateTime?
-  priority     String    @db.VarChar(20) // LOW, MEDIUM, HIGH, CRITICAL
-  status       String    @db.VarChar(30) // NOT_STARTED, IN_PROGRESS, etc.
-  weight       Decimal?  @db.Decimal(5, 4) // 0-1
-  dependencies String[] // Array of goal IDs
-
-  // Relations
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  version   Int       @default(0)
-  deletedAt DateTime?
-
-  @@index([projectId])
-  @@index([status])
-  @@index([priority])
-  @@map("goals")
 }
 
 model Activity {
@@ -747,17 +683,18 @@ model Activity {
   metadata             Json?
 
   // Relations
-  project          Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  assignee         UserProfile?      @relation("ActivityAssignee", fields: [assignedTo], references: [id])
-  organizer        UserProfile?      @relation("ActivityOrganizer", fields: [organizerId], references: [id])
-  parentActivity   Activity?         @relation("ActivityHierarchy", fields: [parentActivityId], references: [id])
-  childActivities  Activity[]        @relation("ActivityHierarchy")
-  activityExpenses ActivityExpense[]
+  project         Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignee        UserProfile? @relation("ActivityAssignee", fields: [assignedTo], references: [id])
+  organizer       UserProfile? @relation("ActivityOrganizer", fields: [organizerId], references: [id])
+  parentActivity  Activity?    @relation("ActivityHierarchy", fields: [parentActivityId], references: [id])
+  childActivities Activity[]   @relation("ActivityHierarchy")
 
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  version   Int       @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  version   Int        @default(0)
   deletedAt DateTime?
+  donations Donation[]
+  expenses  Expense[]
 
   @@index([projectId])
   @@index([status])
@@ -767,57 +704,6 @@ model Activity {
   @@index([organizerId])
   @@index([parentActivityId])
   @@map("activities")
-}
-
-model Milestone {
-  id           String    @id @default(uuid())
-  projectId    String    @db.VarChar(255)
-  name         String    @db.VarChar(255)
-  description  String?   @db.Text
-  targetDate   DateTime
-  actualDate   DateTime?
-  status       String    @db.VarChar(20) // PENDING, IN_PROGRESS, etc.
-  importance   String    @db.VarChar(20) // LOW, MEDIUM, HIGH, CRITICAL
-  dependencies String[] // Array of milestone IDs
-  notes        String?   @db.Text
-
-  // Relations
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  @@index([projectId])
-  @@index([status])
-  @@index([targetDate])
-  @@map("milestones")
-}
-
-model ProjectTeamMember {
-  id               String    @id @default(uuid())
-  projectId        String    @db.VarChar(255)
-  userId           String    @db.VarChar(255)
-  role             String    @db.VarChar(30) // PROJECT_MANAGER, TEAM_LEAD, etc.
-  responsibilities String?   @db.Text
-  startDate        DateTime
-  endDate          DateTime?
-  hoursAllocated   Decimal?  @db.Decimal(10, 2)
-  isActive         Boolean   @default(true)
-
-  // Relations
-  project Project     @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  user    UserProfile @relation("ProjectTeamMember", fields: [userId], references: [id])
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  @@unique([projectId, userId, isActive])
-  @@index([projectId])
-  @@index([userId])
-  @@index([isActive])
-  @@map("project_team_members")
 }
 
 model Beneficiary {
@@ -852,61 +738,6 @@ model Beneficiary {
   @@index([type])
   @@index([enrollmentDate])
   @@map("beneficiaries")
-}
-
-model ProjectRisk {
-  id             String    @id @default(uuid())
-  projectId      String    @db.VarChar(255)
-  title          String    @db.VarChar(255)
-  description    String?   @db.Text
-  category       String    @db.VarChar(30) // BUDGET, TIMELINE, etc.
-  severity       String    @db.VarChar(20) // LOW, MEDIUM, HIGH, CRITICAL
-  probability    String    @db.VarChar(20) // LOW, MEDIUM, HIGH
-  status         String    @db.VarChar(20) // IDENTIFIED, MONITORING, etc.
-  impact         String?   @db.Text
-  mitigationPlan String?   @db.Text
-  ownerId        String?   @db.VarChar(255)
-  identifiedDate DateTime
-  resolvedDate   DateTime?
-  notes          String?   @db.Text
-
-  // Relations
-  project Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  owner   UserProfile? @relation("RiskOwner", fields: [ownerId], references: [id])
-
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
-
-  @@index([projectId])
-  @@index([status])
-  @@index([severity])
-  @@index([category])
-  @@map("project_risks")
-}
-
-model ActivityExpense {
-  id                   String   @id @default(uuid())
-  activityId           String   @db.VarChar(255)
-  expenseId            String   @db.VarChar(255) // References Finance module Expense entity
-  allocationPercentage Decimal? @db.Decimal(5, 2) // 0-100
-  allocationAmount     Decimal? @db.Decimal(15, 2)
-  notes                String?  @db.Text
-  createdBy            String   @db.VarChar(255)
-
-  // Relations
-  activity Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
-  // creator  UserProfile @relation("ActivityExpenseCreator", fields: [createdBy], references: [id])
-
-  createdAt     DateTime     @default(now())
-  userProfile   UserProfile? @relation(fields: [userProfileId], references: [id])
-  userProfileId String?
-  expense       Expense      @relation(fields: [expenseId], references: [id])
-
-  @@unique([activityId, expenseId])
-  @@index([activityId])
-  @@index([expenseId])
-  @@map("activity_expenses")
 }
 
 // ====================================

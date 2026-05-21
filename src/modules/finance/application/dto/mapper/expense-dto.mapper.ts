@@ -31,6 +31,8 @@ export class ExpenseDtoMapper {
       rejectedBy: expense.rejectedBy ? UserDtoMapper.toUserDTO(expense.rejectedBy as User) : undefined, // UserDetail reference
       rejectedOn: expense.rejectedDate,
       remarks: expense.remarks,
+      activityId: expense.activityId,
+      activityName: expense.activityName,
     };
   }
 

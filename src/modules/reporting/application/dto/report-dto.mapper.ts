@@ -12,6 +12,7 @@ export class ReportDtoMapper {
             status: report.status,
             parameters: report.parameters,
             needApproval: report.needApproval,
+            approvedBy: report.approvedBy?.id,
             approvedById: report.approvedBy?.id,
             approvedByName: report.approvedBy ? report.approvedBy?.firstName + ' ' + report.approvedBy?.lastName : undefined,
             approvedAt: report.approvedAt,

@@ -1,19 +1,11 @@
 import { Project, ProjectCategory, ProjectStatus, ProjectPhase } from '../domain/model/project.model';
-import { Goal, GoalPriority, GoalStatus } from '../domain/model/goal.model';
 import { Activity, ActivityScale, ActivityType, ActivityStatus, ActivityPriority } from '../domain/model/activity.model';
-import { Milestone, MilestoneStatus, MilestoneImportance } from '../domain/model/milestone.model';
-import { ProjectTeamMember, ProjectTeamMemberRole } from '../domain/model/project-team-member.model';
 import { Beneficiary, BeneficiaryType, BeneficiaryGender, BeneficiaryStatus } from '../domain/model/beneficiary.model';
-import { ProjectRisk, RiskCategory, RiskSeverity, RiskProbability, RiskStatus } from '../domain/model/project-risk.model';
 import { Prisma } from '@prisma/client';
 import {
   ProjectPersistence,
-  GoalPersistence,
   ActivityPersistence,
-  MilestonePersistence,
-  ProjectTeamMemberPersistence,
   BeneficiaryPersistence,
-  ProjectRiskPersistence,
 } from './types/project-persistence.types';
 import { MapperUtils } from 'src/modules/shared/database/mapper-utils';
 
@@ -97,69 +89,6 @@ export class ProjectInfraMapper {
       sponsorId: MapperUtils.undefinedToNull(domain.sponsorId),
       tags: domain.tags,
       metadata: domain.metadata as Prisma.InputJsonValue,
-      updatedAt: new Date(),
-    };
-  }
-
-  // ===== GOAL MAPPERS =====
-
-  static toGoalDomain(p: GoalPersistence.Base | any): Goal | null {
-    if (!p) return null;
-
-    const goal = Goal.create({
-      projectId: p.projectId,
-      title: p.title,
-      description: MapperUtils.nullToUndefined(p.description),
-      targetValue: MapperUtils.nullToUndefined(Number(p.targetValue)),
-      targetUnit: MapperUtils.nullToUndefined(p.targetUnit),
-      deadline: MapperUtils.nullToUndefined(p.deadline),
-      priority: p.priority as GoalPriority,
-      weight: MapperUtils.nullToUndefined(Number(p.weight)),
-      dependencies: p.dependencies || [],
-    });
-
-    (goal as any)['#id'] = p.id;
-    (goal as any)['#currentValue'] = Number(p.currentValue);
-    (goal as any)['#status'] = p.status as GoalStatus;
-    (goal as any)['createdAt'] = p.createdAt;
-    (goal as any)['updatedAt'] = p.updatedAt;
-    (goal as any)['version'] = p.version;
-
-    return goal;
-  }
-
-  static toGoalCreatePersistence(domain: Goal): Prisma.GoalUncheckedCreateInput {
-    return {
-      id: domain.id,
-      projectId: domain.projectId,
-      title: domain.title,
-      description: MapperUtils.undefinedToNull(domain.description),
-      targetValue: MapperUtils.undefinedToNull(domain.targetValue),
-      targetUnit: MapperUtils.undefinedToNull(domain.targetUnit),
-      currentValue: domain.currentValue,
-      deadline: MapperUtils.undefinedToNull(domain.deadline),
-      priority: domain.priority,
-      status: domain.status,
-      weight: MapperUtils.undefinedToNull(domain.weight),
-      dependencies: domain.dependencies,
-      createdAt: domain.createdAt || new Date(),
-      updatedAt: domain.updatedAt || new Date(),
-      version: 0,
-    };
-  }
-
-  static toGoalUpdatePersistence(domain: Goal): Prisma.GoalUncheckedUpdateInput {
-    return {
-      title: domain.title,
-      description: MapperUtils.undefinedToNull(domain.description),
-      targetValue: MapperUtils.undefinedToNull(domain.targetValue),
-      targetUnit: MapperUtils.undefinedToNull(domain.targetUnit),
-      currentValue: domain.currentValue,
-      deadline: MapperUtils.undefinedToNull(domain.deadline),
-      priority: domain.priority,
-      status: domain.status,
-      weight: MapperUtils.undefinedToNull(domain.weight),
-      dependencies: domain.dependencies,
       updatedAt: new Date(),
     };
   }
@@ -261,111 +190,6 @@ export class ProjectInfraMapper {
     };
   }
 
-  // ===== MILESTONE MAPPERS =====
-
-  static toMilestoneDomain(p: MilestonePersistence.Base | any): Milestone | null {
-    if (!p) return null;
-
-    const milestone = Milestone.create({
-      projectId: p.projectId,
-      name: p.name,
-      description: MapperUtils.nullToUndefined(p.description),
-      targetDate: p.targetDate,
-      importance: p.importance as MilestoneImportance,
-      dependencies: p.dependencies || [],
-      notes: MapperUtils.nullToUndefined(p.notes),
-    });
-
-    (milestone as any)['#id'] = p.id;
-    (milestone as any)['#actualDate'] = MapperUtils.nullToUndefined(p.actualDate);
-    (milestone as any)['#status'] = p.status as MilestoneStatus;
-    (milestone as any)['createdAt'] = p.createdAt;
-    (milestone as any)['updatedAt'] = p.updatedAt;
-
-    return milestone;
-  }
-
-  static toMilestoneCreatePersistence(domain: Milestone): Prisma.MilestoneUncheckedCreateInput {
-    return {
-      id: domain.id,
-      projectId: domain.projectId,
-      name: domain.name,
-      description: MapperUtils.undefinedToNull(domain.description),
-      targetDate: domain.targetDate,
-      actualDate: MapperUtils.undefinedToNull(domain.actualDate),
-      status: domain.status,
-      importance: domain.importance,
-      dependencies: domain.dependencies,
-      notes: MapperUtils.undefinedToNull(domain.notes),
-      createdAt: domain.createdAt || new Date(),
-      updatedAt: domain.updatedAt || new Date(),
-    };
-  }
-
-  static toMilestoneUpdatePersistence(domain: Milestone): Prisma.MilestoneUncheckedUpdateInput {
-    return {
-      name: domain.name,
-      description: MapperUtils.undefinedToNull(domain.description),
-      targetDate: domain.targetDate,
-      actualDate: MapperUtils.undefinedToNull(domain.actualDate),
-      status: domain.status,
-      importance: domain.importance,
-      dependencies: domain.dependencies,
-      notes: MapperUtils.undefinedToNull(domain.notes),
-      updatedAt: new Date(),
-    };
-  }
-
-  // ===== PROJECT TEAM MEMBER MAPPERS =====
-
-  static toProjectTeamMemberDomain(p: ProjectTeamMemberPersistence.Base | any): ProjectTeamMember | null {
-    if (!p) return null;
-
-    const member = ProjectTeamMember.create({
-      projectId: p.projectId,
-      userId: p.userId,
-      role: p.role as ProjectTeamMemberRole,
-      responsibilities: MapperUtils.nullToUndefined(p.responsibilities),
-      startDate: p.startDate,
-      endDate: MapperUtils.nullToUndefined(p.endDate),
-      hoursAllocated: MapperUtils.nullToUndefined(Number(p.hoursAllocated)),
-    });
-
-    (member as any)['#id'] = p.id;
-    (member as any)['#isActive'] = p.isActive;
-    (member as any)['createdAt'] = p.createdAt;
-    (member as any)['updatedAt'] = p.updatedAt;
-
-    return member;
-  }
-
-  static toProjectTeamMemberCreatePersistence(domain: ProjectTeamMember): Prisma.ProjectTeamMemberUncheckedCreateInput {
-    return {
-      id: domain.id,
-      projectId: domain.projectId,
-      userId: domain.userId,
-      role: domain.role,
-      responsibilities: MapperUtils.undefinedToNull(domain.responsibilities),
-      startDate: domain.startDate,
-      endDate: MapperUtils.undefinedToNull(domain.endDate),
-      hoursAllocated: MapperUtils.undefinedToNull(domain.hoursAllocated),
-      isActive: domain.isActive,
-      createdAt: domain.createdAt || new Date(),
-      updatedAt: domain.updatedAt || new Date(),
-    };
-  }
-
-  static toProjectTeamMemberUpdatePersistence(domain: ProjectTeamMember): Prisma.ProjectTeamMemberUncheckedUpdateInput {
-    return {
-      role: domain.role,
-      responsibilities: MapperUtils.undefinedToNull(domain.responsibilities),
-      endDate: MapperUtils.undefinedToNull(domain.endDate),
-      hoursAllocated: MapperUtils.undefinedToNull(domain.hoursAllocated),
-      isActive: domain.isActive,
-      updatedAt: new Date(),
-    };
-  }
-
   // ===== BENEFICIARY MAPPERS =====
 
   static toBeneficiaryDomain(p: BeneficiaryPersistence.Base | any): Beneficiary | null {
@@ -444,70 +268,6 @@ export class ProjectInfraMapper {
     };
   }
 
-  // ===== PROJECT RISK MAPPERS =====
 
-  static toProjectRiskDomain(p: ProjectRiskPersistence.Base | any): ProjectRisk | null {
-    if (!p) return null;
-
-    const risk = ProjectRisk.create({
-      projectId: p.projectId,
-      title: p.title,
-      description: MapperUtils.nullToUndefined(p.description),
-      category: p.category as RiskCategory,
-      severity: p.severity as RiskSeverity,
-      probability: p.probability as RiskProbability,
-      impact: MapperUtils.nullToUndefined(p.impact),
-      mitigationPlan: MapperUtils.nullToUndefined(p.mitigationPlan),
-      ownerId: MapperUtils.nullToUndefined(p.ownerId),
-      identifiedDate: p.identifiedDate,
-      notes: MapperUtils.nullToUndefined(p.notes),
-    });
-
-    (risk as any)['#id'] = p.id;
-    (risk as any)['#status'] = p.status as RiskStatus;
-    (risk as any)['#resolvedDate'] = MapperUtils.nullToUndefined(p.resolvedDate);
-    (risk as any)['createdAt'] = p.createdAt;
-    (risk as any)['updatedAt'] = p.updatedAt;
-
-    return risk;
-  }
-
-  static toProjectRiskCreatePersistence(domain: ProjectRisk): Prisma.ProjectRiskUncheckedCreateInput {
-    return {
-      id: domain.id,
-      projectId: domain.projectId,
-      title: domain.title,
-      description: MapperUtils.undefinedToNull(domain.description),
-      category: domain.category,
-      severity: domain.severity,
-      probability: domain.probability,
-      status: domain.status,
-      impact: MapperUtils.undefinedToNull(domain.impact),
-      mitigationPlan: MapperUtils.undefinedToNull(domain.mitigationPlan),
-      ownerId: MapperUtils.undefinedToNull(domain.ownerId),
-      identifiedDate: domain.identifiedDate,
-      resolvedDate: MapperUtils.undefinedToNull(domain.resolvedDate),
-      notes: MapperUtils.undefinedToNull(domain.notes),
-      createdAt: domain.createdAt || new Date(),
-      updatedAt: domain.updatedAt || new Date(),
-    };
-  }
-
-  static toProjectRiskUpdatePersistence(domain: ProjectRisk): Prisma.ProjectRiskUncheckedUpdateInput {
-    return {
-      title: domain.title,
-      description: MapperUtils.undefinedToNull(domain.description),
-      category: domain.category,
-      severity: domain.severity,
-      probability: domain.probability,
-      status: domain.status,
-      impact: MapperUtils.undefinedToNull(domain.impact),
-      mitigationPlan: MapperUtils.undefinedToNull(domain.mitigationPlan),
-      ownerId: MapperUtils.undefinedToNull(domain.ownerId),
-      resolvedDate: MapperUtils.undefinedToNull(domain.resolvedDate),
-      notes: MapperUtils.undefinedToNull(domain.notes),
-      updatedAt: new Date(),
-    };
-  }
 }
 

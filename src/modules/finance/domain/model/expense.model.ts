@@ -64,6 +64,7 @@ export class Expense extends AggregateRoot<string> {
   #description: string;
   #referenceId: string | undefined;
   #referenceType: ExpenseRefType | undefined;
+  #activityName: string | undefined;
   #requestedBy: Partial<User>;
   #paidBy: Partial<User>;
   #expenseDate: Date;
@@ -91,6 +92,7 @@ export class Expense extends AggregateRoot<string> {
     description: string,
     referenceId: string | undefined,
     referenceType: ExpenseRefType | undefined,
+    activityName: string | undefined,
     requestedBy: Partial<User>,
     submittedBy: Partial<User> | undefined,
     finalizedBy: Partial<User> | undefined,
@@ -119,6 +121,7 @@ export class Expense extends AggregateRoot<string> {
     this.#description = description;
     this.#referenceId = referenceId;
     this.#referenceType = referenceType;
+    this.#activityName = activityName;
     this.#requestedBy = requestedBy;
     this.#submittedBy = submittedBy;
     this.#finalizedBy = finalizedBy;
@@ -180,6 +183,7 @@ export class Expense extends AggregateRoot<string> {
       props.description,
       props.referenceId,
       props.referenceType,
+      undefined,
       props.requestedBy,
       undefined, // approvedBy
       undefined, // finalizedBy
@@ -333,6 +337,9 @@ export class Expense extends AggregateRoot<string> {
   get description(): string { return this.#description; }
   get referenceId(): string | undefined { return this.#referenceId; }
   get referenceType(): ExpenseRefType | undefined { return this.#referenceType; }
+  get activityId(): string | undefined { return this.#referenceId; }
+
+  get activityName(): string | undefined { return this.#activityName; }
   get requestedBy(): Partial<User> { return this.#requestedBy; }
   get paidBy(): Partial<User> { return this.#paidBy; }
   get submittedBy(): Partial<User> | undefined { return this.#submittedBy; }

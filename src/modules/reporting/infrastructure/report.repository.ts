@@ -19,12 +19,14 @@ export class ReportRepository implements IReportRepository {
     private readonly includeUsers = {
         requestedBy: {
             select: {
+                id: true,
                 firstName: true,
                 lastName: true,
             }
         },
         approvedBy: {
             select: {
+                id: true,
                 firstName: true,
                 lastName: true,
             }

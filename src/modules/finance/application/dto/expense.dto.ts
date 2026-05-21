@@ -78,6 +78,12 @@ export class ExpenseDetailDto {
   txnNumber?: string;
 
   @ApiPropertyOptional()
+  activityName?: string;
+
+  @ApiPropertyOptional()
+  activityId?: string;
+
+  @ApiPropertyOptional()
   settlementAccountId?: string;
 
   @ApiPropertyOptional()

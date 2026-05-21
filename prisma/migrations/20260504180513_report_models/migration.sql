@@ -6,7 +6,7 @@ CREATE TABLE "reports" (
     "status" VARCHAR(20) NOT NULL,
     "parameters" JSONB,
     "needApproval" BOOLEAN NOT NULL DEFAULT false,
-    "approvedBy" VARCHAR(255),
+    "approvedById" VARCHAR(255),
     "approvedAt" TIMESTAMP(3),
     "approvers" VARCHAR(255)[],
     "viewers" VARCHAR(255)[],
@@ -29,3 +29,6 @@ CREATE INDEX "reports_status_idx" ON "reports"("status");
 
 -- AddForeignKey
 ALTER TABLE "reports" ADD CONSTRAINT "reports_requestedById_fkey" FOREIGN KEY ("requestedById") REFERENCES "user_profiles"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "reports" ADD CONSTRAINT "reports_approvedById_fkey" FOREIGN KEY ("approvedById") REFERENCES "user_profiles"("id") ON DELETE SET NULL ON UPDATE CASCADE;
