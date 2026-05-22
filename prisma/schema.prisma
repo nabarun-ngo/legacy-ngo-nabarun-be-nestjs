@@ -64,7 +64,8 @@ model UserProfile {
   sponsoredProjects   Project[]  @relation("ProjectSponsor")
   assignedActivities  Activity[] @relation("ActivityAssignee")
   organizedActivities Activity[] @relation("ActivityOrganizer")
-  donations           Donation[] @relation("Donation")
+  donorProfiles       Donor[]    @relation("UserDonor")
+  referredDonors      Donor[]    @relation("DonorReference")
   confirmedDonations  Donation[] @relation("DonationConfirmedBy")
   expenseCreator      Expense[]  @relation("ExpenseCreator")
   expensePaidBy       Expense[]  @relation("ExpensePaidBy")
@@ -355,11 +356,13 @@ model Donation {
   status   String  @db.VarChar(20) // RAISED, PAID, PENDING, PAYMENT_FAILED, PAY_LATER, CANCELLED, UPDATE_MISTAKE
 
   // Donor information
-  donorId    String?      @db.VarChar(255) // UserId for internal members
-  donor      UserProfile? @relation("Donation", fields: [donorId], references: [id])
-  donorName  String?      @db.VarChar(100) // Name for guest donations
-  donorEmail String?      @db.VarChar(100) // Email for guest donations
-  donorPhone String?      @db.VarChar(20) // Phone for guest donations
+  donorId    String?      @db.VarChar(255) // Link to Donor
+  donor      Donor?       @relation("DonorDonations", fields: [donorId], references: [id])
+  
+  // Legacy Guest information
+  donorName  String?      @db.VarChar(100) // Legacy Name for guest donations
+  donorEmail String?      @db.VarChar(100) // Legacy Email for guest donations
+  donorPhone String?      @db.VarChar(20) // Legacy Phone for guest donations
 
   // Legacy fields
   isGuest   Boolean?  @default(false)
@@ -903,4 +906,39 @@ model Report {
   @@index([requestedById])
   @@index([status])
   @@map("reports")
+}
+
+// ====================================
+// DONOR MODULE MODELS
+// ====================================
+
+model Donor {
+  id                String   @id @default(uuid())
+  donorType         String   @db.VarChar(20) // MEMBER, GUEST, CORPORATE
+  name              String   @db.VarChar(255)
+  email             String?  @db.VarChar(100)
+  phoneNumber       String?  @db.VarChar(20)
+  panNumber         String?  @db.VarChar(20)
+  address           String?  @db.Text
+  
+  // Link to UserProfile if this donor is a registered member
+  userId            String?  @db.VarChar(255)
+  user              UserProfile? @relation("UserDonor", fields: [userId], references: [id])
+
+  // Link to UserProfile if this donor was referred by a member
+  referenceMemberId String?  @db.VarChar(255)
+  referenceMember   UserProfile? @relation("DonorReference", fields: [referenceMemberId], references: [id])
+
+  donations         Donation[] @relation("DonorDonations")
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  version           Int      @default(0)
+  deletedAt         DateTime?
+
+  @@index([email])
+  @@index([phoneNumber])
+  @@index([userId])
+  @@index([referenceMemberId])
+  @@map("donors")
 }
