@@ -84,7 +84,8 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
                 endDate: endDate,
             }),
             this.accountRepository.findAll({
-                status: [AccountStatus.ACTIVE]
+                status: [AccountStatus.ACTIVE],
+                includeBalance: true,
             }),
         ]);
 

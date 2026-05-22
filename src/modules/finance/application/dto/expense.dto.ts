@@ -3,6 +3,7 @@ import { IsString, IsOptional, IsNumber, IsEnum, IsArray, ValidateNested, IsDate
 import { Transform, Type } from 'class-transformer';
 import { ExpenseRefType, ExpenseStatus } from '../../domain/model/expense.model';
 import { UserDto } from 'src/modules/user/application/dto/user.dto';
+import { KeyValueDto } from 'src/shared/dto/KeyValue.dto';
 
 
 /**
@@ -189,6 +190,17 @@ export class UpdateExpenseDto {
 
   @ApiPropertyOptional()
   @IsOptional()
+  @IsEnum(ExpenseRefType)
+  expenseRefType?: ExpenseRefType;
+
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  expenseRefId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
   description?: string;
 
@@ -220,3 +232,12 @@ export class UpdateExpenseDto {
   @IsString()
   payerId?: string;
 }
+
+export class ExpenseRefDataDto {
+  @ApiProperty()
+  expenseStatuses?: KeyValueDto[];
+
+  @ApiProperty()
+  expenseRefTypes?: KeyValueDto[];
+}
+

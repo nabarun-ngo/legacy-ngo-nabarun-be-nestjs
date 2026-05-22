@@ -355,17 +355,3 @@ export class DonationRefDataDto {
 
 }
 
-export class AccountRefDataDto {
-  @ApiProperty()
-  accountStatuses?: KeyValueDto[];
-
-  @ApiProperty()
-  accountTypes?: KeyValueDto[];
-
-  @ApiProperty()
-  transactionRefTypes?: KeyValueDto[];
-
-  @ApiProperty()
-  expenseStatuses?: KeyValueDto[];
-
-}

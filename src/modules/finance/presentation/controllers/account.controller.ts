@@ -21,6 +21,7 @@ import {
   TransferDto,
   AddFundDto,
   FixTransactionDto,
+  AccountRefDataDto,
 } from '../../application/dto/account.dto';
 import { ReverseTransactionDto, TransactionDetailDto, TransactionDetailFilterDto } from '../../application/dto/transaction.dto';
 import { AccountService } from '../../application/services/account.service';
@@ -28,7 +29,6 @@ import { PagedResult } from 'src/shared/models/paged-result';
 import { RequirePermissions } from 'src/modules/shared/auth/application/decorators/require-permissions.decorator';
 import { CurrentUser } from 'src/modules/shared/auth/application/decorators/current-user.decorator';
 import { type AuthUser } from 'src/modules/shared/auth/domain/models/api-user.model';
-import { AccountRefDataDto } from '../../application/dto/donation.dto';
 import { FixTransactionUseCase } from '../../application/use-cases/fix-transaction.use-case';
 import { deprecate } from 'node:util';
 
@@ -183,30 +183,6 @@ export class AccountController {
     return new SuccessResponse(result);
   }
 
-  @Post(':id/addFund/me')
-  @ApiOperation({ summary: 'Add fund to account' })
-  @ApiAutoResponse(String, { description: 'OK', wrapInSuccessResponse: true })
-  async addFundSelf(
-    @Param('id') accountId: string,
-    @Body() dto: AddFundDto,
-    @CurrentUser() user?: AuthUser,
-  ): Promise<SuccessResponse<string>> {
-    const result = await this.accountService.addFundToAccount(accountId, dto, user?.profile_id);
-    return new SuccessResponse(result);
-  }
-
-  @Post(':id/addFund')
-  @RequirePermissions('update:accounts', 'update:transactions')
-  @ApiOperation({ summary: 'Add fund to account' })
-  @ApiAutoResponse(String, { description: 'OK', wrapInSuccessResponse: true })
-  async addFund(
-    @Param('id') accountId: string,
-    @Body() dto: AddFundDto,
-  ): Promise<SuccessResponse<string>> {
-    const result = await this.accountService.addFundToAccount(accountId, dto, undefined);
-    return new SuccessResponse(result);
-  }
-
   @Get('payable-account')
   @ApiOperation({ summary: 'Get account data for payable' })
   @ApiAutoResponse(AccountDetailDto, { status: 200, description: 'OK', isArray: true, wrapInSuccessResponse: true })
@@ -227,16 +203,40 @@ export class AccountController {
 
 
 
-  @Post('support/transaction-fix')
-  @ApiOperation({ summary: 'Fix transaction for account' })
-  @RequirePermissions('update:transactions')
-  @ApiAutoResponse(String, { description: 'OK', wrapInSuccessResponse: true })
-  async fixTransactions(
-    @Body() dto: FixTransactionDto,
-  ): Promise<SuccessResponse<string>> {
-    await this.fixTransaction.execute(dto);
-    return new SuccessResponse('Transaction fixed successfully');
-  }
+  // @Post('support/transaction-fix')
+  // @ApiOperation({ summary: 'Fix transaction for account' })
+  // @RequirePermissions('update:transactions')
+  // @ApiAutoResponse(String, { description: 'OK', wrapInSuccessResponse: true })
+  // async fixTransactions(
+  //   @Body() dto: FixTransactionDto,
+  // ): Promise<SuccessResponse<string>> {
+  //   await this.fixTransaction.execute(dto);
+  //   return new SuccessResponse('Transaction fixed successfully');
+  // }
+
+  // @Post(':id/addFund/me')
+  // @ApiOperation({ summary: 'Add fund to account' })
+  // @ApiAutoResponse(String, { description: 'OK', wrapInSuccessResponse: true })
+  // async addFundSelf(
+  //   @Param('id') accountId: string,
+  //   @Body() dto: AddFundDto,
+  //   @CurrentUser() user?: AuthUser,
+  // ): Promise<SuccessResponse<string>> {
+  //   const result = await this.accountService.addFundToAccount(accountId, dto, user?.profile_id);
+  //   return new SuccessResponse(result);
+  // }
+
+  // @Post(':id/addFund')
+  // @RequirePermissions('update:accounts', 'update:transactions')
+  // @ApiOperation({ summary: 'Add fund to account' })
+  // @ApiAutoResponse(String, { description: 'OK', wrapInSuccessResponse: true })
+  // async addFund(
+  //   @Param('id') accountId: string,
+  //   @Body() dto: AddFundDto,
+  // ): Promise<SuccessResponse<string>> {
+  //   const result = await this.accountService.addFundToAccount(accountId, dto, undefined);
+  //   return new SuccessResponse(result);
+  // }
 
 }
 

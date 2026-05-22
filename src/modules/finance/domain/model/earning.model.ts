@@ -3,6 +3,7 @@ import { AggregateRoot } from 'src/shared/models/aggregate-root';
 import { generateUniqueNDigitNumber } from 'src/shared/utilities/password-util';
 
 export enum EarningCategory {
+  INTEREST = 'INTEREST',      // Interest from investments
   SERVICE = 'SERVICE',        // Service-based earnings
   PRODUCT = 'PRODUCT',        // Product sales
   GRANT = 'GRANT',            // Grants received

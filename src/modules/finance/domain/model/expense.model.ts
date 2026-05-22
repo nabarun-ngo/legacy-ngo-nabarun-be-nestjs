@@ -16,11 +16,13 @@ export enum ExpenseStatus {
  * Expense Reference Type Enum
  */
 export enum ExpenseRefType {
-  OTHER = 'OTHER',
-  EVENT = 'EVENT',            // Expenses on events
-  ADHOC = 'ADHOC',            // Ad-hoc expenses
+
   OPERATIONAL = 'OPERATIONAL', // Operational expenses
   ADMINISTRATIVE = 'ADMINISTRATIVE', // Administrative expenses
+  EVENT = 'EVENT',            // Expenses on Project/Activity
+  ADHOC = 'ADHOC',            // Ad-hoc expenses
+  OTHER = 'OTHER',
+
 }
 
 /**
@@ -292,6 +294,8 @@ export class Expense extends AggregateRoot<string> {
     expenseItems?: ExpenseItem[];
     remarks?: string;
     payerId?: string;
+    expenseRefType?: ExpenseRefType;
+    expenseRefId?: string;
   }): void {
     const allowedStatus = [ExpenseStatus.DRAFT, ExpenseStatus.SUBMITTED];
     if (!allowedStatus.includes(this.#status)) {
@@ -326,6 +330,8 @@ export class Expense extends AggregateRoot<string> {
     if (props.payerId !== undefined) {
       this.#paidBy = { id: props.payerId };
     }
+    this.#referenceType = props.expenseRefType ?? this.#referenceType;
+    this.#referenceId = props.expenseRefId ?? this.#referenceId;
     this.touch();
   }
 
