@@ -19,6 +19,7 @@ export type ExpensePersistence = Prisma.ExpenseGetPayload<{
     rejectedBy: true;
     submittedBy: true;
     paidBy: true;
+    activity: true;
   }
 }>;
 
@@ -47,6 +48,7 @@ class ExpenseRepository implements IExpenseRepository {
           rejectedBy: true,
           submittedBy: true,
           paidBy: true,
+          activity: true,
         },
         skip: (filter?.pageIndex ?? 0) * (filter?.pageSize ?? 1000),
         take: filter?.pageSize ?? 1000,
@@ -75,6 +77,7 @@ class ExpenseRepository implements IExpenseRepository {
         rejectedBy: true,
         submittedBy: true,
         paidBy: true,
+        activity: true,
       },
     });
 
@@ -112,6 +115,7 @@ class ExpenseRepository implements IExpenseRepository {
         rejectedBy: true,
         submittedBy: true,
         paidBy: true,
+        activity: true,
       },
     });
 
@@ -132,6 +136,7 @@ class ExpenseRepository implements IExpenseRepository {
         rejectedBy: true,
         submittedBy: true,
         paidBy: true,
+        activity: true,
       },
     });
 
@@ -151,6 +156,7 @@ class ExpenseRepository implements IExpenseRepository {
         rejectedBy: true,
         paidBy: true,
         submittedBy: true,
+        activity: true,
       },
     });
 
@@ -160,7 +166,7 @@ class ExpenseRepository implements IExpenseRepository {
 
 
   async create(expense: Expense): Promise<Expense> {
-    const createData: Prisma.ExpenseCreateInput = {
+    const createData: Prisma.ExpenseUncheckedCreateInput = {
       ...ExpenseInfraMapper.toExpenseCreatePersistence(expense),
     };
 
@@ -175,6 +181,7 @@ class ExpenseRepository implements IExpenseRepository {
         rejectedBy: true,
         submittedBy: true,
         paidBy: true,
+        activity: true,
       },
     });
 
@@ -198,6 +205,7 @@ class ExpenseRepository implements IExpenseRepository {
         rejectedBy: true,
         paidBy: true,
         submittedBy: true,
+        activity: true,
       },
     });
 

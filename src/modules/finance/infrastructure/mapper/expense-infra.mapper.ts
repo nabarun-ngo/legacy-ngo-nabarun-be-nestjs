@@ -32,6 +32,7 @@ export class ExpenseInfraMapper {
             MapperUtils.nullToUndefined(p.description) || '',
             MapperUtils.nullToUndefined(p.referenceId),
             MapperUtils.nullToUndefined(p.referenceType as ExpenseRefType),
+            MapperUtils.nullToUndefined(p.activity?.name || null),
             MapperUtils.nullToUndefined(
                 UserInfraMapper.toUserDomain(p.createdBy as any)
             )!,
@@ -66,7 +67,7 @@ export class ExpenseInfraMapper {
         );
     }
 
-    static toExpenseCreatePersistence(domain: Expense): Prisma.ExpenseCreateInput {
+    static toExpenseCreatePersistence(domain: Expense): Prisma.ExpenseUncheckedCreateInput {
         // Serialize expense items to JSON string
         const itemsJson = domain.expenseItems.length > 0
             ? JSON.stringify(domain.expenseItems)
@@ -83,19 +84,19 @@ export class ExpenseInfraMapper {
             referenceId: MapperUtils.undefinedToNull(domain.referenceId),
             referenceType: MapperUtils.undefinedToNull(domain.referenceType),
             isDelegated: domain.isDelegated,
-            createdBy: MapperUtils.connect(domain.requestedBy), // Map requestedBy to createdById
-            paidBy: MapperUtils.connect(domain.paidBy), // Default paidById to requestedBy (can be updated later)
-            finalizedBy: MapperUtils.connect(domain.finalizedBy),
+            createdById: domain.requestedBy?.id ?? '', // Map requestedBy to createdById
+            paidById: domain.paidBy?.id ?? '',
+            finalizedById: domain.finalizedBy?.id ?? undefined,
             finalizedOn: MapperUtils.undefinedToNull(domain.finalizedDate),
-            settledBy: MapperUtils.connect(domain.settledBy),
+            settledById: domain.settledBy?.id ?? undefined,
             settledOn: MapperUtils.undefinedToNull(domain.settledDate),
-            rejectedBy: MapperUtils.connect(domain.rejectedBy),
-            updatedBy: MapperUtils.connect(domain.requestedBy), // Default to creator
+            rejectedById: domain.rejectedBy?.id ?? undefined,
+            updatedById: domain.requestedBy?.id ?? undefined, // Default to creator
             updatedOn: domain.updatedAt,
-            account: MapperUtils.connect({ id: domain.accountId }),
+            accountId: domain.accountId ?? null,
             transactionRef: MapperUtils.undefinedToNull(domain.transactionId),
             expenseDate: domain.expenseDate,
-            submittedBy: MapperUtils.connect(domain.requestedBy),
+            submittedById: domain.requestedBy?.id ?? '',
             submittedOn: domain.submittedDate,
             rejectedOn: domain.rejectedDate,
             remarks: MapperUtils.undefinedToNull(domain.remarks),
@@ -104,7 +105,7 @@ export class ExpenseInfraMapper {
         };
     }
 
-    static toExpenseUpdatePersistence(domain: Expense): Prisma.ExpenseUpdateInput {
+    static toExpenseUpdatePersistence(domain: Expense): Prisma.ExpenseUncheckedUpdateInput {
         // Serialize expense items to JSON string
         const itemsJson = domain.expenseItems.length > 0
             ? JSON.stringify(domain.expenseItems)
@@ -120,19 +121,19 @@ export class ExpenseInfraMapper {
             referenceId: MapperUtils.undefinedToNull(domain.referenceId),
             referenceType: MapperUtils.undefinedToNull(domain.referenceType),
             isDelegated: domain.isDelegated,
-            createdBy: MapperUtils.connect(domain.requestedBy), // Map requestedBy to createdById
-            paidBy: MapperUtils.connect(domain.paidBy), // Default paidById to requestedBy (can be updated later)
-            finalizedBy: MapperUtils.connect(domain.finalizedBy),
+            createdById: domain.requestedBy?.id ?? undefined,
+            paidById: domain.paidBy?.id ?? '',
+            finalizedById: domain.finalizedBy?.id ?? undefined,
             finalizedOn: MapperUtils.undefinedToNull(domain.finalizedDate),
-            settledBy: MapperUtils.connect(domain.settledBy),
+            settledById: domain.settledBy?.id ?? undefined,
             settledOn: MapperUtils.undefinedToNull(domain.settledDate),
-            rejectedBy: MapperUtils.connect(domain.rejectedBy),
-            updatedBy: MapperUtils.connect(domain.requestedBy), // Default to creator
+            rejectedById: domain.rejectedBy?.id ?? undefined,
+            updatedById: domain.requestedBy?.id ?? undefined,
             updatedOn: domain.updatedAt,
-            account: MapperUtils.connect({ id: domain.accountId }),
+            accountId: domain.accountId ?? null,
             transactionRef: MapperUtils.undefinedToNull(domain.transactionId),
             expenseDate: domain.expenseDate,
-            submittedBy: MapperUtils.connect(domain.requestedBy),
+            submittedById: domain.requestedBy?.id ?? '',
             submittedOn: domain.submittedDate,
             rejectedOn: domain.rejectedDate,
             remarks: MapperUtils.undefinedToNull(domain.remarks),

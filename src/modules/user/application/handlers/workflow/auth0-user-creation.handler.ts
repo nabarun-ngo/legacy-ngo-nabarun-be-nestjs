@@ -1,12 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { WorkflowTask } from "../../domain/model/workflow-task.model";
-import { TaskDef, WorkflowDefinition } from "../../domain/vo/workflow-def.vo";
-import { IAutomaticTaskHandler } from "./automatic-task-handler.interface";
+import { WorkflowTask } from "../../../../workflow/domain/model/workflow-task.model";
+import { TaskDef, WorkflowDefinition } from "../../../../workflow/domain/vo/workflow-def.vo";
+import { IAutomaticTaskHandler, AutomaticTaskHandler } from "../../../../workflow/application/automatic-task-handlers/automatic-task-handler.interface";
 import { CreateUserUseCase } from "src/modules/user/application/use-cases/create-user.use-case";
-import { WORKFLOW_INSTANCE_REPOSITORY, type IWorkflowInstanceRepository } from "../../domain/repositories/workflow-instance.repository.interface";
+import { WORKFLOW_INSTANCE_REPOSITORY, type IWorkflowInstanceRepository } from "../../../../workflow/domain/repositories/workflow-instance.repository.interface";
 import { SignUpDto } from "src/modules/public/application/dto/public.dto";
 
 @Injectable()
+@AutomaticTaskHandler('Auth0UserCreationHandler')
 export class Auth0UserCreationHandler implements IAutomaticTaskHandler {
     handlerName = 'Auth0UserCreationHandler';
 

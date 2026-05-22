@@ -2,9 +2,10 @@ import { Injectable } from "@nestjs/common";
 import { BusinessException } from "src/shared/exceptions/business-exception";
 import { WorkflowTask } from "../../domain/model/workflow-task.model";
 import { TaskDef, WorkflowDefinition } from "../../domain/vo/workflow-def.vo";
-import { IAutomaticTaskHandler } from "./automatic-task-handler.interface";
+import { IAutomaticTaskHandler, AutomaticTaskHandler } from "./automatic-task-handler.interface";
 
 @Injectable()
+@AutomaticTaskHandler('ValidateInputs')
 export class ValidateInputsHandler implements IAutomaticTaskHandler {
     handlerName = 'ValidateInputs';
 

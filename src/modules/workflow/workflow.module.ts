@@ -1,4 +1,5 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
+import { DiscoveryModule } from '@nestjs/core';
 import { WorkflowController } from './presentation/controllers/workflow.controller';
 import { StartWorkflowUseCase } from './application/use-cases/start-workflow.use-case';
 import { CompleteTaskUseCase } from './application/use-cases/complete-task.use-case';
@@ -9,7 +10,6 @@ import {
 } from './domain/repositories/workflow-instance.repository.interface';
 import { WorkflowJobProcessor } from './application/handlers/workflow-job.processor';
 import { JobProcessingModule } from '../shared/job-processing/job-processing.module';
-import { UserModule } from '../user/user.module';
 import { FirebaseModule } from '../shared/firebase/firebase.module';
 import { WorkflowDefService } from './infrastructure/external/workflow-def.service';
 import { WorkflowEventsHandler } from './application/handlers/workflow-event.handler';
@@ -17,17 +17,12 @@ import { StartWorkflowStepUseCase } from './application/use-cases/start-workflow
 import { ReassignTaskUseCase } from './application/use-cases/reassign-task.use-case';
 import { AutomaticTaskService } from './application/services/automatic-task.service';
 import { ValidateInputsHandler } from './application/automatic-task-handlers/validate-inputs.handler';
-import { Auth0UserCreationHandler } from './application/automatic-task-handlers/auth0-user-creation.handler';
-import { UserNotRegisteredTaskHandler } from './application/automatic-task-handlers/user-not-registered.handler';
-import { GuestDonationCreationHandler } from './application/automatic-task-handlers/guest-donation-creation.handler';
-import { FinanceModule } from '../finance/finance.module';
-import { UserDeleteAndDataCleanupHandler } from './application/automatic-task-handlers/user-delete-and-data-cleanup.handler';
+import { AutomaticTaskRegistryService } from './application/services/automatic-task-registry.service';
 import { CancelWorkflowUseCase } from './application/use-cases/cancel-workflow.use-case';
-import { DonationAmountUpdateHandler } from './application/automatic-task-handlers/donation-amount-update.handler';
-import { DonationPauseUpdateHandler } from './application/automatic-task-handlers/donation-pause-update.handler';
 
+@Global()
 @Module({
-  imports: [JobProcessingModule, UserModule, FirebaseModule, FinanceModule],
+  imports: [DiscoveryModule, JobProcessingModule, FirebaseModule],
   controllers: [WorkflowController],
   providers: [
     StartWorkflowUseCase,
@@ -43,19 +38,15 @@ import { DonationPauseUpdateHandler } from './application/automatic-task-handler
     StartWorkflowStepUseCase,
     ReassignTaskUseCase,
     AutomaticTaskService,
+    AutomaticTaskRegistryService,
     ValidateInputsHandler,
-    Auth0UserCreationHandler,
-    UserNotRegisteredTaskHandler,
-    GuestDonationCreationHandler,
-    UserDeleteAndDataCleanupHandler,
     CancelWorkflowUseCase,
-    DonationAmountUpdateHandler,
-    DonationPauseUpdateHandler,
   ],
   exports: [
     WorkflowService, // TODO make it internal
     WORKFLOW_INSTANCE_REPOSITORY,
     StartWorkflowUseCase,
+    AutomaticTaskRegistryService,
   ],
 })
 export class WorkflowModule { }

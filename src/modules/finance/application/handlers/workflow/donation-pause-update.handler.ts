@@ -1,11 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { IAutomaticTaskHandler } from "./automatic-task-handler.interface";
-import { WorkflowTask } from "../../domain/model/workflow-task.model";
-import { TaskDef, WorkflowDefinition } from "../../domain/vo/workflow-def.vo";
+import { IAutomaticTaskHandler, AutomaticTaskHandler } from "../../../../workflow/application/automatic-task-handlers/automatic-task-handler.interface";
+import { WorkflowTask } from "../../../../workflow/domain/model/workflow-task.model";
+import { TaskDef, WorkflowDefinition } from "../../../../workflow/domain/vo/workflow-def.vo";
 import { type IUserRepository, USER_REPOSITORY } from "src/modules/user/domain/repositories/user.repository.interface";
-import { type IWorkflowInstanceRepository, WORKFLOW_INSTANCE_REPOSITORY } from "../../domain/repositories/workflow-instance.repository.interface";
+import { type IWorkflowInstanceRepository, WORKFLOW_INSTANCE_REPOSITORY } from "../../../../workflow/domain/repositories/workflow-instance.repository.interface";
 
 @Injectable()
+@AutomaticTaskHandler('DonationPauseUpdateHandler')
 export class DonationPauseUpdateHandler implements IAutomaticTaskHandler {
     handlerName = 'DonationPauseUpdateHandler';
 

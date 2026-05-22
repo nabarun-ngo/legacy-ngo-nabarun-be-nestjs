@@ -51,6 +51,9 @@ import { DMSModule } from '../shared/dms/dms.module';
 import { DonationSummaryReportProvider } from './application/providers/reports/donation-summary.provider';
 import { AuditReportProvider } from './application/providers/reports/audit-report.provider';
 import { FixTransactionUseCase } from './application/use-cases/fix-transaction.use-case';
+import { GuestDonationCreationHandler } from './application/handlers/workflow/guest-donation-creation.handler';
+import { DonationAmountUpdateHandler } from './application/handlers/workflow/donation-amount-update.handler';
+import { DonationPauseUpdateHandler } from './application/handlers/workflow/donation-pause-update.handler';
 
 
 /**
@@ -135,6 +138,9 @@ import { FixTransactionUseCase } from './application/use-cases/fix-transaction.u
     MetadataService,
     DonationsEventHandler,
     DonationJobsHandler,
+    GuestDonationCreationHandler,
+    DonationAmountUpdateHandler,
+    DonationPauseUpdateHandler,
   ],
   exports: [
     DONATION_REPOSITORY,

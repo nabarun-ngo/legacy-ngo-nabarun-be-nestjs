@@ -1,17 +1,7 @@
 import { Project } from '../../domain/model/project.model';
 import { ProjectDetailDto } from './project.dto';
-import { Goal } from '../../domain/model/goal.model';
-import { GoalDetailDto } from './goal.dto';
-import { Activity } from '../../domain/model/activity.model';
-import { ActivityDetailDto } from './activity.dto';
-import { Milestone } from '../../domain/model/milestone.model';
-import { MilestoneDetailDto } from './milestone.dto';
-import { ProjectTeamMember } from '../../domain/model/project-team-member.model';
-import { ProjectTeamMemberDetailDto } from './project-team-member.dto';
 import { Beneficiary } from '../../domain/model/beneficiary.model';
 import { BeneficiaryDetailDto } from './beneficiary.dto';
-import { ProjectRisk } from '../../domain/model/project-risk.model';
-import { ProjectRiskDetailDto } from './project-risk.dto';
 
 /**
  * Project DTO Mapper
@@ -45,29 +35,10 @@ export class ProjectDtoMapper {
   }
 }
 
-/**
- * Goal DTO Mapper
- */
-export class GoalDtoMapper {
-  static toDto(goal: Goal): GoalDetailDto {
-    return {
-      id: goal.id,
-      projectId: goal.projectId,
-      title: goal.title,
-      description: goal.description,
-      targetValue: goal.targetValue,
-      targetUnit: goal.targetUnit,
-      currentValue: goal.currentValue,
-      deadline: goal.deadline,
-      priority: goal.priority,
-      status: goal.status,
-      weight: goal.weight,
-      dependencies: goal.dependencies,
-      createdAt: goal.createdAt,
-      updatedAt: goal.updatedAt,
-    };
-  }
-}
+
+
+import { Activity } from '../../domain/model/activity.model';
+import { ActivityDetailDto } from './activity.dto';
 
 /**
  * Activity DTO Mapper
@@ -106,49 +77,6 @@ export class ActivityDtoMapper {
 }
 
 /**
- * Milestone DTO Mapper
- */
-export class MilestoneDtoMapper {
-  static toDto(milestone: Milestone): MilestoneDetailDto {
-    return {
-      id: milestone.id,
-      projectId: milestone.projectId,
-      name: milestone.name,
-      description: milestone.description,
-      targetDate: milestone.targetDate,
-      actualDate: milestone.actualDate,
-      status: milestone.status,
-      importance: milestone.importance,
-      dependencies: milestone.dependencies,
-      notes: milestone.notes,
-      createdAt: milestone.createdAt,
-      updatedAt: milestone.updatedAt,
-    };
-  }
-}
-
-/**
- * Project Team Member DTO Mapper
- */
-export class ProjectTeamMemberDtoMapper {
-  static toDto(member: ProjectTeamMember): ProjectTeamMemberDetailDto {
-    return {
-      id: member.id,
-      projectId: member.projectId,
-      userId: member.userId,
-      role: member.role,
-      responsibilities: member.responsibilities,
-      startDate: member.startDate,
-      endDate: member.endDate,
-      hoursAllocated: member.hoursAllocated,
-      isActive: member.isActive,
-      createdAt: member.createdAt,
-      updatedAt: member.updatedAt,
-    };
-  }
-}
-
-/**
  * Beneficiary DTO Mapper
  */
 export class BeneficiaryDtoMapper {
@@ -178,29 +106,5 @@ export class BeneficiaryDtoMapper {
   }
 }
 
-/**
- * Project Risk DTO Mapper
- */
-export class ProjectRiskDtoMapper {
-  static toDto(risk: ProjectRisk): ProjectRiskDetailDto {
-    return {
-      id: risk.id,
-      projectId: risk.projectId,
-      title: risk.title,
-      description: risk.description,
-      category: risk.category,
-      severity: risk.severity,
-      probability: risk.probability,
-      status: risk.status,
-      impact: risk.impact,
-      mitigationPlan: risk.mitigationPlan,
-      ownerId: risk.ownerId,
-      identifiedDate: risk.identifiedDate,
-      resolvedDate: risk.resolvedDate,
-      notes: risk.notes,
-      createdAt: risk.createdAt,
-      updatedAt: risk.updatedAt,
-    };
-  }
-}
+
 

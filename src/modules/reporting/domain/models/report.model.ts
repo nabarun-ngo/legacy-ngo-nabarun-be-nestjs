@@ -1,5 +1,7 @@
 import { AggregateRoot } from 'src/shared/models/aggregate-root';
 import { ReportApprovedEvent } from '../events/report-approved.event';
+import { generateUniqueNDigitNumber } from 'src/shared/utilities/password-util';
+import { User } from 'src/modules/user/domain/model/user.model';
 
 export enum ReportStatus {
     DRAFT = 'DRAFT',
@@ -19,7 +21,7 @@ export class ReportFilter {
 export class Report extends AggregateRoot<string> {
 
     #approvedAt: Date | undefined;
-    #approvedBy: string | undefined;
+    #approvedBy: Partial<User> | undefined;
     #status: ReportStatus;
     #dmsDocumentId: string | undefined;
     #version: number = 0;
@@ -27,7 +29,7 @@ export class Report extends AggregateRoot<string> {
     #approvers: string[];
     #viewers: string[];
     #needApproval: boolean;
-    #requestedById: string | undefined;
+    #requestedBy: Partial<User> | undefined;
     #reportCode: string;
     #workflowId: string | undefined;
     #reportName: string;
@@ -36,11 +38,11 @@ export class Report extends AggregateRoot<string> {
         id: string,
         reportCode: string,
         reportName: string,
-        requestedById: string | undefined,
+        requestedBy: Partial<User> | undefined,
         status: ReportStatus,
         parameters: Record<string, any> | undefined,
         needApproval: boolean,
-        approvedBy: string | undefined,
+        approvedBy: Partial<User> | undefined,
         approvedAt: Date | undefined,
         approvers: string[] | undefined,
         viewers: string[] | undefined,
@@ -53,7 +55,7 @@ export class Report extends AggregateRoot<string> {
         super(id, createdAt, updatedAt);
         this.#reportCode = reportCode;
         this.#reportName = reportName;
-        this.#requestedById = requestedById;
+        this.#requestedBy = requestedBy;
         this.#status = status;
         this.#parameters = parameters;
         this.#needApproval = needApproval;
@@ -79,10 +81,10 @@ export class Report extends AggregateRoot<string> {
         viewers: string[] | undefined;
     }): Report {
         return new Report(
-            crypto.randomUUID(),
+            `NRP${generateUniqueNDigitNumber(6)}`,
             props.reportCode,
             props.reportName,
-            props.requestedById,
+            { id: props.requestedById },
             ReportStatus.DRAFT,
             props.parameters,
             props.needApproval,
@@ -103,14 +105,23 @@ export class Report extends AggregateRoot<string> {
      */
     markApproved(approvedBy: string): void {
         this.#status = ReportStatus.APPROVED;
-        this.#approvedBy = approvedBy;
+        this.#approvedBy = { id: approvedBy };
         this.#approvedAt = new Date();
         this.addDomainEvent(new ReportApprovedEvent(this));
     }
 
-    incrementVersion(docId: string): void {
+    incrementVersion(): void {
         this.#version++;
-        this.#dmsDocumentId = docId;
+    }
+
+    markDraft() {
+        this.#status = ReportStatus.DRAFT;
+        this.#approvedBy = undefined;
+        this.#approvedAt = undefined;
+    }
+
+    set dmsDocumentId(id: string) {
+        this.#dmsDocumentId = id;
     }
 
     get reportName(): string {
@@ -128,8 +139,8 @@ export class Report extends AggregateRoot<string> {
     get reportCode(): string {
         return this.#reportCode;
     }
-    get requestedById(): string | undefined {
-        return this.#requestedById;
+    get requestedBy(): Partial<User> | undefined {
+        return this.#requestedBy;
     }
     get status(): ReportStatus {
         return this.#status;
@@ -140,7 +151,7 @@ export class Report extends AggregateRoot<string> {
     get needApproval(): boolean {
         return this.#needApproval;
     }
-    get approvedBy(): string | undefined {
+    get approvedBy(): Partial<User> | undefined {
         return this.#approvedBy;
     }
     get approvedAt(): Date | undefined {

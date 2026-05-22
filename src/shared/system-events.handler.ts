@@ -72,7 +72,6 @@ export class SystemEventsHandler {
                         domainEvents: undefined
                     },
                 } as DomainEventPayload;
-                //console.log(payload);
                 await this.redisCache.pushToList(APP_DOMAIN_EVENTS_KEY, 'events', payload, 10000, 86400 * 1);//1 Day
                 this.logger.debug(`Cached domain event for auto-close evaluation: ${event.constructor.name} on aggregate: ${event.aggregateId}`);
             } catch (error) {

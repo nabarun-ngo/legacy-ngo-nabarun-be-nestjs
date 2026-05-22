@@ -1,13 +1,14 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { WorkflowTask } from "../../domain/model/workflow-task.model";
-import { TaskDef, WorkflowDefinition } from "../../domain/vo/workflow-def.vo";
-import { IAutomaticTaskHandler } from "./automatic-task-handler.interface";
-import { WORKFLOW_INSTANCE_REPOSITORY, type IWorkflowInstanceRepository } from "../../domain/repositories/workflow-instance.repository.interface";
+import { WorkflowTask } from "../../../../workflow/domain/model/workflow-task.model";
+import { TaskDef, WorkflowDefinition } from "../../../../workflow/domain/vo/workflow-def.vo";
+import { IAutomaticTaskHandler, AutomaticTaskHandler } from "../../../../workflow/application/automatic-task-handlers/automatic-task-handler.interface";
+import { WORKFLOW_INSTANCE_REPOSITORY, type IWorkflowInstanceRepository } from "../../../../workflow/domain/repositories/workflow-instance.repository.interface";
 import { DeleteUserUseCase } from "src/modules/user/application/use-cases/delete-user.use-case";
 
 @Injectable()
+@AutomaticTaskHandler('UserDeleteAndDataCleanupHandler')
 export class UserDeleteAndDataCleanupHandler implements IAutomaticTaskHandler {
-    handlerName = UserDeleteAndDataCleanupHandler.name;
+    handlerName = 'UserDeleteAndDataCleanupHandler';
 
     constructor(
         private readonly deleteUserUseCase: DeleteUserUseCase,
