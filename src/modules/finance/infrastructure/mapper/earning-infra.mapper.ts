@@ -21,14 +21,13 @@ export class EarningInfraMapper {
             MapperUtils.nullToUndefined(p.referenceType),
             MapperUtils.nullToUndefined(p.accountId),
             MapperUtils.nullToUndefined(p.transactionId),
-            p.earningDate,
-            MapperUtils.nullToUndefined(p.receivedDate),
+            MapperUtils.nullToUndefined(p.earningDate),
             p.createdAt,
             p.updatedAt,
         );
     }
 
-    static toEarningCreatePersistence(domain: Earning): Prisma.EarningUncheckedCreateInput {
+    static toEarningCreatePersistence(domain: Earning): Prisma.EarningCreateInput {
         return {
             id: domain.id,
             category: domain.category,
@@ -39,21 +38,20 @@ export class EarningInfraMapper {
             source: domain.source,
             referenceId: MapperUtils.undefinedToNull(domain.referenceId),
             referenceType: MapperUtils.undefinedToNull(domain.referenceType),
-            accountId: MapperUtils.undefinedToNull(domain.accountId),
+            account: domain.accountId ? { connect: { id: domain.accountId } } : undefined,
             transactionId: MapperUtils.undefinedToNull(domain.transactionId),
-            earningDate: domain.earningDate,
-            receivedDate: MapperUtils.undefinedToNull(domain.receivedDate),
+            earningDate: MapperUtils.undefinedToNull(domain.earningDate),
             createdAt: domain.createdAt,
             updatedAt: domain.updatedAt,
         };
     }
 
-    static toEarningUpdatePersistence(domain: Earning): Prisma.EarningUncheckedUpdateInput {
+    static toEarningUpdatePersistence(domain: Earning): Prisma.EarningUpdateInput {
         return {
             status: domain.status,
-            accountId: MapperUtils.undefinedToNull(domain.accountId),
+            category: domain.category,
+            account: domain.accountId ? { connect: { id: domain.accountId } } : undefined,
             transactionId: MapperUtils.undefinedToNull(domain.transactionId),
-            receivedDate: MapperUtils.undefinedToNull(domain.receivedDate),
             createdAt: domain.createdAt,
             amount: domain.amount,
             currency: domain.currency,
@@ -61,8 +59,8 @@ export class EarningInfraMapper {
             source: domain.source,
             referenceId: MapperUtils.undefinedToNull(domain.referenceId),
             referenceType: MapperUtils.undefinedToNull(domain.referenceType),
-            earningDate: domain.earningDate,
-            updatedAt: new Date(),
+            earningDate: MapperUtils.undefinedToNull(domain.earningDate),
+            updatedAt: domain.updatedAt,
         };
     }
 }

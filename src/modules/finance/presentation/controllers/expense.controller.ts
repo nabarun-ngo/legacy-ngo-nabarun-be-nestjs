@@ -17,6 +17,7 @@ import {
   ExpenseDetailFilterDto,
   CreateExpenseDto,
   UpdateExpenseDto,
+  ExpenseRefDataDto,
 } from '../../application/dto/expense.dto';
 import { ExpenseService } from '../../application/services/expense.service';
 import { PagedResult } from 'src/shared/models/paged-result';
@@ -135,6 +136,15 @@ export class ExpenseController {
   async getExpenseById(@Param('id') id: string): Promise<SuccessResponse<ExpenseDetailDto>> {
     const expense = await this.expenseService.getById(id);
     return new SuccessResponse(expense);
+  }
+
+  @Get('static/referenceData')
+  @ApiOperation({ summary: 'Get expense reference data' })
+  @ApiAutoResponse(ExpenseRefDataDto, { wrapInSuccessResponse: true, description: 'Reference data retrieved successfully' })
+  async getExpenseReferenceData(): Promise<SuccessResponse<ExpenseRefDataDto>> {
+    return new SuccessResponse<ExpenseRefDataDto>(
+      await this.expenseService.getReferenceData()
+    );
   }
 
 

@@ -65,7 +65,7 @@ class DonationRepository implements IDonationRepository {
     const donations = await this.prisma.donation.findMany({
       where: this.whereQuery(filter),
       orderBy: {
-        ...filter?.isGuest ? { raisedOn: 'desc' } : { startDate: 'desc' }
+        raisedOn: 'desc'
       },
       include: {
         donor: true,

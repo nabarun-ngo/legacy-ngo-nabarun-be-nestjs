@@ -54,6 +54,7 @@ import { FixTransactionUseCase } from './application/use-cases/fix-transaction.u
 import { GuestDonationCreationHandler } from './application/handlers/workflow/guest-donation-creation.handler';
 import { DonationAmountUpdateHandler } from './application/handlers/workflow/donation-amount-update.handler';
 import { DonationPauseUpdateHandler } from './application/handlers/workflow/donation-pause-update.handler';
+import { EarningController } from './presentation/controllers/earning.controller';
 
 
 /**
@@ -74,7 +75,7 @@ import { DonationPauseUpdateHandler } from './application/handlers/workflow/dona
     DonationController,
     AccountController,
     ExpenseController,
-    //EarningController,
+    EarningController,
   ],
   imports: [
     UserModule,

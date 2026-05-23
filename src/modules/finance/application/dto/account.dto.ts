@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsNumber, IsEnum, ValidateNested, IsDate, IsArray } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { AccountStatus, AccountType } from '../../domain/model/account.model';
+import { KeyValueDto } from 'src/shared/dto/KeyValue.dto';
 
 /**
  * Bank Detail DTO - matches legacy system
@@ -252,6 +253,18 @@ export class TransferDto {
   @ApiProperty()
   @IsDate()
   transferDate: Date;
+
+}
+
+export class AccountRefDataDto {
+  @ApiProperty()
+  accountStatuses?: KeyValueDto[];
+
+  @ApiProperty()
+  accountTypes?: KeyValueDto[];
+
+  @ApiProperty()
+  transactionRefTypes?: KeyValueDto[];
 
 }
 

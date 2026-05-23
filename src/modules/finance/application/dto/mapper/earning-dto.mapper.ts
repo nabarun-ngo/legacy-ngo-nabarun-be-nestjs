@@ -19,7 +19,6 @@ export class EarningDtoMapper {
       accountId: earning.accountId,
       transactionId: earning.transactionId,
       earningDate: earning.earningDate,
-      receivedDate: earning.receivedDate,
       createdAt: earning.createdAt,
       updatedAt: earning.updatedAt,
     };

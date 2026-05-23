@@ -19,6 +19,9 @@ export class MetadataService {
             acc_type: parsefromString<KeyValueConfig[]>(keyValueConfigs['ACCOUNT_TYPES'].value),
             txn_types: parsefromString<KeyValueConfig[]>(keyValueConfigs['TRANSACTION_TYPES'].value),
             exp_status: parsefromString<KeyValueConfig[]>(keyValueConfigs['EXPENSE_STATUSES'].value),
+            exp_categories: parsefromString<KeyValueConfig[]>(keyValueConfigs['EXPENSE_CATEGORIES'].value),
+            earn_status: parsefromString<KeyValueConfig[]>(keyValueConfigs['EARNING_STATUSES'].value),
+            earn_categories: parsefromString<KeyValueConfig[]>(keyValueConfigs['EARNING_CATEGORIES'].value),
         }
     }
 

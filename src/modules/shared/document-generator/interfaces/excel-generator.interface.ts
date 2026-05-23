@@ -100,5 +100,6 @@ export interface IExcelSheetBuilder {
     addConditionalFormatting(range: string, rules: any): IExcelSheetBuilder;
     addFormula(row: number, col: number | string, formula: string, style?: IExcelCellStyle): IExcelSheetBuilder;
     addHyperlink(row: number, col: number | string, text: string, url: string, style?: IExcelCellStyle): IExcelSheetBuilder;
+    addImage(imageBuffer: Buffer, extension: 'png' | 'jpeg' | 'gif', range: string | any): IExcelSheetBuilder;
     endSheet(): IExcelBuilder;
 }

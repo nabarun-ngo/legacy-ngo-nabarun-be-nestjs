@@ -17,6 +17,7 @@ import {
   EarningDetailFilterDto,
   CreateEarningDto,
   UpdateEarningDto,
+  EarningRefDataDto,
 } from '../../application/dto/earning.dto';
 import { EarningService } from '../../application/services/earning.service';
 import { PagedResult } from 'src/shared/models/paged-result';
@@ -78,24 +79,6 @@ export class EarningController {
     return new SuccessResponse(result);
   }
 
-  @Get('list/me')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'List own earnings' })
-  @ApiAutoPagedResponse(EarningDetailDto, { description: 'OK', wrapInSuccessResponse: true })
-  async listSelfEarnings(
-    @Query('pageIndex') pageIndex?: number,
-    @Query('pageSize') pageSize?: number,
-    @Query() filter?: EarningDetailFilterDto,
-    @CurrentUser() user?: AuthUser,
-  ): Promise<SuccessResponse<PagedResult<EarningDetailDto>>> {
-    const result = await this.earningService.list({
-      pageIndex,
-      pageSize,
-      props: { ...filter, },
-    });
-    return new SuccessResponse(result);
-  }
-
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   @RequirePermissions('read:earning')
@@ -105,5 +88,15 @@ export class EarningController {
     const earning = await this.earningService.getById(id);
     return new SuccessResponse(earning);
   }
+
+  @Get('static/referenceData')
+  @ApiOperation({ summary: 'Get earning reference data' })
+  @ApiAutoResponse(EarningRefDataDto, { wrapInSuccessResponse: true, description: 'Reference data retrieved successfully' })
+  async getEarningReferenceData(): Promise<SuccessResponse<EarningRefDataDto>> {
+    return new SuccessResponse<EarningRefDataDto>(
+      await this.earningService.getReferenceData()
+    );
+  }
+
 }
 

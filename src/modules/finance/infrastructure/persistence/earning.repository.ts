@@ -28,7 +28,7 @@ class EarningRepository implements IEarningRepository {
     const [data, total] = await Promise.all([
       this.prisma.earning.findMany({
         where,
-        orderBy: { earningDate: 'desc' },
+        orderBy: { createdAt: 'desc' },
         include: {
           account: true,
         },
@@ -49,7 +49,7 @@ class EarningRepository implements IEarningRepository {
   async findAll(filter?: EarningFilter): Promise<Earning[]> {
     const earnings = await this.prisma.earning.findMany({
       where: this.whereQuery(filter),
-      orderBy: { earningDate: 'desc' },
+      orderBy: { createdAt: 'desc' },
       include: {
         account: true,
       },
@@ -90,7 +90,7 @@ class EarningRepository implements IEarningRepository {
   async findByCategory(category: EarningCategory): Promise<Earning[]> {
     const earnings = await this.prisma.earning.findMany({
       where: { category, deletedAt: null },
-      orderBy: { earningDate: 'desc' },
+      orderBy: { createdAt: 'desc' },
       include: {
         account: true,
       },
@@ -102,7 +102,7 @@ class EarningRepository implements IEarningRepository {
   async findBySource(source: string): Promise<Earning[]> {
     const earnings = await this.prisma.earning.findMany({
       where: { source, deletedAt: null },
-      orderBy: { earningDate: 'desc' },
+      orderBy: { createdAt: 'desc' },
       include: {
         account: true,
       },

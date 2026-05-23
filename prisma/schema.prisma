@@ -529,8 +529,7 @@ model Earning {
   account       Account? @relation(fields: [accountId], references: [id])
   transactionId String?  @unique @db.VarChar(255)
 
-  earningDate  DateTime
-  receivedDate DateTime?
+  earningDate DateTime?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
