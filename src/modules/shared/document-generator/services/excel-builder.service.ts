@@ -241,7 +241,7 @@ class ExcelSheetBuilder implements IExcelSheetBuilder {
     /**
      * Add an image to the sheet
      */
-    addImage(imageBuffer: Buffer, extension: 'png' | 'jpeg' | 'gif', range: string): IExcelSheetBuilder {
+    addImage(imageBuffer: Buffer, extension: 'png' | 'jpeg' | 'gif', range: string | any): IExcelSheetBuilder {
         const imageId = this.workbook.addImage({
             buffer: imageBuffer as unknown as ExcelJS.Buffer,
             extension,
