@@ -67,7 +67,7 @@ export class ProjectService {
       pageSize: baseFilter.pageSize,
       props: {
         ...baseFilter.props,
-        projectId: projectid,
+        ...(projectid == undefined || projectid == 'undefined' ? {} : { projectId: projectid })
       },
     });
     return new PagedResult(

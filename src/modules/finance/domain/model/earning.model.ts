@@ -31,25 +31,48 @@ export class EarningFilter {
  * Represents earnings/income other than donations
  */
 export class Earning extends AggregateRoot<string> {
+  #category: EarningCategory;
+  #amount: number;
+  #currency: string;
+  #status: EarningStatus;
+  #description: string;
+  #source: string;                       // Source of earning
+  #referenceId: string | undefined;      // Project ID, Event ID, etc.
+  #referenceType: string | undefined;    // 'Project', 'Event', etc.
+  #accountId: string | undefined;        // Account to which credited
+  #transactionId: string | undefined;    // Transaction ID after receipt
+  #earningDate: Date | undefined;
   constructor(
     id: string,
-    public readonly category: EarningCategory,
-    public amount: number,
-    public currency: string,
-    public status: EarningStatus,
-    public description: string,
-    public source: string,                       // Source of earning
-    public referenceId: string | undefined,      // Project ID, Event ID, etc.
-    public referenceType: string | undefined,    // 'Project', 'Event', etc.
-    public accountId: string | undefined,        // Account to which credited
-    public transactionId: string | undefined,    // Transaction ID after receipt
-    public earningDate: Date,
-    public receivedDate: Date | undefined,
+    category: EarningCategory,
+    amount: number,
+    currency: string,
+    status: EarningStatus,
+    description: string,
+    source: string,                       // Source of earning
+    referenceId: string | undefined,      // Project ID, Event ID, etc.
+    referenceType: string | undefined,    // 'Project', 'Event', etc.
+    accountId: string | undefined,        // Account to which credited
+    transactionId: string | undefined,    // Transaction ID after receipt
+    earningDate: Date | undefined,
     createdAt?: Date,
     updatedAt?: Date,
   ) {
     super(id, createdAt, updatedAt);
+    this.#category = category;
+    this.#amount = amount;
+    this.#currency = currency;
+    this.#status = status;
+    this.#description = description;
+    this.#source = source;
+    this.#referenceId = referenceId;
+    this.#referenceType = referenceType;
+    this.#accountId = accountId;
+    this.#transactionId = transactionId;
+    this.#earningDate = earningDate;
   }
+
+
 
   /**
    * Factory method to create a new Earning
@@ -76,8 +99,7 @@ export class Earning extends AggregateRoot<string> {
       props.referenceType,
       undefined,
       undefined,
-      props.earningDate || new Date(),
-      undefined,
+      props.earningDate,
       new Date(),
       new Date(),
     );
@@ -86,15 +108,17 @@ export class Earning extends AggregateRoot<string> {
   /**
    * Mark earning as received
    */
-  markAsReceived(accountId: string, transactionId: string): void {
+  markAsReceived(accountId: string, earningDate: Date): void {
     if (this.status !== EarningStatus.PENDING) {
       throw new BusinessException('Can only mark pending earnings as received');
     }
+    this.#status = EarningStatus.RECEIVED;
+    this.#accountId = accountId;
+    this.#earningDate = earningDate;
+  }
 
-    this.status = EarningStatus.RECEIVED;
-    this.accountId = accountId;
-    this.transactionId = transactionId;
-    this.receivedDate = new Date();
+  setTransactionId(id: string) {
+    this.#transactionId = id;
   }
 
   /**
@@ -105,6 +129,73 @@ export class Earning extends AggregateRoot<string> {
       throw new BusinessException('Cannot cancel received earning');
     }
 
-    this.status = EarningStatus.CANCELLED;
+    this.#status = EarningStatus.CANCELLED;
+  }
+
+  update(dto: {
+    category?: EarningCategory;
+    amount?: number;
+    currency?: string;
+    description?: string;
+    source?: string;
+    earningDate?: Date;
+  }): void {
+    if (dto.amount && this.status !== EarningStatus.PENDING) {
+      throw new BusinessException('Can not update amount of received earning');
+    }
+    if (dto.category && this.status !== EarningStatus.PENDING) {
+      throw new BusinessException('Can not update category of received earning');
+    }
+    this.#category = dto.category ?? this.#category;
+    this.#amount = dto.amount ?? this.#amount;
+    this.#currency = dto.currency ?? this.#currency;
+    this.#description = dto.description ?? this.#description;
+    this.#source = dto.source ?? this.#source;
+    this.#earningDate = dto.earningDate ?? this.#earningDate;
+  }
+
+
+  get category(): EarningCategory {
+    return this.#category;
+  }
+
+  get amount(): number {
+    return this.#amount;
+  }
+
+  get currency(): string {
+    return this.#currency;
+  }
+
+  get status(): EarningStatus {
+    return this.#status;
+  }
+
+  get description(): string {
+    return this.#description;
+  }
+
+  get source(): string {
+    return this.#source;
+  }
+
+  get referenceId(): string | undefined {
+    return this.#referenceId;
+  }
+
+  get referenceType(): string | undefined {
+    return this.#referenceType;
+  }
+
+  get accountId(): string | undefined {
+    return this.#accountId;
+  }
+
+  get transactionId(): string | undefined {
+    return this.#transactionId;
+  }
+
+  get earningDate(): Date | undefined {
+    return this.#earningDate;
   }
 }

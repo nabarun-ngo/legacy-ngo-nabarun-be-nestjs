@@ -406,7 +406,6 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
             amount: earn.amount,
             currency: earn.currency || 'INR',
             earningDate: safeFormatDate(earn.earningDate),
-            receivedDate: safeFormatDate(earn.receivedDate),
             source: earn.source || '-',
             description: earn.description || '-',
             status: earn.status,
