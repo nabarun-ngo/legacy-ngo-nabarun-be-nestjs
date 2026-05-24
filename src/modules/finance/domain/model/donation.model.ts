@@ -51,6 +51,7 @@ export class DonationFilter {
   endDate_confirmedOn?: Date;
   startDate_lte?: Date;
   endDate_gte?: Date;
+  forEventId?: string;
 }
 
 /**

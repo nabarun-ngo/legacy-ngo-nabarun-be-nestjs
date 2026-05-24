@@ -12,7 +12,8 @@ import { ExpenseStatus } from 'src/modules/finance/domain/model/expense.model';
 import { EarningStatus } from 'src/modules/finance/domain/model/earning.model';
 import { AccountStatus } from 'src/modules/finance/domain/model/account.model';
 import { DonationStatus } from 'src/modules/finance/domain/model/donation.model';
-
+import { MetadataService } from 'src/modules/finance/infrastructure/external/metadata.service';
+import { ExcelStyles } from 'src/modules/shared/document-generator/services/excel-builder.service';
 @Injectable()
 @ReportProvider()
 export class AuditReportProvider implements IReportProvider<{ financialYear: string }> {
@@ -28,6 +29,7 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
         @Inject(ACCOUNT_REPOSITORY)
         private readonly accountRepository: IAccountRepository,
         private readonly documentGenerator: DocumentGeneratorService,
+        private readonly metadataService: MetadataService,
     ) { }
 
     readonly reportParams: FieldDef<'financialYear'>[] = [
@@ -58,7 +60,7 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
         const [startYear, endYear] = request.financialYear.split('-').map(y => parseInt(y));
         const startDate = DateTime.fromObject({ year: startYear, month: 4, day: 1 }).toJSDate();
         const endDate = DateTime.fromObject({ year: endYear, month: 3, day: 31 }).endOf('day').toJSDate();
-
+        const password = crypto.randomUUID();
         // Safe Date formatter helper
         const safeFormatDate = (date?: Date | null): string => {
             if (!date) return '-';
@@ -84,28 +86,32 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
                 endDate: endDate,
             }),
             this.accountRepository.findAll({
-                status: [AccountStatus.ACTIVE]
+                status: [AccountStatus.ACTIVE],
+                includeBalance: true,
             }),
         ]);
 
+        const refData = await this.metadataService.getReferenceData();
+        const incomeMap: { label: string, value: number }[] = [];
+
         // Consolidated breakdown sums for Annual Summary sheet
         const paidDons = donations.filter(d => d.status === DonationStatus.PAID);
-        const regDonAmt = paidDons.filter(d => d.type === 'REGULAR').reduce((sum, d) => sum + d.amount, 0);
-        const oneTimeDonAmt = paidDons.filter(d => d.type === 'ONETIME').reduce((sum, d) => sum + d.amount, 0);
+        incomeMap.push({ label: 'Member Donations (Regular + One Time)', value: paidDons.filter(f => !f.isGuest).reduce((sum, d) => sum + d.amount, 0) })
+        incomeMap.push({ label: 'Guest Donations', value: paidDons.filter(f => f.isGuest).reduce((sum, d) => sum + d.amount, 0) })
+
 
         const receivedEarnings = earnings.filter(e => e.status === EarningStatus.RECEIVED);
-        const serviceEarnAmt = receivedEarnings.filter(e => e.category === 'SERVICE').reduce((sum, e) => sum + e.amount, 0);
-        const productEarnAmt = receivedEarnings.filter(e => e.category === 'PRODUCT').reduce((sum, e) => sum + e.amount, 0);
-        const grantEarnAmt = receivedEarnings.filter(e => e.category === 'GRANT').reduce((sum, e) => sum + e.amount, 0);
-        const sponsEarnAmt = receivedEarnings.filter(e => e.category === 'SPONSORSHIP').reduce((sum, e) => sum + e.amount, 0);
-        const otherEarnAmt = receivedEarnings.filter(e => e.category === 'OTHER').reduce((sum, e) => sum + e.amount, 0);
+
+        for (const cat of refData.earn_categories) {
+            incomeMap.push({ label: `${cat.VALUE} Earnings`, value: receivedEarnings.filter(e => e.category === cat.KEY).reduce((sum, e) => sum + e.amount, 0) })
+        }
 
         const settledExpenses = expenses.filter(e => e.status === ExpenseStatus.SETTLED);
-        const opExpAmt = settledExpenses.filter(e => e.referenceType === 'OPERATIONAL').reduce((sum, e) => sum + e.amount, 0);
-        const adminExpAmt = settledExpenses.filter(e => e.referenceType === 'ADMINISTRATIVE').reduce((sum, e) => sum + e.amount, 0);
-        const eventExpAmt = settledExpenses.filter(e => e.referenceType === 'EVENT').reduce((sum, e) => sum + e.amount, 0);
-        const adhocExpAmt = settledExpenses.filter(e => e.referenceType === 'ADHOC').reduce((sum, e) => sum + e.amount, 0);
-        const otherExpAmt = settledExpenses.filter(e => !['OPERATIONAL', 'ADMINISTRATIVE', 'EVENT', 'ADHOC'].includes(e.referenceType || '')).reduce((sum, e) => sum + e.amount, 0);
+        const expMap: { label: string, value: number }[] = [];
+
+        for (const refType of refData.exp_categories) {
+            expMap.push({ label: `${refType.VALUE} Expenses`, value: settledExpenses.filter(e => e.referenceType === refType.KEY).reduce((sum, e) => sum + e.amount, 0) })
+        }
 
         const excelBuilder = this.documentGenerator.createExcelBuilder();
 
@@ -114,7 +120,10 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
         // ==========================================
         const summarySheet = excelBuilder.addSheet({
             name: 'Annual Summary',
-            autoSizeColumns: false,
+            protection: {
+                sheet: true,
+                password: password,
+            },
         });
 
         // Setup custom column widths
@@ -123,227 +132,112 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
             .setColumnWidth('B', 20)
             .setColumnWidth('C', 15);
 
-        // Styling definitions
-        const thinBorder = {
-            top: { style: 'thin' as const, color: '#D3D3D3' },
-            bottom: { style: 'thin' as const, color: '#D3D3D3' },
-            left: { style: 'thin' as const, color: '#D3D3D3' },
-            right: { style: 'thin' as const, color: '#D3D3D3' },
-        };
-        const doubleBottomBorder = {
-            top: { style: 'thin' as const, color: '#D3D3D3' },
-            bottom: { style: 'double' as const, color: '#000000' },
-            left: { style: 'thin' as const, color: '#D3D3D3' },
-            right: { style: 'thin' as const, color: '#D3D3D3' },
-        };
 
-        const titleStyle = {
-            font: { bold: true, size: 16, color: '#FFFFFF' },
-            fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#1F4E78' },
-            alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
-        };
+        const incomeRowStart = 17;
+        const incomeTotalRow = incomeRowStart + incomeMap.length;
 
-        const subtitleStyle = {
-            font: { bold: true, size: 11, color: '#1F4E78' },
-            fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#DDEBF7' },
-            alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
-        };
+        const expSectionHeaderRow = incomeTotalRow + 2;
+        const expRowStart = expSectionHeaderRow + 2;
+        const expTotalRow = expRowStart + expMap.length;
 
-        const sectionHeaderStyle = {
-            font: { bold: true, size: 12, color: '#1F4E78' },
-            fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#DDEBF7' },
-            alignment: { horizontal: 'left' as const, vertical: 'middle' as const },
-            border: thinBorder,
-        };
+        // ── Letterhead and Report Title Block ──────────────────────────────────
+        const data = summarySheet;
 
-        const labelStyle = {
-            font: { bold: false, size: 11 },
-            alignment: { horizontal: 'left' as const, vertical: 'middle' as const },
-            border: thinBorder,
-        };
-
-        const labelBoldStyle = {
-            font: { bold: true, size: 11 },
-            alignment: { horizontal: 'left' as const, vertical: 'middle' as const },
-            border: thinBorder,
-        };
-
-        const rupeeFmt = '₹ #,##0.00';
-
-        const amountStyle = {
-            font: { bold: false, size: 11 },
-            numFmt: rupeeFmt,
-            alignment: { horizontal: 'right' as const, vertical: 'middle' as const },
-            border: thinBorder,
-        };
-
-        const amountBoldStyle = {
-            font: { bold: true, size: 11 },
-            numFmt: rupeeFmt,
-            alignment: { horizontal: 'right' as const, vertical: 'middle' as const },
-            border: thinBorder,
-        };
-
-        const percentageStyle = {
-            font: { bold: false, size: 11 },
-            numFmt: '0.0%',
-            alignment: { horizontal: 'right' as const, vertical: 'middle' as const },
-            border: thinBorder,
-        };
-
-        const percentageBoldStyle = {
-            font: { bold: true, size: 11 },
-            numFmt: '0.0%',
-            alignment: { horizontal: 'right' as const, vertical: 'middle' as const },
-            border: thinBorder,
-        };
-
-        const totalRowLabelStyle = {
-            font: { bold: true, size: 11, color: '#000000' },
-            fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#F2F2F2' },
-            alignment: { horizontal: 'left' as const, vertical: 'middle' as const },
-            border: doubleBottomBorder,
-        };
-
-        const totalRowAmountStyle = {
-            font: { bold: true, size: 11, color: '#000000' },
-            fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#F2F2F2' },
-            numFmt: rupeeFmt,
-            alignment: { horizontal: 'right' as const, vertical: 'middle' as const },
-            border: doubleBottomBorder,
-        };
-
-        const totalRowPercentageStyle = {
-            ...totalRowAmountStyle,
-            numFmt: '0.0%',
-        };
-
-        // Title Block
-        summarySheet
-            .mergeCells(1, 1, 1, 3)
-            .setRowHeight(1, 40)
-            .setCell(1, 1, 'Annual Financial Audit Report', titleStyle)
-
-            .mergeCells(2, 1, 2, 3)
-            .setRowHeight(2, 22)
-            .setCell(2, 1, `Financial Year: ${request.financialYear}`, subtitleStyle)
-
-            .mergeCells(3, 1, 3, 3)
-            .setRowHeight(3, 20)
-            .setCell(3, 1, `Generated on: ${safeFormatDate(new Date())}`, {
-                font: { italic: true, size: 9, color: '#595959' },
-                alignment: { horizontal: 'center' as const },
-            })
+        data.addReportHeader({
+            title: 'Annual Financial Audit Report',
+            subtitle: `Financial Year: ${request.financialYear}`,
+            mergeColumns: 3,
+            generationDate: new Date(),
+        })
 
             // Section 1: Financial Health Overview
-            .mergeCells(5, 1, 5, 3)
-            .setCell(5, 1, 'Financial Health Overview', sectionHeaderStyle)
-            .setCell(6, 1, 'Total Gross Income', labelBoldStyle)
-            .addFormula(6, 2, 'B19', amountBoldStyle)
-            .setCell(6, 3, '-', amountStyle)
-            .setCell(7, 1, 'Total Expenditures', labelBoldStyle)
-            .addFormula(7, 2, 'B28', amountBoldStyle)
-            .setCell(7, 3, '-', amountStyle)
-            .setCell(8, 1, 'Net Annual Surplus / (Deficit)', totalRowLabelStyle)
-            .addFormula(8, 2, 'B6-B7', totalRowAmountStyle)
-            .setCell(8, 3, '-', totalRowAmountStyle)
-
-            // Section 2: Income Breakdown
             .mergeCells(10, 1, 10, 3)
-            .setCell(10, 1, 'Consolidated Income Breakdown', sectionHeaderStyle)
-            .setCell(11, 1, 'Income Source', labelBoldStyle)
-            .setCell(11, 2, 'Amount', { ...labelBoldStyle, alignment: { horizontal: 'right' as const } })
-            .setCell(11, 3, '% of Income', { ...labelBoldStyle, alignment: { horizontal: 'right' as const } })
+            .setCell(10, 1, 'Financial Overview', ExcelStyles.sectionHeaderStyle)
+            .setCell(11, 1, 'Total Gross Income', ExcelStyles.labelBoldStyle)
+            .addFormula(11, 2, `B${incomeTotalRow}`, ExcelStyles.rupeeAmountBoldStyle)
+            .setCell(11, 3, '-', ExcelStyles.rupeeAmountStyle)
+            .setCell(12, 1, 'Total Expenditures', ExcelStyles.labelBoldStyle)
+            .addFormula(12, 2, `B${expTotalRow}`, ExcelStyles.rupeeAmountBoldStyle)
+            .setCell(12, 3, '-', ExcelStyles.rupeeAmountStyle)
+            .setCell(13, 1, 'Net Annual Surplus / (Deficit)', ExcelStyles.totalRowLabelStyle)
+            .addFormula(13, 2, 'B11-B12', ExcelStyles.totalRowAmountStyle)
+            .setCell(13, 3, '-', ExcelStyles.totalRowAmountStyle)
 
-            .setCell(12, 1, 'Regular Donations', labelStyle)
-            .setCell(12, 2, regDonAmt, amountStyle)
-            .addFormula(12, 3, 'IFERROR(B12/B19, 0)', percentageStyle)
+            // Section 2: Income Breakdown — row 15 onward (row 14 is spacer)
+            .mergeCells(15, 1, 15, 3)
+            .setCell(15, 1, 'Consolidated Income Breakdown', ExcelStyles.sectionHeaderStyle)
+            .setCell(16, 1, 'Income Source', ExcelStyles.labelBoldStyle)
+            .setCell(16, 2, 'Amount', { ...ExcelStyles.labelBoldStyle, alignment: { horizontal: 'right' as const } })
+            .setCell(16, 3, '% of Income', { ...ExcelStyles.labelBoldStyle, alignment: { horizontal: 'right' as const } });
 
-            .setCell(13, 1, 'One-Time Donations', labelStyle)
-            .setCell(13, 2, oneTimeDonAmt, amountStyle)
-            .addFormula(13, 3, 'IFERROR(B13/B19, 0)', percentageStyle)
 
-            .setCell(14, 1, 'Service Earnings', labelStyle)
-            .setCell(14, 2, serviceEarnAmt, amountStyle)
-            .addFormula(14, 3, 'IFERROR(B14/B19, 0)', percentageStyle)
 
-            .setCell(15, 1, 'Product Sales', labelStyle)
-            .setCell(15, 2, productEarnAmt, amountStyle)
-            .addFormula(15, 3, 'IFERROR(B15/B19, 0)', percentageStyle)
+        let incomeRow = incomeRowStart;
+        for (const income of incomeMap) {
+            data.setCell(incomeRow, 1, income.label, ExcelStyles.labelStyle)
+            data.setCell(incomeRow, 2, income.value, ExcelStyles.rupeeAmountStyle)
+            data.addFormula(incomeRow, 3, `IFERROR(B${incomeRow}/B${incomeTotalRow}, 0)`, ExcelStyles.percentageReportStyle)
+            incomeRow++;
+        }
 
-            .setCell(16, 1, 'Grants Received', labelStyle)
-            .setCell(16, 2, grantEarnAmt, amountStyle)
-            .addFormula(16, 3, 'IFERROR(B16/B19, 0)', percentageStyle)
 
-            .setCell(17, 1, 'Corporate Sponsorships', labelStyle)
-            .setCell(17, 2, sponsEarnAmt, amountStyle)
-            .addFormula(17, 3, 'IFERROR(B17/B19, 0)', percentageStyle)
-
-            .setCell(18, 1, 'Other Income', labelStyle)
-            .setCell(18, 2, otherEarnAmt, amountStyle)
-            .addFormula(18, 3, 'IFERROR(B18/B19, 0)', percentageStyle)
-
-            .setCell(19, 1, 'Total Consolidated Income', totalRowLabelStyle)
-            .addFormula(19, 2, 'SUM(B12:B18)', totalRowAmountStyle)
-            .addFormula(19, 3, 'SUM(C12:C18)', totalRowPercentageStyle)
+        data.setCell(incomeTotalRow, 1, 'Total Consolidated Income', ExcelStyles.totalRowLabelStyle)
+            .addFormula(incomeTotalRow, 2, `SUM(B${incomeRowStart}:B${incomeTotalRow - 1})`, ExcelStyles.totalRowAmountStyle)
+            .addFormula(incomeTotalRow, 3, `SUM(C${incomeRowStart}:C${incomeTotalRow - 1})`, ExcelStyles.totalRowPercentageStyle)
 
             // Section 3: Expenditures Breakdown
-            .mergeCells(21, 1, 21, 3)
-            .setCell(21, 1, 'Consolidated Expenditures Breakdown', sectionHeaderStyle)
-            .setCell(22, 1, 'Expense Category', labelBoldStyle)
-            .setCell(22, 2, 'Amount', { ...labelBoldStyle, alignment: { horizontal: 'right' as const } })
-            .setCell(22, 3, '% of Expenditures', { ...labelBoldStyle, alignment: { horizontal: 'right' as const } })
+            .mergeCells(expSectionHeaderRow, 1, expSectionHeaderRow, 3)
+            .setCell(expSectionHeaderRow, 1, 'Consolidated Expenditures Breakdown', ExcelStyles.sectionHeaderStyle)
+            .setCell(expSectionHeaderRow + 1, 1, 'Expense Category', ExcelStyles.labelBoldStyle)
+            .setCell(expSectionHeaderRow + 1, 2, 'Amount', { ...ExcelStyles.labelBoldStyle, alignment: { horizontal: 'right' as const } })
+            .setCell(expSectionHeaderRow + 1, 3, '% of Expenditures', { ...ExcelStyles.labelBoldStyle, alignment: { horizontal: 'right' as const } })
 
-            .setCell(23, 1, 'Operational Expenses', labelStyle)
-            .setCell(23, 2, opExpAmt, amountStyle)
-            .addFormula(23, 3, 'IFERROR(B23/B28, 0)', percentageStyle)
+        let expRow = expRowStart;
+        for (const exp of expMap) {
+            data.setCell(expRow, 1, exp.label, ExcelStyles.labelStyle)
+            data.setCell(expRow, 2, exp.value, ExcelStyles.rupeeAmountStyle)
+            data.addFormula(expRow, 3, `IFERROR(B${expRow}/B${expTotalRow}, 0)`, ExcelStyles.percentageReportStyle)
+            expRow++;
+        }
 
-            .setCell(24, 1, 'Administrative Expenses', labelStyle)
-            .setCell(24, 2, adminExpAmt, amountStyle)
-            .addFormula(24, 3, 'IFERROR(B24/B28, 0)', percentageStyle)
+        data.setCell(expTotalRow, 1, 'Total Consolidated Expenditures', ExcelStyles.totalRowLabelStyle)
+            .addFormula(expTotalRow, 2, `SUM(B${expRowStart}:B${expTotalRow - 1})`, ExcelStyles.totalRowAmountStyle)
+            .addFormula(expTotalRow, 3, `SUM(C${expRowStart}:C${expTotalRow - 1})`, ExcelStyles.totalRowPercentageStyle)
 
-            .setCell(25, 1, 'Event Expenses', labelStyle)
-            .setCell(25, 2, eventExpAmt, amountStyle)
-            .addFormula(25, 3, 'IFERROR(B25/B28, 0)', percentageStyle)
-
-            .setCell(26, 1, 'Ad-hoc Expenses', labelStyle)
-            .setCell(26, 2, adhocExpAmt, amountStyle)
-            .addFormula(26, 3, 'IFERROR(B26/B28, 0)', percentageStyle)
-
-            .setCell(27, 1, 'Other Miscellaneous Expenses', labelStyle)
-            .setCell(27, 2, otherExpAmt, amountStyle)
-            .addFormula(27, 3, 'IFERROR(B27/B28, 0)', percentageStyle)
-
-            .setCell(28, 1, 'Total Consolidated Expenditures', totalRowLabelStyle)
-            .addFormula(28, 2, 'SUM(B23:B27)', totalRowAmountStyle)
-            .addFormula(28, 3, 'SUM(C23:C27)', totalRowPercentageStyle)
             .endSheet();
 
         // ==========================================
         // 2. SHEET: ACCOUNT SUMMARY
         // ==========================================
+        const accTypeMap = new Map<string, string>();
+        refData.acc_type.forEach(item => accTypeMap.set(item.KEY, item.VALUE));
         const accountRows = accounts.map(acc => ({
             accountId: acc.id,
-            accountName: acc.name,
-            accountType: acc.type,
+            accountName: acc.accountHolderName,
+            accountType: accTypeMap.get(acc.type) || acc.type,
             status: acc.status,
             currency: acc.currency || 'INR',
             balance: acc.balance,
-            description: acc.description || '-',
+            activatedOn: safeFormatDate(acc.activatedOn) || '-',
         }));
 
         excelBuilder.addSheet({
-            name: 'Active Account Summary',
+            name: 'Account Summary',
             freezePane: { row: 1 },
             autoFilter: true,
+            autoSizeColumns: true,
+            protection: {
+                sheet: true,
+                password: password,
+            },
             columns: [
-                { header: 'Account ID', key: 'accountId', width: 15 },
-                { header: 'Account Name', key: 'accountName', width: 25 },
-                { header: 'Account Type', key: 'accountType', width: 15 },
-                { header: 'Status', key: 'status', width: 12 },
-                { header: 'Currency', key: 'currency', width: 10 },
-                { header: 'Closing Balance', key: 'balance', width: 18, style: { numFmt: rupeeFmt, alignment: { horizontal: 'right' as const } } },
-                { header: 'Description', key: 'description', width: 35 },
+                { header: 'Account ID', key: 'accountId' },
+                { header: 'Account Name', key: 'accountName' },
+                { header: 'Account Type', key: 'accountType' },
+                { header: 'Status', key: 'status' },
+                { header: 'Activated Date', key: 'activatedOn' },
+                { header: 'Currency', key: 'currency' },
+                { header: 'Closing Balance', key: 'balance', style: ExcelStyles.rupeeAmountStyle },
             ],
         })
             .addRows(accountRows)
@@ -352,22 +246,38 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
         // ==========================================
         // 3. SHEET: DONATIONS DETAILS
         // ==========================================
+        const donationTypeMap = new Map<string, string>();
+        refData.donationType.forEach(item => donationTypeMap.set(item.KEY, item.VALUE));
+
+        const donationStatusMap = new Map<string, string>();
+        refData.donationStatus.forEach(item => donationStatusMap.set(item.KEY, item.VALUE));
+
+        const paymentMethodMap = new Map<string, string>();
+        refData.paymentMethod.forEach(item => paymentMethodMap.set(item.KEY, item.VALUE));
+
+        const upiTypeMap = new Map<string, string>();
+        refData.upiOption.forEach(item => upiTypeMap.set(item.KEY, item.VALUE));
+
         const donationRows = donations.map(d => {
             const activityName = d.activityName || '-';
             return {
                 donationId: d.id,
+                donationType: `${donationTypeMap.get(d.type) || d.type}${d.isGuest === true ? ' (Guest)' : ''}`,
                 donorName: d.donorName,
                 donorEmail: d.donorEmail || '-',
                 donorPhone: d.donorNumber || '-',
                 amount: d.amount,
+                period: d.type == 'REGULAR' ? `${safeFormatDate(d.startDate)} - ${safeFormatDate(d.endDate)}` : "",
                 currency: d.currency || 'INR',
                 raisedOn: safeFormatDate(d.raisedOn),
+                status: donationStatusMap.get(d.status) || d.status,
                 paidOn: safeFormatDate(d.paidOn),
-                paymentMethod: d.paymentMethod || '-',
-                paidUsingUPI: d.paidUsingUPI || '-',
+                paymentMethod: paymentMethodMap.get(d.paymentMethod ?? '') || d.paymentMethod || '-',
+                paidUsingUPI: upiTypeMap.get(d.paidUsingUPI ?? '') || d.paidUsingUPI || '-',
                 transactionRef: d.transactionRef || '-',
                 activityName: activityName,
-                status: d.status,
+                confirmedBy: d.confirmedBy?.fullName || '-',
+                confirmedOn: safeFormatDate(d.confirmedOn),
                 remarks: d.remarks || '-',
             };
         });
@@ -376,21 +286,29 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
             name: 'Donations Details',
             freezePane: { row: 1 },
             autoFilter: true,
+            protection: {
+                sheet: true,
+                password: password,
+            },
             columns: [
                 { header: 'Donation ID', key: 'donationId', width: 15 },
+                { header: 'Donation Type', key: 'donationType', width: 15 },
                 { header: 'Donor Name', key: 'donorName', width: 25 },
-                { header: 'Email', key: 'donorEmail', width: 25 },
-                { header: 'Phone', key: 'donorPhone', width: 15 },
-                { header: 'Amount', key: 'amount', width: 15, style: { numFmt: rupeeFmt, alignment: { horizontal: 'right' as const } } },
+                { header: 'Donor Email', key: 'donorEmail', width: 25 },
+                { header: 'Donor Phone', key: 'donorPhone', width: 15 },
                 { header: 'Currency', key: 'currency', width: 10 },
+                { header: 'Donation Amount', key: 'amount', width: 15, style: ExcelStyles.rupeeAmountStyle },
+                { header: 'Donation Period', key: 'period', width: 15 },
                 { header: 'Raised Date', key: 'raisedOn', width: 15 },
+                { header: 'Donation Status', key: 'status', width: 12 },
                 { header: 'Paid Date', key: 'paidOn', width: 15 },
                 { header: 'Payment Method', key: 'paymentMethod', width: 15 },
                 { header: 'UPI Type', key: 'paidUsingUPI', width: 15 },
                 { header: 'Transaction Ref', key: 'transactionRef', width: 20 },
+                { header: 'Confirmed By', key: 'confirmedBy', width: 20 },
+                { header: 'Confirmed Date', key: 'confirmedOn', width: 15 },
                 { header: 'Activity Name', key: 'activityName', width: 25 },
-                { header: 'Status', key: 'status', width: 12 },
-                { header: 'Remarks', key: 'remarks', width: 30 },
+                { header: 'Remarks', key: 'remarks', width: 25 },
             ],
         })
             .addRows(donationRows)
@@ -399,33 +317,49 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
         // ==========================================
         // 4. SHEET: OTHER EARNINGS DETAILS
         // ==========================================
+        const earningTypeMap = new Map<string, string>();
+        refData.earn_categories.forEach(item => earningTypeMap.set(item.KEY, item.VALUE));
+
+        const earningStatusMap = new Map<string, string>();
+        refData.earn_status.forEach(item => earningStatusMap.set(item.KEY, item.VALUE));
+
         const earningRows = earnings.map(earn => ({
             earningId: earn.id,
-            category: earn.category,
-            amount: earn.amount,
-            currency: earn.currency || 'INR',
-            earningDate: safeFormatDate(earn.earningDate),
-            receivedDate: safeFormatDate(earn.receivedDate),
+            category: earningTypeMap.get(earn.category) || earn.category || '-',
             source: earn.source || '-',
             description: earn.description || '-',
-            status: earn.status,
+            currency: earn.currency || 'INR',
+            amount: earn.amount,
+            status: earningStatusMap.get(earn.status) || earn.status || '-',
+            accountId: earn.accountId || '-',
+            transactionId: earn.transactionId || '-',
+            earningDate: safeFormatDate(earn.earningDate),
+            receivedBy: earn.receivedBy?.fullName || '-',
+            createdBy: earn.createdBy?.fullName || '-',
             referenceId: earn.referenceId || '-',
         }));
 
         excelBuilder.addSheet({
-            name: 'Other Earnings Details',
+            name: 'Earnings Details',
             freezePane: { row: 1 },
             autoFilter: true,
+            protection: {
+                sheet: true,
+                password: password,
+            },
             columns: [
                 { header: 'Earning ID', key: 'earningId', width: 15 },
                 { header: 'Category', key: 'category', width: 15 },
-                { header: 'Amount', key: 'amount', width: 15, style: { numFmt: rupeeFmt, alignment: { horizontal: 'right' as const } } },
-                { header: 'Currency', key: 'currency', width: 10 },
-                { header: 'Earning Date', key: 'earningDate', width: 15 },
-                { header: 'Received Date', key: 'receivedDate', width: 15 },
                 { header: 'Source', key: 'source', width: 25 },
                 { header: 'Description', key: 'description', width: 35 },
+                { header: 'Amount', key: 'amount', width: 15, style: ExcelStyles.rupeeAmountStyle },
+                { header: 'Currency', key: 'currency', width: 10 },
+                { header: 'Earning Date', key: 'earningDate', width: 15 },
                 { header: 'Status', key: 'status', width: 12 },
+                { header: 'Account ID', key: 'accountId', width: 15 },
+                { header: 'Transaction ID', key: 'transactionId', width: 20 },
+                { header: 'Received By', key: 'receivedBy', width: 20 },
+                { header: 'Created By', key: 'createdBy', width: 20 },
                 { header: 'Reference ID', key: 'referenceId', width: 20 },
             ],
         })
@@ -435,22 +369,32 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
         // ==========================================
         // 5. SHEET: EXPENSES DETAILS
         // ==========================================
+        const expenseTypeMap = new Map<string, string>();
+        refData.exp_categories.forEach(item => expenseTypeMap.set(item.KEY, item.VALUE));
+
+        const expenseStatusMap = new Map<string, string>();
+        refData.exp_status.forEach(item => expenseStatusMap.set(item.KEY, item.VALUE));
+
         const expenseRows = expenses.map(e => {
             const activityName = e.activityName || '-';
             return {
                 expenseId: e.id,
+                category: expenseTypeMap.get(e.referenceType ?? '') || e.referenceType || '-',
                 name: e.name,
-                activityName: activityName,
-                category: e.referenceType || '-',
-                amount: e.amount,
-                currency: e.currency || 'INR',
-                date: safeFormatDate(e.expenseDate),
-                status: e.status,
                 description: e.description || '-',
-                requestedBy: e.requestedBy?.id || '-',
-                paidBy: e.paidBy?.id || '-',
+                currency: e.currency || 'INR',
+                amount: e.amount,
+                status: expenseStatusMap.get(e.status) || e.status || '-',
+                date: safeFormatDate(e.expenseDate),
+                requestedBy: e.requestedBy?.fullName || '-',
+                paidBy: e.paidBy?.fullName || '-',
+                finalizedBy: e.finalizedBy?.fullName || '-',
+                settledBy: e.settledBy?.fullName || '-',
                 settledOn: safeFormatDate(e.settledDate),
+                accountId: e.accountId || '-',
+                transactionId: e.transactionId || '-',
                 remarks: e.remarks || '-',
+                activityName: activityName,
             };
         });
 
@@ -458,20 +402,29 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
             name: 'Expenses Details',
             freezePane: { row: 1 },
             autoFilter: true,
+            autoSizeColumns: true,
+            protection: {
+                sheet: true,
+                password: password,
+            },
             columns: [
-                { header: 'Expense ID', key: 'expenseId', width: 15 },
-                { header: 'Name', key: 'name', width: 25 },
-                { header: 'Activity Name', key: 'activityName', width: 25 },
-                { header: 'Category (Ref Type)', key: 'category', width: 20 },
-                { header: 'Amount', key: 'amount', width: 15, style: { numFmt: rupeeFmt, alignment: { horizontal: 'right' as const } } },
-                { header: 'Currency', key: 'currency', width: 10 },
-                { header: 'Date', key: 'date', width: 15 },
-                { header: 'Status', key: 'status', width: 12 },
-                { header: 'Description', key: 'description', width: 35 },
-                { header: 'Requested By', key: 'requestedBy', width: 20 },
-                { header: 'Paid By', key: 'paidBy', width: 20 },
-                { header: 'Settled Date', key: 'settledOn', width: 15 },
-                { header: 'Remarks', key: 'remarks', width: 30 },
+                { header: 'Expense ID', key: 'expenseId' },
+                { header: 'Expense Type', key: 'category' },
+                { header: 'Name', key: 'name' },
+                { header: 'Description', key: 'description' },
+                { header: 'Currency', key: 'currency' },
+                { header: 'Amount', key: 'amount', style: ExcelStyles.rupeeAmountStyle },
+                { header: 'Status', key: 'status' },
+                { header: 'Expense Date', key: 'date' },
+                { header: 'Requested By', key: 'requestedBy' },
+                { header: 'Paid By', key: 'paidBy' },
+                { header: 'Finalized By', key: 'finalizedBy' },
+                { header: 'Settled By', key: 'settledBy' },
+                { header: 'Settled Date', key: 'settledOn' },
+                { header: 'Account ID', key: 'accountId' },
+                { header: 'Transaction ID', key: 'transactionId' },
+                { header: 'Remarks', key: 'remarks' },
+                { header: 'Activity Name', key: 'activityName' },
             ],
         })
             .addRows(expenseRows)

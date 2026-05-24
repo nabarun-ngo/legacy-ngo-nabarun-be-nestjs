@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsNumber, IsEnum, IsDate, Min } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
 import { EarningCategory, EarningStatus } from '../../domain/model/earning.model';
+import { KeyValueDto } from 'src/shared/dto/KeyValue.dto';
 
 /**
  * Earning Detail DTO
@@ -40,8 +41,8 @@ export class EarningDetailDto {
   @ApiPropertyOptional()
   transactionId?: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
-  earningDate: Date;
+  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  earningDate?: Date;
 
   @ApiPropertyOptional({ type: String, format: 'date-time' })
   receivedDate?: Date;
@@ -51,6 +52,16 @@ export class EarningDetailDto {
 
   @ApiPropertyOptional({ type: String, format: 'date-time' })
   updatedAt?: Date;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  receivedBy?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  createdBy?: string;
 }
 
 /**
@@ -112,24 +123,25 @@ export class CreateEarningDto {
   currency: string;
 
   @ApiProperty()
-  @IsString()
-  description: string;
-
-  @ApiProperty()
-  @IsString()
-  accountId: string;
-
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
   @IsOptional()
-  @IsDate()
-  @Type(() => Date)
-  earningDate?: Date;
+  @IsString()
+  source: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  description?: string;
+
 }
 
 /**
  * Update Earning DTO
  */
 export class UpdateEarningDto {
+  @ApiPropertyOptional({ enum: EarningCategory })
+  @IsOptional()
+  @IsEnum(EarningCategory)
+  category?: EarningCategory;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -151,5 +163,23 @@ export class UpdateEarningDto {
   @IsDate()
   @Type(() => Date)
   earningDate?: Date;
+
+  @ApiPropertyOptional({ enum: EarningStatus })
+  @IsOptional()
+  @IsEnum(EarningStatus)
+  status?: EarningStatus;
+
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  accountId?: string;
 }
 
+export class EarningRefDataDto {
+  @ApiProperty()
+  earningStatuses?: KeyValueDto[];
+
+  @ApiProperty()
+  earningCategories?: KeyValueDto[];
+}

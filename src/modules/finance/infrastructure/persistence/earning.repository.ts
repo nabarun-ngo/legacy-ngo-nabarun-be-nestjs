@@ -10,6 +10,8 @@ import { EarningInfraMapper } from '../mapper/earning-infra.mapper';
 export type EarningPersistence = Prisma.EarningGetPayload<{
   include: {
     account: true;
+    createdBy: true;
+    receivedBy: true;
   }
 }>;
 
@@ -28,9 +30,11 @@ class EarningRepository implements IEarningRepository {
     const [data, total] = await Promise.all([
       this.prisma.earning.findMany({
         where,
-        orderBy: { earningDate: 'desc' },
+        orderBy: { createdAt: 'desc' },
         include: {
           account: true,
+          createdBy: true,
+          receivedBy: true,
         },
         skip: (filter?.pageIndex ?? 0) * (filter?.pageSize ?? 1000),
         take: filter?.pageSize ?? 1000,
@@ -49,9 +53,11 @@ class EarningRepository implements IEarningRepository {
   async findAll(filter?: EarningFilter): Promise<Earning[]> {
     const earnings = await this.prisma.earning.findMany({
       where: this.whereQuery(filter),
-      orderBy: { earningDate: 'desc' },
+      orderBy: { createdAt: 'desc' },
       include: {
         account: true,
+        createdBy: true,
+        receivedBy: true,
       },
     });
 
@@ -81,35 +87,14 @@ class EarningRepository implements IEarningRepository {
       where: { id },
       include: {
         account: true,
+        createdBy: true,
+        receivedBy: true,
       },
     });
 
     return EarningInfraMapper.toEarningDomain(earning!);
   }
 
-  async findByCategory(category: EarningCategory): Promise<Earning[]> {
-    const earnings = await this.prisma.earning.findMany({
-      where: { category, deletedAt: null },
-      orderBy: { earningDate: 'desc' },
-      include: {
-        account: true,
-      },
-    });
-
-    return earnings.map(m => EarningInfraMapper.toEarningDomain(m)!);
-  }
-
-  async findBySource(source: string): Promise<Earning[]> {
-    const earnings = await this.prisma.earning.findMany({
-      where: { source, deletedAt: null },
-      orderBy: { earningDate: 'desc' },
-      include: {
-        account: true,
-      },
-    });
-
-    return earnings.map(m => EarningInfraMapper.toEarningDomain(m)!);
-  }
 
   async create(earning: Earning): Promise<Earning> {
     const createData: Prisma.EarningUncheckedCreateInput = {
@@ -120,6 +105,8 @@ class EarningRepository implements IEarningRepository {
       data: createData,
       include: {
         account: true,
+        createdBy: true,
+        receivedBy: true,
       },
     });
 
@@ -136,6 +123,8 @@ class EarningRepository implements IEarningRepository {
       data: updateData,
       include: {
         account: true,
+        createdBy: true,
+        receivedBy: true,
       },
     });
 

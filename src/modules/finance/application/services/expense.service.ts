@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { EXPENSE_REPOSITORY } from '../../domain/repositories/expense.repository.interface';
 import type { IExpenseRepository } from '../../domain/repositories/expense.repository.interface';
-import { ExpenseDetailDto, ExpenseDetailFilterDto, CreateExpenseDto, UpdateExpenseDto } from '../dto/expense.dto';
+import { ExpenseDetailDto, ExpenseDetailFilterDto, CreateExpenseDto, UpdateExpenseDto, ExpenseRefDataDto } from '../dto/expense.dto';
 import { PagedResult } from 'src/shared/models/paged-result';
 import { BaseFilter } from 'src/shared/models/base-filter-props';
 import { CreateExpenseUseCase } from '../use-cases/create-expense.use-case';
@@ -13,9 +13,12 @@ import { BusinessException } from 'src/shared/exceptions/business-exception';
 import { AuthUser } from 'src/modules/shared/auth/domain/models/api-user.model';
 import { ACCOUNT_REPOSITORY } from '../../domain/repositories/account.repository.interface';
 import type { IAccountRepository } from '../../domain/repositories/account.repository.interface';
+import { MetadataService } from '../../infrastructure/external/metadata.service';
+import { toKeyValueDto } from 'src/shared/utilities/kv-config.util';
 
 @Injectable()
 export class ExpenseService {
+
 
   constructor(
     @Inject(EXPENSE_REPOSITORY)
@@ -24,6 +27,7 @@ export class ExpenseService {
     private readonly updateExpenseUseCase: UpdateExpenseUseCase,
     private readonly settleExpenseUseCase: SettleExpenseUseCase,
     private readonly finalizeExpenseUseCase: FinalizeExpenseUseCase,
+    private readonly metadataService: MetadataService,
     @Inject(ACCOUNT_REPOSITORY)
     private readonly accountRepository: IAccountRepository,
   ) { }
@@ -79,5 +83,15 @@ export class ExpenseService {
     const expense = await this.finalizeExpenseUseCase.execute({ id, finalizedById });
     return ExpenseDtoMapper.toDto(expense);
   }
+
+
+  async getReferenceData(): Promise<ExpenseRefDataDto> {
+    const data = await this.metadataService.getReferenceData()
+    return {
+      expenseRefTypes: data.exp_categories.map(toKeyValueDto),
+      expenseStatuses: data.exp_status.map(toKeyValueDto),
+    };
+  }
+
 }
 

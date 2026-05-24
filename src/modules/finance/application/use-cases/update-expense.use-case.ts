@@ -42,6 +42,8 @@ export class UpdateExpenseUseCase implements IUseCase<{ id: string; dto: UpdateE
         remarks: request.dto.remarks,
         payerId: request.dto.payerId,
         expenseItems,
+        expenseRefType: request.dto.expenseRefType,
+        expenseRefId: request.dto.expenseRefId,
       });
     }
 

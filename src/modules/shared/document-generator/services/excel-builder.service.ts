@@ -241,7 +241,7 @@ class ExcelSheetBuilder implements IExcelSheetBuilder {
     /**
      * Add an image to the sheet
      */
-    addImage(imageBuffer: Buffer, extension: 'png' | 'jpeg' | 'gif', range: string): IExcelSheetBuilder {
+    addImage(imageBuffer: Buffer, extension: 'png' | 'jpeg' | 'gif', range: string | any): IExcelSheetBuilder {
         const imageId = this.workbook.addImage({
             buffer: imageBuffer as unknown as ExcelJS.Buffer,
             extension,
@@ -264,6 +264,53 @@ class ExcelSheetBuilder implements IExcelSheetBuilder {
      */
     setPageOrientation(orientation: 'portrait' | 'landscape'): IExcelSheetBuilder {
         this.worksheet.pageSetup.orientation = orientation;
+        return this;
+    }
+
+    addReportHeader(options: { title: string; subtitle?: string; mergeColumns?: number; generationDate?: Date }): IExcelSheetBuilder {
+        const mergeCols = options.mergeColumns || 3;
+        
+        // ── Letterhead (rows 1-4) ──────────────────────────────────────────────
+        this.mergeCells(1, 1, 1, mergeCols);
+        this.setRowHeight(1, 38);
+        this.setCell(1, 1, 'NABARUN', ExcelStyles.letterheadOrgStyle);
+
+        this.mergeCells(2, 1, 2, mergeCols);
+        this.setRowHeight(2, 22);
+        this.setCell(2, 1, 'An Apolitical Socio-Cultural Organisation', ExcelStyles.letterheadTaglineStyle);
+
+        this.mergeCells(3, 1, 3, mergeCols);
+        this.setRowHeight(3, 18);
+        this.setCell(3, 1, 'Reg. No:   |  Email: nabarunbangla18@gmail.com  |  Website: https://ngonabarun.web.app', ExcelStyles.letterheadInfoStyle);
+
+        this.mergeCells(4, 1, 4, mergeCols);
+        this.setRowHeight(4, 4);
+        this.setCell(4, 1, '', ExcelStyles.letterheadDividerStyle);
+
+        // ── Report Title Block (rows 5-8) ──────────────────────────────────
+        this.mergeCells(5, 1, 5, mergeCols);
+        this.setRowHeight(5, 8);
+
+        this.mergeCells(6, 1, 6, mergeCols);
+        this.setRowHeight(6, 40);
+        this.setCell(6, 1, options.title, ExcelStyles.titleStyle);
+
+        if (options.subtitle) {
+            this.mergeCells(7, 1, 7, mergeCols);
+            this.setRowHeight(7, 22);
+            this.setCell(7, 1, options.subtitle, ExcelStyles.subtitleStyle);
+        }
+
+        const date = options.generationDate || new Date();
+        const formattedDate = date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
+        
+        this.mergeCells(8, 1, 8, mergeCols);
+        this.setRowHeight(8, 20);
+        this.setCell(8, 1, `Generated on: ${formattedDate}`, {
+            font: { italic: true, size: 9, color: '#595959' },
+            alignment: { horizontal: 'center' as const },
+        });
+
         return this;
     }
 
@@ -560,5 +607,160 @@ export const ExcelStyles = {
     error: {
         font: { color: '#9C0006' },
         fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#FFC7CE' },
+    } as IExcelCellStyle,
+
+    // Nabarun Report Shared Styles
+    titleStyle: {
+        font: { bold: true, size: 16, color: '#FFFFFF' },
+        fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#1F4E78' },
+        alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
+    } as IExcelCellStyle,
+
+    subtitleStyle: {
+        font: { bold: true, size: 11, color: '#1F4E78' },
+        fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#DDEBF7' },
+        alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
+    } as IExcelCellStyle,
+
+    sectionHeaderStyle: {
+        font: { bold: true, size: 12, color: '#1F4E78' },
+        fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#DDEBF7' },
+        alignment: { horizontal: 'left' as const, vertical: 'middle' as const },
+        border: {
+            top: { style: 'thin' as const, color: '#D3D3D3' },
+            bottom: { style: 'thin' as const, color: '#D3D3D3' },
+            left: { style: 'thin' as const, color: '#D3D3D3' },
+            right: { style: 'thin' as const, color: '#D3D3D3' },
+        },
+    } as IExcelCellStyle,
+
+    labelStyle: {
+        font: { bold: false, size: 11 },
+        alignment: { horizontal: 'left' as const, vertical: 'middle' as const },
+        border: {
+            top: { style: 'thin' as const, color: '#D3D3D3' },
+            bottom: { style: 'thin' as const, color: '#D3D3D3' },
+            left: { style: 'thin' as const, color: '#D3D3D3' },
+            right: { style: 'thin' as const, color: '#D3D3D3' },
+        },
+    } as IExcelCellStyle,
+
+    labelBoldStyle: {
+        font: { bold: true, size: 11 },
+        alignment: { horizontal: 'left' as const, vertical: 'middle' as const },
+        border: {
+            top: { style: 'thin' as const, color: '#D3D3D3' },
+            bottom: { style: 'thin' as const, color: '#D3D3D3' },
+            left: { style: 'thin' as const, color: '#D3D3D3' },
+            right: { style: 'thin' as const, color: '#D3D3D3' },
+        },
+    } as IExcelCellStyle,
+
+    rupeeAmountStyle: {
+        font: { bold: false, size: 11 },
+        numFmt: '₹ #,##0.00',
+        alignment: { horizontal: 'right' as const, vertical: 'middle' as const },
+        border: {
+            top: { style: 'thin' as const, color: '#D3D3D3' },
+            bottom: { style: 'thin' as const, color: '#D3D3D3' },
+            left: { style: 'thin' as const, color: '#D3D3D3' },
+            right: { style: 'thin' as const, color: '#D3D3D3' },
+        },
+    } as IExcelCellStyle,
+
+    rupeeAmountBoldStyle: {
+        font: { bold: true, size: 11 },
+        numFmt: '₹ #,##0.00',
+        alignment: { horizontal: 'right' as const, vertical: 'middle' as const },
+        border: {
+            top: { style: 'thin' as const, color: '#D3D3D3' },
+            bottom: { style: 'thin' as const, color: '#D3D3D3' },
+            left: { style: 'thin' as const, color: '#D3D3D3' },
+            right: { style: 'thin' as const, color: '#D3D3D3' },
+        },
+    } as IExcelCellStyle,
+
+    percentageReportStyle: {
+        font: { bold: false, size: 11 },
+        numFmt: '0.0%',
+        alignment: { horizontal: 'right' as const, vertical: 'middle' as const },
+        border: {
+            top: { style: 'thin' as const, color: '#D3D3D3' },
+            bottom: { style: 'thin' as const, color: '#D3D3D3' },
+            left: { style: 'thin' as const, color: '#D3D3D3' },
+            right: { style: 'thin' as const, color: '#D3D3D3' },
+        },
+    } as IExcelCellStyle,
+
+    percentageBoldReportStyle: {
+        font: { bold: true, size: 11 },
+        numFmt: '0.0%',
+        alignment: { horizontal: 'right' as const, vertical: 'middle' as const },
+        border: {
+            top: { style: 'thin' as const, color: '#D3D3D3' },
+            bottom: { style: 'thin' as const, color: '#D3D3D3' },
+            left: { style: 'thin' as const, color: '#D3D3D3' },
+            right: { style: 'thin' as const, color: '#D3D3D3' },
+        },
+    } as IExcelCellStyle,
+
+    totalRowLabelStyle: {
+        font: { bold: true, size: 11, color: '#000000' },
+        fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#F2F2F2' },
+        alignment: { horizontal: 'left' as const, vertical: 'middle' as const },
+        border: {
+            top: { style: 'thin' as const, color: '#D3D3D3' },
+            bottom: { style: 'double' as const, color: '#000000' },
+            left: { style: 'thin' as const, color: '#D3D3D3' },
+            right: { style: 'thin' as const, color: '#D3D3D3' },
+        },
+    } as IExcelCellStyle,
+
+    totalRowAmountStyle: {
+        font: { bold: true, size: 11, color: '#000000' },
+        fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#F2F2F2' },
+        numFmt: '₹ #,##0.00',
+        alignment: { horizontal: 'right' as const, vertical: 'middle' as const },
+        border: {
+            top: { style: 'thin' as const, color: '#D3D3D3' },
+            bottom: { style: 'double' as const, color: '#000000' },
+            left: { style: 'thin' as const, color: '#D3D3D3' },
+            right: { style: 'thin' as const, color: '#D3D3D3' },
+        },
+    } as IExcelCellStyle,
+
+    totalRowPercentageStyle: {
+        font: { bold: true, size: 11, color: '#000000' },
+        fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#F2F2F2' },
+        numFmt: '0.0%',
+        alignment: { horizontal: 'right' as const, vertical: 'middle' as const },
+        border: {
+            top: { style: 'thin' as const, color: '#D3D3D3' },
+            bottom: { style: 'double' as const, color: '#000000' },
+            left: { style: 'thin' as const, color: '#D3D3D3' },
+            right: { style: 'thin' as const, color: '#D3D3D3' },
+        },
+    } as IExcelCellStyle,
+
+    letterheadOrgStyle: {
+        font: { bold: true, size: 20, color: '#FFFFFF', name: 'Calibri' },
+        fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#1F4E78' },
+        alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
+    } as IExcelCellStyle,
+
+    letterheadTaglineStyle: {
+        font: { bold: false, size: 11, color: '#BDD7EE', italic: true, name: 'Calibri' },
+        fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#1F4E78' },
+        alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
+    } as IExcelCellStyle,
+
+    letterheadInfoStyle: {
+        font: { bold: false, size: 9, color: '#DDEBF7', name: 'Calibri' },
+        fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#1F4E78' },
+        alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
+    } as IExcelCellStyle,
+
+    letterheadDividerStyle: {
+        fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#F4A623' },
     } as IExcelCellStyle,
 };

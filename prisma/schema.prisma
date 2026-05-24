@@ -80,6 +80,8 @@ model UserProfile {
   transactionCreator Transaction[] @relation("TransactionCreator")
   expenses           Expense[]
   comments           Comment[]     @relation("CommentAuthor")
+  EarningCreator     Earning[]     @relation("EarningCreator")
+  EarningReceivedBy  Earning[]     @relation("EarningReceivedBy")
 
   @@index([email])
   @@index([authUserId])
@@ -529,8 +531,12 @@ model Earning {
   account       Account? @relation(fields: [accountId], references: [id])
   transactionId String?  @unique @db.VarChar(255)
 
-  earningDate  DateTime
-  receivedDate DateTime?
+  earningDate DateTime?
+
+  createdById  String?      @db.VarChar(255) // User ID
+  createdBy    UserProfile? @relation("EarningCreator", fields: [createdById], references: [id])
+  receivedById String?      @db.VarChar(255) // User ID
+  receivedBy   UserProfile? @relation("EarningReceivedBy", fields: [receivedById], references: [id])
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

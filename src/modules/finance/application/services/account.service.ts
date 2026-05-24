@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { ACCOUNT_REPOSITORY } from '../../domain/repositories/account.repository.interface';
 import type { IAccountRepository } from '../../domain/repositories/account.repository.interface';
-import { AccountDetailDto, AccountDetailFilterDto, AddFundDto, CreateAccountDto, FixTransactionDto, TransferDto, UpdateAccountDto } from '../dto/account.dto';
+import { AccountDetailDto, AccountDetailFilterDto, AccountRefDataDto, AddFundDto, CreateAccountDto, FixTransactionDto, TransferDto, UpdateAccountDto } from '../dto/account.dto';
 import { PagedResult } from 'src/shared/models/paged-result';
 import { BaseFilter } from 'src/shared/models/base-filter-props';
 import { CreateAccountUseCase } from '../use-cases/create-account.use-case';
@@ -13,7 +13,6 @@ import { TransactionDtoMapper } from '../dto/mapper/transaction-dto.mapper';
 import { BusinessException } from 'src/shared/exceptions/business-exception';
 import { type ITransactionRepository, TRANSACTION_REPOSITORY } from '../../domain/repositories/transaction.repository.interface';
 import { AccountFilter, AccountStatus, AccountType } from '../../domain/model/account.model';
-import { AccountRefDataDto } from '../dto/donation.dto';
 import { MetadataService } from '../../infrastructure/external/metadata.service';
 import { toKeyValueDto } from 'src/shared/utilities/kv-config.util';
 import { TransactionRefType, TransactionType } from '../../domain/model/transaction.model';
@@ -184,7 +183,6 @@ export class AccountService {
       accountStatuses: data.acc_status.map(toKeyValueDto),
       accountTypes: data.acc_type.map(toKeyValueDto),
       transactionRefTypes: data.txn_types.map(toKeyValueDto),
-      expenseStatuses: data.exp_status.map(toKeyValueDto),
     };
   }
 }
