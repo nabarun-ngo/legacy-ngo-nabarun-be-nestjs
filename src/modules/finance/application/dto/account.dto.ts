@@ -164,11 +164,6 @@ export class CreateAccountDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsNumber()
-  initialBalance?: number;
-
-  @ApiPropertyOptional()
-  @IsOptional()
   @IsString()
   description?: string;
 

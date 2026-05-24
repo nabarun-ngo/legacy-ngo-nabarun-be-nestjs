@@ -1,6 +1,7 @@
 import { AggregateRoot } from '../../../../shared/models/aggregate-root';
 import { BusinessException } from '../../../../shared/exceptions/business-exception';
 import { randomUUID } from 'crypto';
+import { ActivityCompletedEvent } from '../events/activity-completed.event';
 
 export enum ActivityScale {
   TASK = 'TASK',
@@ -32,7 +33,6 @@ export enum ActivityStatus {
   COMPLETED = 'COMPLETED',
   CANCELLED = 'CANCELLED',
   ON_HOLD = 'ON_HOLD',
-  POSTPONED = 'POSTPONED',
 }
 
 export enum ActivityPriority {
@@ -253,24 +253,23 @@ export class Activity extends AggregateRoot<string> {
   }
 
   public updateStatus(newStatus: ActivityStatus): void {
-    if (this.#status === ActivityStatus.COMPLETED && newStatus !== ActivityStatus.COMPLETED) {
-      throw new BusinessException('Cannot change status of completed activity');
-    }
-
-    if (newStatus === ActivityStatus.CANCELLED && this.#status === ActivityStatus.COMPLETED) {
-      throw new BusinessException('Cannot cancel completed activity');
+    if (this.#status === ActivityStatus.COMPLETED || this.#status === ActivityStatus.CANCELLED) {
+      throw new BusinessException('Cannot change status of completed or cancelled activity');
     }
 
     this.#status = newStatus;
 
-    if (newStatus === ActivityStatus.IN_PROGRESS && !this.#actualStartDate) {
+    if (newStatus === ActivityStatus.IN_PROGRESS) {
       this.#actualStartDate = new Date();
     }
 
-    if (newStatus === ActivityStatus.COMPLETED && !this.#actualEndDate) {
+    if (newStatus === ActivityStatus.COMPLETED) {
       this.#actualEndDate = new Date();
+      this.addDomainEvent(new ActivityCompletedEvent(this));
     }
   }
+
+
 
   public updateActualParticipants(count: number): void {
     if (count < 0) {
@@ -318,6 +317,24 @@ export class Activity extends AggregateRoot<string> {
 
   public isTask(): boolean {
     return this.#scale === ActivityScale.TASK;
+  }
+
+  get nextStatus(): ActivityStatus[] {
+    switch (this.#status) {
+      case ActivityStatus.PLANNED:
+        return [ActivityStatus.IN_PROGRESS, ActivityStatus.ON_HOLD, ActivityStatus.CANCELLED];
+      case ActivityStatus.IN_PROGRESS:
+        return [ActivityStatus.COMPLETED, ActivityStatus.ON_HOLD, ActivityStatus.CANCELLED];
+      case ActivityStatus.ON_HOLD:
+        return [ActivityStatus.IN_PROGRESS, ActivityStatus.CANCELLED];
+      case ActivityStatus.COMPLETED:
+      case ActivityStatus.CANCELLED:
+        return [];
+      case ActivityStatus.CONFIRMED:
+        return [ActivityStatus.IN_PROGRESS, ActivityStatus.ON_HOLD, ActivityStatus.CANCELLED];
+      default:
+        return [];
+    }
   }
 }
 

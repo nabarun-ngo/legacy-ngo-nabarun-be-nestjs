@@ -82,6 +82,8 @@ class DonationRepository implements IDonationRepository {
     const where: Prisma.DonationWhereInput = {
       ...(props?.type && props.type.length > 0 ? { type: { in: props.type } } : {}),
       ...(props?.status && props.status.length > 0 ? { status: { in: props.status } } : {}),
+      ...(props?.forEventId ? { forEventId: props.forEventId } : {}),
+
       ...(props?.donorId ? { donorId: props.donorId } : {}),
       ...(props?.donorName ? {
         OR: [

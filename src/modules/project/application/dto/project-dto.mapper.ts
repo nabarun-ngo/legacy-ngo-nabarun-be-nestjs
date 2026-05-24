@@ -31,6 +31,7 @@ export class ProjectDtoMapper {
       metadata: project.metadata,
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
+      nextStatus: project.nextStatus
     };
   }
 }
@@ -72,6 +73,7 @@ export class ActivityDtoMapper {
       metadata: activity.metadata,
       createdAt: activity.createdAt,
       updatedAt: activity.updatedAt,
+      nextStatus: activity.nextStatus
     };
   }
 }

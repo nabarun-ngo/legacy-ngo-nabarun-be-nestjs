@@ -76,17 +76,17 @@ export class CreateAccountUseCase implements IUseCase<CreateAccountDto, Account>
 
     const savedAccount = await this.accountRepository.create(account);
 
-    if (request?.initialBalance && request.initialBalance > 0) {
-      await this.transactionUseCase.execute({
-        accountId: savedAccount?.id!,
-        txnAmount: request.initialBalance!,
-        currency: 'INR',
-        txnDescription: `Initial Balance for Account`,
-        txnType: TransactionType.IN,
-        txnDate: account.createdAt,
-        txnRefType: TransactionRefType.NONE,
-      })
-    }
+    // if (request?.initialBalance && request.initialBalance > 0) {
+    //   await this.transactionUseCase.execute({
+    //     accountId: savedAccount?.id!,
+    //     txnAmount: request.initialBalance!,
+    //     currency: 'INR',
+    //     txnDescription: `Initial Balance for Account`,
+    //     txnType: TransactionType.IN,
+    //     txnDate: account.createdAt,
+    //     txnRefType: TransactionRefType.NONE,
+    //   })
+    // }
 
     // Emit domain events
     for (const event of savedAccount.domainEvents) {
