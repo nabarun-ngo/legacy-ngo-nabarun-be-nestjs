@@ -13,7 +13,6 @@ import { EarningStatus } from 'src/modules/finance/domain/model/earning.model';
 import { AccountStatus } from 'src/modules/finance/domain/model/account.model';
 import { DonationStatus } from 'src/modules/finance/domain/model/donation.model';
 import { MetadataService } from 'src/modules/finance/infrastructure/external/metadata.service';
-import { groupBy } from 'lodash';
 
 // Styling definitions
 const thinBorder = {
@@ -108,6 +107,26 @@ const totalRowAmountStyle = {
 const totalRowPercentageStyle = {
     ...totalRowAmountStyle,
     numFmt: '0.0%',
+};
+
+const letterheadBg = { fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#1F4E78' } };
+const letterheadOrgStyle = {
+    font: { bold: true, size: 20, color: '#FFFFFF', name: 'Calibri' },
+    fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#1F4E78' },
+    alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
+};
+const letterheadTaglineStyle = {
+    font: { bold: false, size: 11, color: '#BDD7EE', italic: true, name: 'Calibri' },
+    fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#1F4E78' },
+    alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
+};
+const letterheadInfoStyle = {
+    font: { bold: false, size: 9, color: '#DDEBF7', name: 'Calibri' },
+    fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#1F4E78' },
+    alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
+};
+const letterheadDividerStyle = {
+    fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#F4A623' },
 };
 
 @Injectable()
@@ -217,6 +236,7 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
         const summarySheet = excelBuilder.addSheet({
             name: 'Annual Summary',
             autoSizeColumns: false,
+            protection: {},
         });
 
         // Setup custom column widths
@@ -235,26 +255,6 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
 
         // ── Letterhead (rows 1-4) ──────────────────────────────────────────────
         const data = summarySheet;
-
-        const letterheadBg = { fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#1F4E78' } };
-        const letterheadOrgStyle = {
-            font: { bold: true, size: 20, color: '#FFFFFF', name: 'Calibri' },
-            fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#1F4E78' },
-            alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
-        };
-        const letterheadTaglineStyle = {
-            font: { bold: false, size: 11, color: '#BDD7EE', italic: true, name: 'Calibri' },
-            fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#1F4E78' },
-            alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
-        };
-        const letterheadInfoStyle = {
-            font: { bold: false, size: 9, color: '#DDEBF7', name: 'Calibri' },
-            fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#1F4E78' },
-            alignment: { horizontal: 'center' as const, vertical: 'middle' as const },
-        };
-        const letterheadDividerStyle = {
-            fill: { type: 'pattern' as const, pattern: 'solid' as const, fgColor: '#F4A623' },
-        };
 
         data
             // Row 1: Organisation name
@@ -317,10 +317,7 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
             .setCell(16, 2, 'Amount', { ...labelBoldStyle, alignment: { horizontal: 'right' as const } })
             .setCell(16, 3, '% of Income', { ...labelBoldStyle, alignment: { horizontal: 'right' as const } });
 
-        // NOTE: incomeRowStart is 17 — adjust to 13 because letterhead is only 4 rows now
-        // (rows 1-4 letterhead, row 5 spacer, row 6-8 title block, row 9 spacer,
-        //  row 10-13 overview, row 14 spacer, row 15-16 income header → incomeRowStart = 17)
-        // Recalculate to match actual row 17:
+
 
         let incomeRow = incomeRowStart;
         for (const income of incomeMap) {
@@ -363,26 +360,27 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
         refData.acc_type.forEach(item => accTypeMap.set(item.KEY, item.VALUE));
         const accountRows = accounts.map(acc => ({
             accountId: acc.id,
-            accountName: acc.name,
+            accountName: acc.accountHolderName,
             accountType: accTypeMap.get(acc.type) || acc.type,
             status: acc.status,
             currency: acc.currency || 'INR',
             balance: acc.balance,
-            description: acc.description || '-',
+            activatedOn: safeFormatDate(acc.activatedOn) || '-',
         }));
 
         excelBuilder.addSheet({
             name: 'Account Summary',
             freezePane: { row: 1 },
             autoFilter: true,
+            protection: {},
             columns: [
                 { header: 'Account ID', key: 'accountId', width: 15 },
                 { header: 'Account Name', key: 'accountName', width: 25 },
                 { header: 'Account Type', key: 'accountType', width: 15 },
                 { header: 'Status', key: 'status', width: 12 },
+                { header: 'Activated Date', key: 'activatedOn', width: 15 },
                 { header: 'Currency', key: 'currency', width: 10 },
                 { header: 'Closing Balance', key: 'balance', width: 18, style: { numFmt: rupeeFmt, alignment: { horizontal: 'right' as const } } },
-                { header: 'Description', key: 'description', width: 35 },
             ],
         })
             .addRows(accountRows)
@@ -391,6 +389,12 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
         // ==========================================
         // 3. SHEET: DONATIONS DETAILS
         // ==========================================
+        const donationTypeMap = new Map<string, string>();
+        refData.donationType.forEach(item => donationTypeMap.set(item.KEY, item.VALUE));
+
+        const donationStatusMap = new Map<string, string>();
+        refData.donationStatus.forEach(item => donationStatusMap.set(item.KEY, item.VALUE));
+
         const paymentMethodMap = new Map<string, string>();
         refData.paymentMethod.forEach(item => paymentMethodMap.set(item.KEY, item.VALUE));
 
@@ -401,18 +405,20 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
             const activityName = d.activityName || '-';
             return {
                 donationId: d.id,
+                donationType: `${donationTypeMap.get(d.type) || d.type}${d.isGuest === true ? ' (Guest)' : ''}`,
                 donorName: d.donorName,
                 donorEmail: d.donorEmail || '-',
                 donorPhone: d.donorNumber || '-',
                 amount: d.amount,
+                period: d.type == 'REGULAR' ? `${safeFormatDate(d.startDate)} - ${safeFormatDate(d.endDate)}` : "",
                 currency: d.currency || 'INR',
                 raisedOn: safeFormatDate(d.raisedOn),
+                status: donationStatusMap.get(d.status) || d.status,
                 paidOn: safeFormatDate(d.paidOn),
-                paymentMethod: paymentMethodMap.get(d.paymentMethod!) || d.paymentMethod || '-',
-                paidUsingUPI: upiTypeMap.get(d.paidUsingUPI!) || d.paidUsingUPI || '-',
+                paymentMethod: paymentMethodMap.get(d.paymentMethod ?? '') || d.paymentMethod || '-',
+                paidUsingUPI: upiTypeMap.get(d.paidUsingUPI ?? '') || d.paidUsingUPI || '-',
                 transactionRef: d.transactionRef || '-',
                 activityName: activityName,
-                status: d.status,
                 confirmedBy: d.confirmedBy?.fullName || '-',
                 confirmedOn: safeFormatDate(d.confirmedOn),
                 remarks: d.remarks || '-',
@@ -423,23 +429,26 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
             name: 'Donations Details',
             freezePane: { row: 1 },
             autoFilter: true,
+            protection: {},
             columns: [
                 { header: 'Donation ID', key: 'donationId', width: 15 },
+                { header: 'Donation Type', key: 'donationType', width: 15 },
                 { header: 'Donor Name', key: 'donorName', width: 25 },
-                { header: 'Email', key: 'donorEmail', width: 25 },
-                { header: 'Phone', key: 'donorPhone', width: 15 },
-                { header: 'Amount', key: 'amount', width: 15, style: { numFmt: rupeeFmt, alignment: { horizontal: 'right' as const } } },
+                { header: 'Donor Email', key: 'donorEmail', width: 25 },
+                { header: 'Donor Phone', key: 'donorPhone', width: 15 },
                 { header: 'Currency', key: 'currency', width: 10 },
+                { header: 'Donation Amount', key: 'amount', width: 15, style: { numFmt: rupeeFmt, alignment: { horizontal: 'right' as const } } },
+                { header: 'Donation Period', key: 'period', width: 15 },
                 { header: 'Raised Date', key: 'raisedOn', width: 15 },
+                { header: 'Donation Status', key: 'status', width: 12 },
                 { header: 'Paid Date', key: 'paidOn', width: 15 },
                 { header: 'Payment Method', key: 'paymentMethod', width: 15 },
                 { header: 'UPI Type', key: 'paidUsingUPI', width: 15 },
                 { header: 'Transaction Ref', key: 'transactionRef', width: 20 },
-                { header: 'Activity Name', key: 'activityName', width: 25 },
-                { header: 'Status', key: 'status', width: 12 },
                 { header: 'Confirmed By', key: 'confirmedBy', width: 20 },
-                { header: 'Confirmed On', key: 'confirmedOn', width: 15 },
-                { header: 'Remarks', key: 'remarks', width: 30 },
+                { header: 'Confirmed Date', key: 'confirmedOn', width: 15 },
+                { header: 'Activity Name', key: 'activityName', width: 25 },
+                { header: 'Remarks', key: 'remarks', width: 25 },
             ],
         })
             .addRows(donationRows)
@@ -456,13 +465,17 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
 
         const earningRows = earnings.map(earn => ({
             earningId: earn.id,
-            category: earningTypeMap.get(earn.category!) || earn.category || '-',
-            amount: earn.amount,
-            currency: earn.currency || 'INR',
-            earningDate: safeFormatDate(earn.earningDate),
+            category: earningTypeMap.get(earn.category) || earn.category || '-',
             source: earn.source || '-',
             description: earn.description || '-',
-            status: earningStatusMap.get(earn.status!) || earn.status || '-',
+            currency: earn.currency || 'INR',
+            amount: earn.amount,
+            status: earningStatusMap.get(earn.status) || earn.status || '-',
+            accountId: earn.accountId || '-',
+            transactionId: earn.transactionId || '-',
+            earningDate: safeFormatDate(earn.earningDate),
+            receivedBy: earn.receivedBy?.fullName || '-',
+            createdBy: earn.createdBy?.fullName || '-',
             referenceId: earn.referenceId || '-',
         }));
 
@@ -470,15 +483,20 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
             name: 'Earnings Details',
             freezePane: { row: 1 },
             autoFilter: true,
+            protection: {},
             columns: [
                 { header: 'Earning ID', key: 'earningId', width: 15 },
                 { header: 'Category', key: 'category', width: 15 },
+                { header: 'Source', key: 'source', width: 25 },
+                { header: 'Description', key: 'description', width: 35 },
                 { header: 'Amount', key: 'amount', width: 15, style: { numFmt: rupeeFmt, alignment: { horizontal: 'right' as const } } },
                 { header: 'Currency', key: 'currency', width: 10 },
                 { header: 'Earning Date', key: 'earningDate', width: 15 },
-                { header: 'Source', key: 'source', width: 25 },
-                { header: 'Description', key: 'description', width: 35 },
                 { header: 'Status', key: 'status', width: 12 },
+                { header: 'Account ID', key: 'accountId', width: 15 },
+                { header: 'Transaction ID', key: 'transactionId', width: 20 },
+                { header: 'Received By', key: 'receivedBy', width: 20 },
+                { header: 'Created By', key: 'createdBy', width: 20 },
                 { header: 'Reference ID', key: 'referenceId', width: 20 },
             ],
         })
@@ -498,18 +516,22 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
             const activityName = e.activityName || '-';
             return {
                 expenseId: e.id,
+                category: expenseTypeMap.get(e.referenceType ?? '') || e.referenceType || '-',
                 name: e.name,
-                activityName: activityName,
-                category: expenseTypeMap.get(e.referenceType!) || e.referenceType || '-',
-                amount: e.amount,
-                currency: e.currency || 'INR',
-                date: safeFormatDate(e.expenseDate),
-                status: expenseStatusMap.get(e.status!) || e.status || '-',
                 description: e.description || '-',
+                currency: e.currency || 'INR',
+                amount: e.amount,
+                status: expenseStatusMap.get(e.status) || e.status || '-',
+                date: safeFormatDate(e.expenseDate),
                 requestedBy: e.requestedBy?.fullName || '-',
                 paidBy: e.paidBy?.fullName || '-',
+                finalizedBy: e.finalizedBy?.fullName || '-',
+                settledBy: e.settledBy?.fullName || '-',
                 settledOn: safeFormatDate(e.settledDate),
+                accountId: e.accountId || '-',
+                transactionId: e.transactionId || '-',
                 remarks: e.remarks || '-',
+                activityName: activityName,
             };
         });
 
@@ -517,20 +539,25 @@ export class AuditReportProvider implements IReportProvider<{ financialYear: str
             name: 'Expenses Details',
             freezePane: { row: 1 },
             autoFilter: true,
+            protection: {},
             columns: [
                 { header: 'Expense ID', key: 'expenseId', width: 15 },
+                { header: 'Expense Type', key: 'category', width: 15 },
                 { header: 'Name', key: 'name', width: 25 },
-                { header: 'Activity Name', key: 'activityName', width: 25 },
-                { header: 'Category (Ref Type)', key: 'category', width: 20 },
-                { header: 'Amount', key: 'amount', width: 15, style: { numFmt: rupeeFmt, alignment: { horizontal: 'right' as const } } },
-                { header: 'Currency', key: 'currency', width: 10 },
-                { header: 'Date', key: 'date', width: 15 },
-                { header: 'Status', key: 'status', width: 12 },
                 { header: 'Description', key: 'description', width: 35 },
+                { header: 'Currency', key: 'currency', width: 10 },
+                { header: 'Amount', key: 'amount', width: 15, style: { numFmt: rupeeFmt, alignment: { horizontal: 'right' as const } } },
+                { header: 'Status', key: 'status', width: 12 },
+                { header: 'Expense Date', key: 'date', width: 15 },
                 { header: 'Requested By', key: 'requestedBy', width: 20 },
                 { header: 'Paid By', key: 'paidBy', width: 20 },
+                { header: 'Finalized By', key: 'finalizedBy', width: 20 },
+                { header: 'Settled By', key: 'settledBy', width: 20 },
                 { header: 'Settled Date', key: 'settledOn', width: 15 },
+                { header: 'Account ID', key: 'accountId', width: 15 },
+                { header: 'Transaction ID', key: 'transactionId', width: 20 },
                 { header: 'Remarks', key: 'remarks', width: 30 },
+                { header: 'Activity Name', key: 'activityName', width: 25 },
             ],
         })
             .addRows(expenseRows)

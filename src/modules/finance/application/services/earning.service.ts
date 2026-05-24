@@ -10,6 +10,7 @@ import { EarningDtoMapper } from '../dto/mapper/earning-dto.mapper';
 import { BusinessException } from 'src/shared/exceptions/business-exception';
 import { MetadataService } from '../../infrastructure/external/metadata.service';
 import { toKeyValueDto } from 'src/shared/utilities/kv-config.util';
+import { AuthUser } from 'src/modules/shared/auth/domain/models/api-user.model';
 
 @Injectable()
 export class EarningService {
@@ -44,13 +45,13 @@ export class EarningService {
     return EarningDtoMapper.toDto(earning);
   }
 
-  async create(dto: CreateEarningDto): Promise<EarningDetailDto> {
-    const earning = await this.createEarningUseCase.execute(dto);
+  async create(dto: CreateEarningDto, user: AuthUser): Promise<EarningDetailDto> {
+    const earning = await this.createEarningUseCase.execute({ dto, userId: user.profile_id! });
     return EarningDtoMapper.toDto(earning);
   }
 
-  async update(id: string, dto: UpdateEarningDto): Promise<EarningDetailDto> {
-    const earning = await this.updateEarningUseCase.execute({ id, dto });
+  async update(id: string, dto: UpdateEarningDto, user: AuthUser): Promise<EarningDetailDto> {
+    const earning = await this.updateEarningUseCase.execute({ id, dto, userId: user.profile_id! });
     return EarningDtoMapper.toDto(earning);
   }
 

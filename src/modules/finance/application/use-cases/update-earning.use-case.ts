@@ -9,14 +9,14 @@ import { CreateTransactionUseCase } from './create-transaction.use-case';
 import { TransactionRefType, TransactionType } from '../../domain/model/transaction.model';
 
 @Injectable()
-export class UpdateEarningUseCase implements IUseCase<{ id: string; dto: UpdateEarningDto }, Earning> {
+export class UpdateEarningUseCase implements IUseCase<{ id: string; dto: UpdateEarningDto, userId: string }, Earning> {
   constructor(
     @Inject(EARNING_REPOSITORY)
     private readonly earningRepository: IEarningRepository,
     private readonly createTransactionUseCase: CreateTransactionUseCase,
   ) { }
 
-  async execute(request: { id: string; dto: UpdateEarningDto }): Promise<Earning> {
+  async execute(request: { id: string; dto: UpdateEarningDto, userId: string }): Promise<Earning> {
     const earning = await this.earningRepository.findById(request.id);
     if (!earning) {
       throw new BusinessException(`Earning not found with id: ${request.id}`);
@@ -37,7 +37,7 @@ export class UpdateEarningUseCase implements IUseCase<{ id: string; dto: UpdateE
         throw new BusinessException('Earning Date is required to mark earning as received');
       }
 
-      earning.markAsReceived(request.dto.accountId, request.dto.earningDate);
+      earning.markAsReceived(request.dto.accountId, request.dto.earningDate, request.userId);
       const transactionRef = await this.createTransactionUseCase.execute({
         txnAmount: earning.amount,
         currency: earning.currency,
