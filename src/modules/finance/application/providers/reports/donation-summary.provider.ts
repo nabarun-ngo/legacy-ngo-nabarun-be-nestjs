@@ -3,16 +3,15 @@ import { IReportProvider, ReportGeneratedData } from '../../../../reporting/doma
 import { DateTime } from 'luxon';
 import { fileTypeFromBuffer } from 'file-type';
 import { ReportProvider } from 'src/modules/reporting/domain/reporting.interface';
-import { Role } from 'src/modules/user/domain/model/role.model';
 import { formatDate } from 'src/shared/utilities/common.util';
 import { DONATION_REPOSITORY, type IDonationRepository } from 'src/modules/finance/domain/repositories/donation.repository.interface';
-import { ConfigService } from '@nestjs/config';
 import { Donation, DonationStatus, DonationType, PaymentMethod } from 'src/modules/finance/domain/model/donation.model';
 import { DocumentGeneratorService } from 'src/modules/shared/document-generator/services/document-generator.service';
 import { Configkey } from 'src/shared/config-keys';
 import { groupBy } from 'lodash';
 import { IExcelRowData } from 'src/modules/shared/document-generator/interfaces/excel-generator.interface';
 import { FieldDef } from 'src/shared/models/custom-field-def';
+import { ExcelStyles } from 'src/modules/shared/document-generator/services/excel-builder.service';
 
 @Injectable()
 @ReportProvider()
@@ -22,7 +21,6 @@ export class DonationSummaryReportProvider implements IReportProvider<{ startDat
         @Inject(DONATION_REPOSITORY)
         private readonly donationRepository: IDonationRepository,
         private readonly documentGenerator: DocumentGeneratorService,
-        private readonly configService: ConfigService,
     ) { }
     reportParams: FieldDef<'startDate' | 'endDate'>[] = [
         {
@@ -73,7 +71,7 @@ export class DonationSummaryReportProvider implements IReportProvider<{ startDat
             format: 'MMM yyyy'
         })
 
-        const password = this.configService.get(Configkey.APP_SECRET);
+        const password = crypto.randomUUID();
 
         const paidDonations = await this.donationRepository.findAll({
             ...request.on === 'paidOn' ? {
@@ -177,150 +175,54 @@ export class DonationSummaryReportProvider implements IReportProvider<{ startDat
             },
         });
 
-        const leftPadding = 2;
-        const allborder: any = { bottom: { style: 'thin' }, left: { style: 'thin' }, right: { style: 'thin' }, top: { style: 'thin' } };
         summarySheet
-            .setColumnWidth(leftPadding + 1, 30)
-            .setColumnWidth(leftPadding + 2, 15)
-            .setColumnWidth(leftPadding + 3, 20)
-            .setColumnWidth(leftPadding + 4, 15)
-            .setCell(1, leftPadding + 1, 'Donation Summary Report', { font: { bold: true, size: 18 } })
-            .setCell(2, leftPadding + 1, `Period: ${formatDate(request.startDate, { format: 'dd/MM/yyyy' })} to ${formatDate(request.endDate, { format: 'dd/MM/yyyy' })}`, { font: { italic: true } })
+            .setColumnWidth(1, 30)
+            .setColumnWidth(2, 15)
+            .setColumnWidth(3, 20)
+            .setColumnWidth(4, 15)
+            .addReportHeader({
+                title: 'Donation Summary Report',
+                subtitle: `Period: ${formatDate(request.startDate, { format: 'dd/MM/yyyy' })} to ${formatDate(request.endDate, { format: 'dd/MM/yyyy' })}`,
+                mergeColumns: 4,
+                generationDate: new Date(),
+            })
 
-            .setCell(4, leftPadding + 1, 'Key Metrics', { font: { bold: true, size: 12 }, fill: { type: 'pattern', pattern: 'solid', fgColor: 'FFCC99' }, border: allborder })
-            .mergeCells(4, leftPadding + 1, 4, leftPadding + 2)
-            .setCell(5, leftPadding + 1, 'Total Paid Amount in ' + monthName, { border: allborder })
-            .setCell(5, leftPadding + 2, summaryData.totalPaidAmount, { numFmt: '₹ #,##0.00', border: allborder })
-            .setCell(6, leftPadding + 1, 'Total Paid Count in ' + monthName, { border: allborder })
-            .setCell(6, leftPadding + 2, summaryData.totalPaidCount, { border: allborder })
-            .setCell(7, leftPadding + 1, 'Total Pending Amount', { border: allborder })
-            .setCell(7, leftPadding + 2, summaryData.totalPendingAmount, { numFmt: '₹ #,##0.00', border: allborder })
-            .setCell(8, leftPadding + 1, 'Total Pending Count', { border: allborder })
-            .setCell(8, leftPadding + 2, summaryData.totalPendingCount, { border: allborder })
+            .mergeCells(10, 1, 10, 2)
+            .setCell(10, 1, 'Key Metrics', ExcelStyles.sectionHeaderStyle)
+            .setCell(11, 1, 'Total Paid Amount in ' + monthName, ExcelStyles.labelBoldStyle)
+            .setCell(11, 2, summaryData.totalPaidAmount, ExcelStyles.rupeeAmountStyle)
+            .setCell(12, 1, 'Total Paid Count in ' + monthName, ExcelStyles.labelBoldStyle)
+            .setCell(12, 2, summaryData.totalPaidCount, ExcelStyles.labelStyle)
+            .setCell(13, 1, 'Total Pending Amount', ExcelStyles.labelBoldStyle)
+            .setCell(13, 2, summaryData.totalPendingAmount, ExcelStyles.rupeeAmountStyle)
+            .setCell(14, 1, 'Total Pending Count', ExcelStyles.labelBoldStyle)
+            .setCell(14, 2, summaryData.totalPendingCount, ExcelStyles.labelStyle)
 
-            .setCell(10, leftPadding + 1, 'Account Wise Summary', { font: { bold: true, size: 12 }, fill: { type: 'pattern', pattern: 'solid', fgColor: 'FFCC99' }, border: allborder })
-            .mergeCells(10, leftPadding + 1, 10, leftPadding + 4)
-            .setCell(11, leftPadding + 1, 'Account Name', { font: { bold: true }, border: allborder })
-            .setCell(11, leftPadding + 2, 'Cash Donation', { font: { bold: true }, border: allborder })
-            .setCell(11, leftPadding + 3, 'Non-Cash Donation', { font: { bold: true }, border: allborder })
-            .setCell(11, leftPadding + 4, 'Total Amount', { font: { bold: true }, border: allborder })
+            .mergeCells(16, 1, 16, 4)
+            .setCell(16, 1, 'Account Wise Summary', ExcelStyles.sectionHeaderStyle)
+            .setCell(17, 1, 'Account Name', ExcelStyles.labelBoldStyle)
+            .setCell(17, 2, 'Cash Donation', ExcelStyles.labelBoldStyle)
+            .setCell(17, 3, 'Non-Cash Donation', ExcelStyles.labelBoldStyle)
+            .setCell(17, 4, 'Total Amount', ExcelStyles.labelBoldStyle)
 
         // Add account wise summary rows
-        let summaryCurrentRow = 12;
+        let summaryCurrentRow = 18;
         for (const acc of accountWisePaidDonationsData) {
-            summarySheet.setCell(summaryCurrentRow, leftPadding + 1, `${acc.id} - ${acc.accountHolder}`, { alignment: { wrapText: true }, border: allborder });
-            summarySheet.setCell(summaryCurrentRow, leftPadding + 2, acc.cashDonation, { numFmt: '₹ #,##0.00', border: allborder });
-            summarySheet.setCell(summaryCurrentRow, leftPadding + 3, acc.onlineDonation, { numFmt: '₹ #,##0.00', border: allborder });
-            summarySheet.setCell(summaryCurrentRow, leftPadding + 4, acc.totalDonation, { numFmt: '₹ #,##0.00', border: allborder });
+            summarySheet.setCell(summaryCurrentRow, 1, `${acc.id} - ${acc.accountHolder}`, { ...ExcelStyles.labelStyle, alignment: { wrapText: true, vertical: 'middle' } });
+            summarySheet.setCell(summaryCurrentRow, 2, acc.cashDonation, ExcelStyles.rupeeAmountStyle);
+            summarySheet.setCell(summaryCurrentRow, 3, acc.onlineDonation, ExcelStyles.rupeeAmountStyle);
+            summarySheet.setCell(summaryCurrentRow, 4, acc.totalDonation, ExcelStyles.rupeeAmountStyle);
             summaryCurrentRow++;
         }
 
         // Add footer
-        summarySheet.setCell(summaryCurrentRow + 2, leftPadding + 1, `Generated on ${formatDate(new Date(), { format: 'dd/MM/yyyy HH:mm:ss' })}`, { font: { size: 8, italic: true } });
-        summarySheet.setCell(summaryCurrentRow + 3, leftPadding + 1, `NOTE: This report is based on Donation ${request.on === 'paidOn' ? 'Payment Date' : 'Confirmation Date'}.`, { font: { size: 8, italic: true } });
+        summarySheet.setCell(summaryCurrentRow + 2, 1, `NOTE: This report is based on Donation ${request.on === 'paidOn' ? 'Payment Date' : 'Confirmation Date'}.`, { font: { size: 8, italic: true } });
 
         return await summarySheet
             .endSheet()
             .addSheet({
                 name: `Paid Donations - ${monthName}`,
-                protection: {
-                    sheet: true,
-                    password: password
-                },
-                freezePane: {
-                    row: 1
-                },
-                columns: [
-                    {
-                        header: 'Donation Id',
-                        key: 'id',
-                    },
-                    {
-                        header: 'Donation Type',
-                        key: 'donationType',
-                    },
-                    {
-                        header: 'Donation Period',
-                        key: 'period',
-                    },
-                    {
-                        header: 'Donation Amount',
-                        key: 'donationAmount',
-                        style: { numFmt: '₹ #,##0.00' }
-                    },
-                    {
-                        header: 'Donor Name',
-                        key: 'donorName',
-                    },
-                    {
-                        header: 'Paid On',
-                        key: 'paidOn',
-                    },
-                    {
-                        header: 'Paid To Account',
-                        key: 'paidToAccount',
-                    },
-                    {
-                        header: 'Payment Method',
-                        key: 'paymentMethod',
-                    },
-                    {
-                        header: 'Confirmed On',
-                        key: 'confirmedOn',
-                    },
-                    {
-                        header: 'Confirmed By',
-                        key: 'confirmedBy',
-                    },
-                    {
-                        header: 'Transaction Reference',
-                        key: 'txnId',
-                    }
-                ]
-            })
-            .addRows(paidDonationsData)
-            .endSheet()
-            .addSheet({
-                name: `Pending Donations`,
-                protection: {
-                    sheet: true,
-                    password: password
-                },
-                freezePane: {
-                    row: 1
-                },
-                columns: [
-                    {
-                        header: 'Donation Id',
-                        key: 'id',
-                    },
-                    {
-                        header: 'Donation Type',
-                        key: 'donationType',
-                    },
-                    {
-                        header: 'Donation Period',
-                        key: 'period',
-                    },
-                    {
-                        header: 'Donation Amount',
-                        key: 'donationAmount',
-                        style: { numFmt: '₹ #,##0.00' }
-                    },
-                    {
-                        header: 'Donor Name',
-                        key: 'donorName',
-                    },
-                    {
-                        header: 'Donation Status',
-                        key: 'status',
-                    }
-                ]
-            })
-            .addRows(pendingDonationsData)
-            .endSheet()
-            .addSheet({
-                name: `Pending Donations - Donor Wise`,
+                autoFilter: true,
                 autoSizeColumns: true,
                 protection: {
                     sheet: true,
@@ -330,26 +232,58 @@ export class DonationSummaryReportProvider implements IReportProvider<{ startDat
                     row: 1
                 },
                 columns: [
-                    {
-                        header: 'Donor Name',
-                        key: 'donorName',
-                    },
-                    {
-                        header: 'Total Outstanding Amount',
-                        key: 'totalDonation',
-                        style: { numFmt: '₹ #,##0.00' }
-
-                    },
-                    {
-                        header: 'Outstanding Months',
-                        key: 'pendingMonths',
-                        width: 75,
-                        style: {
-                            alignment: {
-                                wrapText: true,
-                            }
-                        }
-                    }
+                    { header: 'Donation Id', key: 'id', },
+                    { header: 'Donation Type', key: 'donationType', },
+                    { header: 'Donation Period', key: 'period', },
+                    { header: 'Donation Amount', key: 'donationAmount', style: ExcelStyles.rupeeAmountStyle },
+                    { header: 'Donor Name', key: 'donorName', },
+                    { header: 'Paid On', key: 'paidOn', },
+                    { header: 'Paid To Account', key: 'paidToAccount', },
+                    { header: 'Payment Method', key: 'paymentMethod', },
+                    { header: 'Confirmed On', key: 'confirmedOn', },
+                    { header: 'Confirmed By', key: 'confirmedBy', },
+                    { header: 'Transaction Reference', key: 'txnId', }
+                ]
+            })
+            .addRows(paidDonationsData)
+            .endSheet()
+            .addSheet({
+                name: `Pending Donations`,
+                autoFilter: true,
+                autoSizeColumns: true,
+                protection: {
+                    sheet: true,
+                    password: password
+                },
+                freezePane: {
+                    row: 1
+                },
+                columns: [
+                    { header: 'Donation Id', key: 'id', },
+                    { header: 'Donation Type', key: 'donationType', },
+                    { header: 'Donation Period', key: 'period', },
+                    { header: 'Donation Amount', key: 'donationAmount', style: ExcelStyles.rupeeAmountStyle },
+                    { header: 'Donor Name', key: 'donorName', },
+                    { header: 'Donation Status', key: 'status', }
+                ]
+            })
+            .addRows(pendingDonationsData)
+            .endSheet()
+            .addSheet({
+                name: `Pending Donations - Donor Wise`,
+                autoFilter: true,
+                autoSizeColumns: true,
+                protection: {
+                    sheet: true,
+                    password: password
+                },
+                freezePane: {
+                    row: 1
+                },
+                columns: [
+                    { header: 'Donor Name', key: 'donorName', },
+                    { header: 'Total Outstanding Amount', key: 'totalDonation', style: ExcelStyles.rupeeAmountStyle },
+                    { header: 'Outstanding Months', key: 'pendingMonths', width: 75, style: { alignment: { wrapText: true } } }
                 ]
             })
             .addRows(donorWisePendingDonationsData)

@@ -22,6 +22,8 @@ export class EarningInfraMapper {
             MapperUtils.nullToUndefined(p.accountId),
             MapperUtils.nullToUndefined(p.transactionId),
             MapperUtils.nullToUndefined(p.earningDate),
+            { id: p.createdBy?.id, fullName: `${p.createdBy?.firstName} ${p.createdBy?.lastName}` },
+            p.receivedBy ? { id: p.receivedBy.id, fullName: `${p.receivedBy.firstName} ${p.receivedBy.lastName}` } : undefined,
             p.createdAt,
             p.updatedAt,
         );

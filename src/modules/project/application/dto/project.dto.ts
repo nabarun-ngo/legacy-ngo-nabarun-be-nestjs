@@ -254,6 +254,11 @@ export class ProjectDetailDto {
   @IsDate()
   @Type(() => Date)
   updatedAt: Date;
+
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  nextStatus: ProjectStatus[];
 }
 
 export class ProjectDetailFilterDto {

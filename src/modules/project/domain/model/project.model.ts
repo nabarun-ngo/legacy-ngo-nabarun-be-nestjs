@@ -284,6 +284,20 @@ export class Project extends AggregateRoot<string> {
   get tags(): string[] { return [...this.#tags]; }
   get metadata(): Record<string, any> | undefined { return this.#metadata ? { ...this.#metadata } : undefined; }
 
+  get nextStatus(): ProjectStatus[] {
+    switch (this.#status) {
+      case ProjectStatus.PLANNING:
+        return [ProjectStatus.ACTIVE, ProjectStatus.ON_HOLD, ProjectStatus.CANCELLED];
+      case ProjectStatus.ACTIVE:
+        return [ProjectStatus.ON_HOLD, ProjectStatus.COMPLETED, ProjectStatus.CANCELLED];
+      case ProjectStatus.ON_HOLD:
+        return [ProjectStatus.ACTIVE, ProjectStatus.CANCELLED];
+      case ProjectStatus.COMPLETED:
+      case ProjectStatus.CANCELLED:
+        return [];
+    }
+  }
+
   public isActive(): boolean {
     return this.#status === ProjectStatus.ACTIVE;
   }

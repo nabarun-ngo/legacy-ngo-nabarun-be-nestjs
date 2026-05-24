@@ -302,6 +302,11 @@ export class ActivityDetailDto {
 
   @ApiProperty({ type: String, format: 'date-time' })
   updatedAt: Date;
+
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  nextStatus: ActivityStatus[]
 }
 
 export class ActivityDetailFilterDto {

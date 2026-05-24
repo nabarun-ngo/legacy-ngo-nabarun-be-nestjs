@@ -52,6 +52,16 @@ export class EarningDetailDto {
 
   @ApiPropertyOptional({ type: String, format: 'date-time' })
   updatedAt?: Date;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  receivedBy?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  createdBy?: string;
 }
 
 /**

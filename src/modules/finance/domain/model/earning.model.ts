@@ -1,3 +1,4 @@
+import { User } from 'src/modules/user/domain/model/user.model';
 import { BusinessException } from 'src/shared/exceptions/business-exception';
 import { AggregateRoot } from 'src/shared/models/aggregate-root';
 import { generateUniqueNDigitNumber } from 'src/shared/utilities/password-util';
@@ -42,6 +43,8 @@ export class Earning extends AggregateRoot<string> {
   #accountId: string | undefined;        // Account to which credited
   #transactionId: string | undefined;    // Transaction ID after receipt
   #earningDate: Date | undefined;
+  #createdBy: Partial<User>;
+  #receivedBy: Partial<User> | undefined;
   constructor(
     id: string,
     category: EarningCategory,
@@ -55,6 +58,8 @@ export class Earning extends AggregateRoot<string> {
     accountId: string | undefined,        // Account to which credited
     transactionId: string | undefined,    // Transaction ID after receipt
     earningDate: Date | undefined,
+    createdBy: Partial<User>,
+    receivedBy: Partial<User> | undefined,
     createdAt?: Date,
     updatedAt?: Date,
   ) {
@@ -70,6 +75,8 @@ export class Earning extends AggregateRoot<string> {
     this.#accountId = accountId;
     this.#transactionId = transactionId;
     this.#earningDate = earningDate;
+    this.#createdBy = createdBy;
+    this.#receivedBy = receivedBy;
   }
 
 
@@ -86,6 +93,7 @@ export class Earning extends AggregateRoot<string> {
     referenceId?: string;
     referenceType?: string;
     earningDate?: Date;
+    createdById: string;
   }): Earning {
     return new Earning(
       `NER${generateUniqueNDigitNumber(6)}`,
@@ -100,6 +108,8 @@ export class Earning extends AggregateRoot<string> {
       undefined,
       undefined,
       props.earningDate,
+      { id: props.createdById },
+      undefined,
       new Date(),
       new Date(),
     );
@@ -108,13 +118,14 @@ export class Earning extends AggregateRoot<string> {
   /**
    * Mark earning as received
    */
-  markAsReceived(accountId: string, earningDate: Date): void {
+  markAsReceived(accountId: string, earningDate: Date, receivedById: string): void {
     if (this.status !== EarningStatus.PENDING) {
       throw new BusinessException('Can only mark pending earnings as received');
     }
     this.#status = EarningStatus.RECEIVED;
     this.#accountId = accountId;
     this.#earningDate = earningDate;
+    this.#receivedBy = { id: receivedById };
   }
 
   setTransactionId(id: string) {
@@ -197,5 +208,12 @@ export class Earning extends AggregateRoot<string> {
 
   get earningDate(): Date | undefined {
     return this.#earningDate;
+  }
+  get createdBy(): Partial<User> {
+    return this.#createdBy;
+  }
+
+  get receivedBy(): Partial<User> | undefined {
+    return this.#receivedBy;
   }
 }

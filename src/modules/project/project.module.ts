@@ -24,9 +24,11 @@ import { FirebaseModule } from '../shared/firebase/firebase.module';
 import { DocumentGeneratorModule } from '../shared/document-generator/document-generator.module';
 import { ProjectReportProvider } from './application/providers/reports/project-report.provider';
 import { ActivityReportProvider } from './application/providers/reports/activity-report.provider';
+import { FinanceModule } from '../finance/finance.module';
+import { ActivityEventsHandler } from './application/handlers/activity-events.handler';
 
 @Module({
-  imports: [FirebaseModule, DocumentGeneratorModule],
+  imports: [FirebaseModule, DocumentGeneratorModule, FinanceModule],
   controllers: [ProjectController],
   providers: [
     // Repositories
@@ -50,10 +52,10 @@ import { ActivityReportProvider } from './application/providers/reports/activity
     UpdateActivityUseCase,
     ProjectReportProvider,
     ActivityReportProvider,
+    ActivityEventsHandler,
     // Services
     ProjectService,
   ],
   exports: [ProjectService],
 })
 export class ProjectModule { }
-

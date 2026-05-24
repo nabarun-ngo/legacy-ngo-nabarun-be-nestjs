@@ -10,20 +10,21 @@ import { CreateEarningDto } from '../dto/earning.dto';
 
 
 @Injectable()
-export class CreateEarningUseCase implements IUseCase<CreateEarningDto, Earning> {
+export class CreateEarningUseCase implements IUseCase<{ userId: string, dto: CreateEarningDto }, Earning> {
   constructor(
     @Inject(EARNING_REPOSITORY)
     private readonly earningRepository: IEarningRepository,
     private readonly eventEmitter: EventEmitter2,
   ) { }
 
-  async execute(request: CreateEarningDto): Promise<Earning> {
+  async execute(request: { userId: string, dto: CreateEarningDto }): Promise<Earning> {
     const earning = Earning.create({
-      category: request.category,
-      amount: request.amount,
-      currency: request.currency,
-      source: request.source,
-      description: request.description ?? '',
+      category: request.dto.category,
+      amount: request.dto.amount,
+      currency: request.dto.currency,
+      source: request.dto.source,
+      description: request.dto.description ?? '',
+      createdById: request.userId,
     });
 
     const savedEarning = await this.earningRepository.create(earning);
