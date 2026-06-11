@@ -4,6 +4,8 @@
 
 The Finance Module manages all financial operations including donations, expenses, earnings, transactions, and accounts. It supports both regular monthly donations (subscriptions) and one-time donations from guests or members.
 
+gh
+
 ## Features
 
 ### 💰 Donations
