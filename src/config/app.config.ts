@@ -1,22 +1,24 @@
 import {
-INestApplication,
-LogLevel,
-NestInterceptor,
-RequestMethod,
-ValidationPipe,
+  INestApplication,
+  LogLevel,
+  NestInterceptor,
+  RequestMethod,
+  ValidationPipe,
 } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
 import * as bodyParser from "body-parser";
 import compression from "compression";
-import { NextFunction,Request,Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { Configkey } from "src/shared/config-keys";
 import { GlobalExceptionFilter } from "src/shared/filters/global-exception.filter";
 import { TimingInterceptor } from "src/shared/interceptors/timing.interceptor";
 import {
-resolveTraceId,
-traceStorage,
+  resolveTraceId,
+  traceStorage,
 } from "src/shared/utilities/trace-context.util";
 import { configureSwagger } from "./swagger.config";
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 const parseRetentionDays = (
   value: string | undefined,
@@ -47,9 +49,9 @@ export const config = {
     fileSize: "10mb",
   },
   database: {
-    mongodbUrl: process.env[Configkey.MONGODB_URL],
-    postgresUrl: process.env[Configkey.POSTGRES_URL],
-    redisUrl: process.env[Configkey.REDIS_URL],
+    mongodbUrl: process.env[Configkey.MONGODB_URL] || "",
+    postgresUrl: process.env[Configkey.POSTGRES_URL] || "",
+    redisUrl: process.env[Configkey.REDIS_URL] || "",
     auditedModels: ["Account", "Donation", "Expense", "Transaction", "Earning"],
   },
 

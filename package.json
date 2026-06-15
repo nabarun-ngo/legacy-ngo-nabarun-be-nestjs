@@ -8,7 +8,7 @@
   "scripts": {
     "build": "npx prisma generate && nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "nest start",
+    "start": "powershell -Command \"./scripts/Start-Redis.ps1\" && nest start",
     "start:dev": "powershell -Command \"./scripts/Start-Redis.ps1\" && nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/ain",
@@ -45,6 +45,7 @@
     "compression": "^1.8.1",
     "cron-parser": "^5.4.0",
     "cronstrue": "^3.14.0",
+    "dotenv": "^17.4.2",
     "exceljs": "^4.4.0",
     "expr-eval": "^2.0.2",
     "file-type": "^21.3.0",
