@@ -1,35 +1,48 @@
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { INestApplication } from '@nestjs/common';
-import { Configkey } from 'src/shared/config-keys';
-import { SuccessResponse, ErrorResponse } from 'src/shared/models/response-model';
-import { PagedResult } from 'src/shared/models/paged-result';
+import { INestApplication } from "@nestjs/common";
+import { DocumentBuilder,SwaggerModule } from "@nestjs/swagger";
+import { Configkey } from "src/shared/config-keys";
+import { PagedResult } from "src/shared/models/paged-result";
+import {
+ErrorResponse,
+SuccessResponse,
+} from "src/shared/models/response-model";
 // DTOs used widely as output models
-import { UserDto, PhoneNumberDto, AddressDto, LinkDto, RoleDto } from 'src/modules/user/application/dto/user.dto';
+import {
+AddressDto,
+LinkDto,
+PhoneNumberDto,
+RoleDto,
+UserDto,
+} from "src/modules/user/application/dto/user.dto";
 // Add more DTO imports as needed
 
 export function configureSwagger(app: INestApplication) {
-
   const config = new DocumentBuilder()
-    .setTitle(process.env[Configkey.APP_NAME] || 'API Documentation')
-    .setDescription(`${process.env[Configkey.APP_NAME]} Backend API powered by NestJS`)
-    .setVersion('2.0')
+    .setTitle(process.env[Configkey.APP_NAME] || "API Documentation")
+    .setDescription(
+      `${process.env[Configkey.APP_NAME]} Backend API powered by NestJS`,
+    )
+    .setVersion("2.0")
     .addBearerAuth(
       {
-        type: 'http',
-        scheme: 'bearer',
-        bearerFormat: 'JWT',
-        name: 'JWT',
-        description: 'Enter JWT token',
-        in: 'header',
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+        name: "JWT",
+        description: "Enter JWT token",
+        in: "header",
       },
-      'jwt',
+      "jwt",
     )
-    .addApiKey({
-      type: 'apiKey',
-      in: 'header',
-      name: 'X-Api-Key',
-      description: 'API Key needed to access the endpoints',
-    }, 'api-key')
+    .addApiKey(
+      {
+        type: "apiKey",
+        in: "header",
+        name: "X-Api-Key",
+        description: "API Key needed to access the endpoints",
+      },
+      "api-key",
+    )
     .build();
 
   // Register extra models so they appear in the generated OpenAPI doc even if only referenced generically
@@ -69,35 +82,42 @@ export function configureSwagger(app: INestApplication) {
       //   operationId = methodKey.charAt(0).toUpperCase() + methodKey.slice(1);
       // }
       return methodKey.charAt(0).toUpperCase() + methodKey.slice(1);
-    }
+    },
   });
 
   // Post-process document to add permissions to description
   Object.values(document.paths).forEach((pathItem) => {
     Object.keys(pathItem).forEach((method) => {
       // only process http methods
-      if (['get', 'post', 'put', 'delete', 'patch', 'options', 'head'].includes(method)) {
+      if (
+        ["get", "post", "put", "delete", "patch", "options", "head"].includes(
+          method,
+        )
+      ) {
         const operation: any = pathItem[method];
-        if (operation && operation['x-required-permissions']) {
-          const permissions = operation['x-required-permissions'] as string[];
-          const requireAll = operation['x-require-all-permissions'] === true;
+        if (operation && operation["x-required-permissions"]) {
+          const permissions = operation["x-required-permissions"] as string[];
+          const requireAll = operation["x-require-all-permissions"] === true;
 
           if (Array.isArray(permissions) && permissions.length > 0) {
-            const permissionList = permissions.map((p) => `- \`${p}\``).join('\n');
+            const permissionList = permissions
+              .map((p) => `- \`${p}\``)
+              .join("\n");
             const suffix = requireAll
-              ? '\n_(All permissions required)_'
-              : '\n_(Any of these permissions)_';
+              ? "\n_(All permissions required)_"
+              : "\n_(Any of these permissions)_";
 
             const permissionText = `\n\n**Required Permissions:**\n${permissionList}${suffix}`;
 
-            operation.description = (operation.description || '') + permissionText;
+            operation.description =
+              (operation.description || "") + permissionText;
           }
         }
       }
     });
   });
 
-  SwaggerModule.setup('swagger-ui', app, document, {
-    jsonDocumentUrl: 'api/docs',
+  SwaggerModule.setup("swagger-ui", app, document, {
+    jsonDocumentUrl: "api/docs",
   });
 }

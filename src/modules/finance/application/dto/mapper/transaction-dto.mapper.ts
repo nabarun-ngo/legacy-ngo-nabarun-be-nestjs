@@ -1,5 +1,5 @@
-import { TransactionDetailDto } from "../transaction.dto";
 import { Transaction } from "../../../domain/model/transaction.model";
+import { TransactionDetailDto } from "../transaction.dto";
 
 /**
  * Transaction DTO Mapper
@@ -17,7 +17,7 @@ export class TransactionDtoMapper {
       txnRefId: transaction.referenceId,
       txnRefType: transaction.referenceType,
       accBalance: transaction.balanceAfter,
-      accTxnType: transaction.type == 'IN' ? 'Credit' : 'Debit',
+      accTxnType: transaction.type == "IN" ? "Credit" : "Debit",
       transferFrom: transaction.refAccountId,
       transferTo: transaction.accountId,
       transactionRef: transaction.transactionRef,

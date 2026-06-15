@@ -27,9 +27,7 @@ export class MapperUtils {
     mapper: (item: TSource) => TDest | null,
   ): TDest[] {
     if (!source) return [];
-    return source
-      .map(mapper)
-      .filter((item): item is TDest => item !== null);
+    return source.map(mapper).filter((item): item is TDest => item !== null);
   }
 
   /**
@@ -51,7 +49,7 @@ export class MapperUtils {
     obj: T,
     key: K,
   ): obj is T & Record<K, unknown> {
-    return obj !== null && typeof obj === 'object' && key in obj;
+    return obj !== null && typeof obj === "object" && key in obj;
   }
 
   /**
@@ -91,10 +89,10 @@ export class MapperUtils {
    * Handles optional IDs correctly
    */
   static connect<T extends { id?: any }>(
-    entity: T | undefined | null
-  ): { connect: { id: NonNullable<T['id']> } } | undefined {
-    return (entity?.id !== undefined && entity?.id !== null)
-      ? { connect: { id: entity.id as NonNullable<T['id']> } }
+    entity: T | undefined | null,
+  ): { connect: { id: NonNullable<T["id"]> } } | undefined {
+    return entity?.id !== undefined && entity?.id !== null
+      ? { connect: { id: entity.id as NonNullable<T["id"]> } }
       : undefined;
   }
 }

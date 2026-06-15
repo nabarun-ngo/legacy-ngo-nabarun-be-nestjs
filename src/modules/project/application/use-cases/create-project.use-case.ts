@@ -1,14 +1,19 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IUseCase } from '../../../../shared/interfaces/use-case.interface';
-import { Project, ProjectPhase, ProjectStatus } from '../../domain/model/project.model';
-import { PROJECT_REPOSITORY } from '../../domain/repositories/project.repository.interface';
-import type { IProjectRepository } from '../../domain/repositories/project.repository.interface';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { CreateProjectDto } from '../dto/project.dto';
-import { BusinessException } from '../../../../shared/exceptions/business-exception';
+import { Inject, Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { BusinessException } from "../../../../shared/exceptions/business-exception";
+import { IUseCase } from "../../../../shared/interfaces/use-case.interface";
+import {
+  Project,
+  ProjectPhase,
+  ProjectStatus,
+} from "../../domain/model/project.model";
+import type { IProjectRepository } from "../../domain/repositories/project.repository.interface";
+import { PROJECT_REPOSITORY } from "../../domain/repositories/project.repository.interface";
+import { CreateProjectDto } from "../dto/project.dto";
 
 @Injectable()
-export class CreateProjectUseCase implements IUseCase<CreateProjectDto, Project> {
+export class CreateProjectUseCase
+  implements IUseCase<CreateProjectDto, Project> {
   constructor(
     @Inject(PROJECT_REPOSITORY)
     private readonly projectRepository: IProjectRepository,
@@ -17,9 +22,11 @@ export class CreateProjectUseCase implements IUseCase<CreateProjectDto, Project>
 
   async execute(request: CreateProjectDto): Promise<Project> {
     // Check if project code already exists
-    const existingProject = await this.projectRepository.findByCode(request.code);
+    const existingProject = await this.projectRepository.findByCode(
+      request.code,
+    );
     if (existingProject) {
-      throw new BusinessException('Project with this code already exists');
+      throw new BusinessException("Project with this code already exists");
     }
 
     // Create domain entity
@@ -43,15 +50,14 @@ export class CreateProjectUseCase implements IUseCase<CreateProjectDto, Project>
     });
 
     // Save to repository
-    const savedProject = await this.projectRepository.create(project);
+    await this.projectRepository.create(project);
 
     // Emit domain events
-    for (const event of savedProject.domainEvents) {
+    for (const event of project.domainEvents) {
       this.eventEmitter.emit(event.constructor.name, event);
     }
-    savedProject.clearEvents();
+    project.clearEvents();
 
-    return savedProject;
+    return project;
   }
 }
-

@@ -1,8 +1,7 @@
-import { randomUUID } from 'crypto';
-import { BaseDomain } from '../../../../shared/models/base-domain';
+import { randomUUID } from "crypto";
+import { BaseDomain } from "../../../../shared/models/base-domain";
 
 export class Address extends BaseDomain<string> {
-
   // 🔒 TRUE private fields
   #addressLine1: string;
   #addressLine2?: string;
@@ -44,7 +43,7 @@ export class Address extends BaseDomain<string> {
     zipCode: string,
     state: string,
     district: string,
-    country: string
+    country: string,
   ): Address {
     return new Address(
       randomUUID(),
@@ -55,7 +54,7 @@ export class Address extends BaseDomain<string> {
       zipCode,
       state,
       district,
-      country
+      country,
     );
   }
 

@@ -1,18 +1,17 @@
-import { User } from 'src/modules/user/domain/model/user.model';
-import { BaseDomain } from '../../../../shared/models/base-domain';
-import { randomUUID } from 'crypto';
-import { BusinessException } from 'src/shared/exceptions/business-exception';
+import { randomUUID } from "crypto";
+import { User } from "src/modules/user/domain/model/user.model";
+import { BusinessException } from "src/shared/exceptions/business-exception";
+import { BaseDomain } from "../../../../shared/models/base-domain";
 
 export enum TaskAssignmentStatus {
-  PENDING = 'PENDING',
-  ACCEPTED = 'ACCEPTED',
-  REMOVED = 'REMOVED',
-  REJECTED = 'REJECTED',
+  PENDING = "PENDING",
+  ACCEPTED = "ACCEPTED",
+  REMOVED = "REMOVED",
+  REJECTED = "REJECTED",
   DELETED = "DELETED",
 }
 
 export class TaskAssignment extends BaseDomain<string> {
-
   #taskId: string;
   #assignedTo: User;
   #roleName: string | null;
@@ -109,7 +108,9 @@ export class TaskAssignment extends BaseDomain<string> {
 
   public accept(): void {
     if (this.#status !== TaskAssignmentStatus.PENDING) {
-      throw new BusinessException(`Cannot accept assignment in status: ${this.#status}`);
+      throw new BusinessException(
+        `Cannot accept assignment in status: ${this.#status}`,
+      );
     }
     this.#status = TaskAssignmentStatus.ACCEPTED;
     this.#acceptedAt = new Date();
@@ -131,7 +132,9 @@ export class TaskAssignment extends BaseDomain<string> {
 
   public reject(notes?: string): void {
     if (this.#status !== TaskAssignmentStatus.PENDING) {
-      throw new BusinessException(`Cannot reject assignment in status: ${this.#status}`);
+      throw new BusinessException(
+        `Cannot reject assignment in status: ${this.#status}`,
+      );
     }
     this.#status = TaskAssignmentStatus.REJECTED;
     this.#notes = notes;
@@ -143,7 +146,9 @@ export class TaskAssignment extends BaseDomain<string> {
       this.#status !== TaskAssignmentStatus.ACCEPTED &&
       this.#status !== TaskAssignmentStatus.PENDING
     ) {
-      throw new BusinessException(`Cannot complete assignment in status: ${this.#status}`);
+      throw new BusinessException(
+        `Cannot complete assignment in status: ${this.#status}`,
+      );
     }
     // this.#status = TaskAssignmentStatus.COMPLETED;
     this.#notes = notes;

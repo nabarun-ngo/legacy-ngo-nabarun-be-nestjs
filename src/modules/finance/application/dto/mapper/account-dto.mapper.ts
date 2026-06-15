@@ -1,14 +1,25 @@
-import { AccountDetailDto, BankDetailDto, UPIDetailDto } from "../../dto/account.dto";
-import { Account, BankDetail, UPIDetail } from "../../../domain/model/account.model";
+import {
+Account,
+BankDetail,
+UPIDetail,
+} from "../../../domain/model/account.model";
+import {
+AccountDetailDto,
+BankDetailDto,
+UPIDetailDto,
+} from "../../dto/account.dto";
 
 /**
  * Account DTO Mapper
  */
 export class AccountDtoMapper {
-  static toDto(account: Account, options: {
-    includeBankDetail?: boolean,
-    includeUpiDetail?: boolean,
-  }): AccountDetailDto {
+  static toDto(
+    account: Account,
+    options: {
+      includeBankDetail?: boolean;
+      includeUpiDetail?: boolean;
+    },
+  ): AccountDetailDto {
     return {
       id: account.id,
       balance: account.balance,
@@ -17,8 +28,14 @@ export class AccountDtoMapper {
       accountStatus: account.status,
       activatedOn: account.activatedOn,
       accountType: account.type,
-      bankDetail: account.bankDetail && options.includeBankDetail ? this.bankDetailToDto(account.bankDetail) : undefined,
-      upiDetail: account.upiDetail && options.includeUpiDetail ? this.upiDetailToDto(account.upiDetail) : undefined,
+      bankDetail:
+        account.bankDetail && options.includeBankDetail
+          ? this.bankDetailToDto(account.bankDetail)
+          : undefined,
+      upiDetail:
+        account.upiDetail && options.includeUpiDetail
+          ? this.upiDetailToDto(account.upiDetail)
+          : undefined,
     };
   }
 

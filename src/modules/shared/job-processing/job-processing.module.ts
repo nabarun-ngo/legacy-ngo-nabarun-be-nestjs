@@ -1,10 +1,10 @@
-import { Module, DynamicModule, Global } from '@nestjs/common';
-import { BullModule } from '@nestjs/bullmq';
-import { JobProcessingService } from './infrastructure/services/job-processing.service';
-import { JobProcessorRegistry } from './infrastructure/services/job-processor-registry.service';
-import { JobService } from './application/services/job.service';
-import { JobController } from './presentation/controllers/job.controller';
-import { config } from 'src/config/app.config';
+import { BullModule } from "@nestjs/bullmq";
+import { DynamicModule,Global,Module } from "@nestjs/common";
+import { config } from "src/config/app.config";
+import { JobService } from "./application/services/job.service";
+import { JobProcessingService } from "./infrastructure/services/job-processing.service";
+import { JobProcessorRegistry } from "./infrastructure/services/job-processor-registry.service";
+import { JobController } from "./presentation/controllers/job.controller";
 
 export interface JobProcessingModuleOptions {
   connection: {
@@ -18,7 +18,7 @@ export interface JobProcessingModuleOptions {
     removeOnComplete?: { age?: number; count?: number } | number;
     removeOnFail?: { age?: number; count?: number } | number;
     attempts?: number;
-    backoff?: { type: 'fixed' | 'exponential'; delay: number };
+    backoff?: { type: "fixed" | "exponential"; delay: number };
   };
   queues?: string[]; // queue names to register; defaults to ['default']
 }
@@ -30,7 +30,7 @@ export class JobProcessingModule {
     const queueNames =
       options.queues && options.queues.length > 0
         ? options.queues
-        : ['default'];
+        : ["default"];
     const queueConfigs = queueNames.map((name) => ({ name }));
     return {
       module: JobProcessingModule,
@@ -41,17 +41,11 @@ export class JobProcessingModule {
         }),
         BullModule.registerQueue(...queueConfigs),
         BullModule.registerFlowProducer({
-          name: config.jobProcessing.queueName + '-flow-producer',
+          name: config.jobProcessing.queueName + "-flow-producer",
         }),
       ],
-      providers: [
-        JobProcessingService,
-        JobProcessorRegistry,
-        JobService,
-      ],
-      exports: [
-        JobProcessingService,
-      ],
+      providers: [JobProcessingService, JobProcessorRegistry, JobService],
+      exports: [JobProcessingService],
       controllers: [JobController],
     };
   }

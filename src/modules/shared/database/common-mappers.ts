@@ -1,4 +1,3 @@
-import { AggregateRoot } from 'src/shared/models/aggregate-root';
 
 /**
  * Common mapping functions for cross-cutting concerns
@@ -16,7 +15,9 @@ export class CommonMappers {
       version?: number | null;
       deletedAt?: Date | null;
     },
-  >(source: T): {
+  >(
+    source: T,
+  ): {
     createdAt: Date;
     updatedAt: Date;
     version: number;
@@ -34,7 +35,16 @@ export class CommonMappers {
    * Map audit fields from domain model to Prisma persistence
    * Type-safe with AggregateRoot constraint
    */
-  static mapAuditFieldsToPrisma<T extends { createdAt: Date; updatedAt: Date; version: number; deletedAt?: Date }>(source: T): {
+  static mapAuditFieldsToPrisma<
+    T extends {
+      createdAt: Date;
+      updatedAt: Date;
+      version: number;
+      deletedAt?: Date;
+    },
+  >(
+    source: T,
+  ): {
     createdAt: Date;
     updatedAt: Date;
     version: number;
@@ -57,10 +67,7 @@ export class CommonMappers {
       id: string;
       [key: string]: any;
     },
-  >(
-    source: T | null | undefined,
-    fields: (keyof T)[],
-  ): Partial<T> | undefined {
+  >(source: T | null | undefined, fields: (keyof T)[]): Partial<T> | undefined {
     if (!source) return undefined;
 
     const result: Partial<T> = {};
@@ -117,7 +124,7 @@ export class CommonMappers {
     defaultValue: string[] = [],
   ): string[] {
     if (!value) return defaultValue;
-    return value.split(',').filter((v) => v.trim().length > 0);
+    return value.split(",").filter((v) => v.trim().length > 0);
   }
 
   /**
@@ -129,6 +136,6 @@ export class CommonMappers {
     defaultValue: string | null = null,
   ): string | null {
     if (!value || value.length === 0) return defaultValue;
-    return value.join(',');
+    return value.join(",");
   }
 }

@@ -1,19 +1,22 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IUseCase } from '../../../../shared/interfaces/use-case.interface';
-import { TransactionRefType, TransactionType } from '../../domain/model/transaction.model';
-import { ACCOUNT_REPOSITORY } from '../../domain/repositories/account.repository.interface';
-import type { IAccountRepository } from '../../domain/repositories/account.repository.interface';
-import { BusinessException } from '../../../../shared/exceptions/business-exception';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { generateUniqueNDigitNumber } from 'src/shared/utilities/password-util';
-import { LockingService } from 'src/modules/shared/database/locking.service';
+import { Inject,Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { LockingService } from "src/modules/shared/database/locking.service";
+import { generateUniqueNDigitNumber } from "src/shared/utilities/password-util";
+import { BusinessException } from "../../../../shared/exceptions/business-exception";
+import { IUseCase } from "../../../../shared/interfaces/use-case.interface";
+import {
+TransactionRefType,
+TransactionType,
+} from "../../domain/model/transaction.model";
+import type { IAccountRepository } from "../../domain/repositories/account.repository.interface";
+import { ACCOUNT_REPOSITORY } from "../../domain/repositories/account.repository.interface";
 
 interface CreateTeansaction {
-  txnType: TransactionType | 'TRANSFER';
+  txnType: TransactionType | "TRANSFER";
   txnAmount: number;
   currency: string;
-  accountId: string;// from Account Id
-  transferToAccountId?: string;// to Account Id
+  accountId: string; // from Account Id
+  transferToAccountId?: string; // to Account Id
   txnDescription: string;
   txnRefId?: string;
   txnRefType?: TransactionRefType;
@@ -22,34 +25,44 @@ interface CreateTeansaction {
 }
 
 @Injectable()
-export class CreateTransactionUseCase implements IUseCase<CreateTeansaction, string> {
+export class CreateTransactionUseCase
+  implements IUseCase<CreateTeansaction, string>
+{
   constructor(
     @Inject(ACCOUNT_REPOSITORY)
     private readonly accountRepository: IAccountRepository,
     private readonly eventBus: EventEmitter2,
     private readonly lockingService: LockingService,
-  ) { }
+  ) {}
 
   async execute(request: CreateTeansaction): Promise<string> {
     const lockKeys = [request.accountId];
-    if (request.txnType === 'TRANSFER' && request.transferToAccountId) {
+    if (request.txnType === "TRANSFER" && request.transferToAccountId) {
       lockKeys.push(request.transferToAccountId);
     }
 
     return await this.lockingService.withLocks(lockKeys, async () => {
       const transactionRef = `TXR${generateUniqueNDigitNumber(10)}`;
 
-      if (request.txnType === 'TRANSFER') {
+      if (request.txnType === "TRANSFER") {
         if (!request.transferToAccountId) {
-          throw new BusinessException('Transfer to account id is required');
+          throw new BusinessException("Transfer to account id is required");
         }
-        const fromAccount = await this.accountRepository.findById(request.accountId);
+        const fromAccount = await this.accountRepository.findById(
+          request.accountId,
+        );
         if (!fromAccount) {
-          throw new BusinessException('Account not found with id ' + request.accountId);
+          throw new BusinessException(
+            "Account not found with id " + request.accountId,
+          );
         }
-        const toAccount = await this.accountRepository.findById(request.transferToAccountId);
+        const toAccount = await this.accountRepository.findById(
+          request.transferToAccountId,
+        );
         if (!toAccount) {
-          throw new BusinessException('Account not found with id ' + request.transferToAccountId);
+          throw new BusinessException(
+            "Account not found with id " + request.transferToAccountId,
+          );
         }
         // Debit account
         fromAccount.debit(request.txnAmount, {
@@ -83,11 +96,15 @@ export class CreateTransactionUseCase implements IUseCase<CreateTeansaction, str
         }
         toAccount.clearEvents();
       } else {
-        const account = await this.accountRepository.findById(request.accountId);
+        const account = await this.accountRepository.findById(
+          request.accountId,
+        );
         if (!account) {
-          throw new BusinessException('Account not found with id ' + request.accountId);
+          throw new BusinessException(
+            "Account not found with id " + request.accountId,
+          );
         }
-        if (request.txnType === 'IN') {
+        if (request.txnType === "IN") {
           // Credit account
           account.credit(request.txnAmount, {
             transactionRef,
@@ -96,7 +113,7 @@ export class CreateTransactionUseCase implements IUseCase<CreateTeansaction, str
             referenceId: request.txnRefId,
             referenceType: request.txnRefType,
           });
-        } else if (request.txnType === 'OUT') {
+        } else if (request.txnType === "OUT") {
           // Debit account
           account.debit(request.txnAmount, {
             transactionRef,

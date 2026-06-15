@@ -1,15 +1,21 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IUseCase } from '../../../../shared/interfaces/use-case.interface';
-import { Account, AccountStatus, AccountType } from '../../domain/model/account.model';
-import { ACCOUNT_REPOSITORY } from '../../domain/repositories/account.repository.interface';
-import type { IAccountRepository } from '../../domain/repositories/account.repository.interface';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { CreateAccountDto } from '../dto/account.dto';
-import { type IUserRepository, USER_REPOSITORY } from 'src/modules/user/domain/repositories/user.repository.interface';
-import { BusinessException } from 'src/shared/exceptions/business-exception';
-import { CreateTransactionUseCase } from './create-transaction.use-case';
-import { TransactionRefType, TransactionType } from '../../domain/model/transaction.model';
-import { Role } from 'src/modules/user/domain/model/role.model';
+import { Inject,Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { Role } from "src/modules/user/domain/model/role.model";
+import {
+type IUserRepository,
+USER_REPOSITORY,
+} from "src/modules/user/domain/repositories/user.repository.interface";
+import { BusinessException } from "src/shared/exceptions/business-exception";
+import { IUseCase } from "../../../../shared/interfaces/use-case.interface";
+import {
+Account,
+AccountStatus,
+AccountType,
+} from "../../domain/model/account.model";
+import type { IAccountRepository } from "../../domain/repositories/account.repository.interface";
+import { ACCOUNT_REPOSITORY } from "../../domain/repositories/account.repository.interface";
+import { CreateAccountDto } from "../dto/account.dto";
+import { CreateTransactionUseCase } from "./create-transaction.use-case";
 
 export class CreateAccountRequest {
   name: string;
@@ -21,19 +27,23 @@ export class CreateAccountRequest {
 }
 
 @Injectable()
-export class CreateAccountUseCase implements IUseCase<CreateAccountDto, Account> {
+export class CreateAccountUseCase
+  implements IUseCase<CreateAccountDto, Account>
+{
   constructor(
     @Inject(ACCOUNT_REPOSITORY)
     private readonly accountRepository: IAccountRepository,
     private readonly eventEmitter: EventEmitter2,
     @Inject(USER_REPOSITORY) private readonly userRepository: IUserRepository,
     private readonly transactionUseCase: CreateTransactionUseCase,
-  ) { }
+  ) {}
 
   async execute(request: CreateAccountDto): Promise<Account> {
     const user = await this.userRepository.findById(request.accountHolderId);
     if (!user) {
-      throw new BusinessException('User not found with id ' + request.accountHolderId);
+      throw new BusinessException(
+        "User not found with id " + request.accountHolderId,
+      );
     }
 
     let accountHolder: string | undefined;
@@ -45,23 +55,33 @@ export class CreateAccountUseCase implements IUseCase<CreateAccountDto, Account>
     const existingAccount = await this.accountRepository.findAll({
       status: [AccountStatus.ACTIVE],
       type: [request.type],
-      accountHolderId: accountHolder
+      accountHolderId: accountHolder,
     });
     if (existingAccount.length > 0) {
-      throw new BusinessException(`An active account of this type already exists${accountHolder ? ' for this account holder' : ''}.`);
+      throw new BusinessException(
+        `An active account of this type already exists${accountHolder ? " for this account holder" : ""}.`,
+      );
     }
 
     if (request.type === AccountType.PRINCIPAL) {
-      const role = user.roles.find(role => role.roleCode === Role.TREASURER);
+      const role = user.roles.find((role) => role.roleCode === Role.TREASURER);
       if (!role) {
-        throw new BusinessException(`Account Holder is not authorized to have this type of account`);
+        throw new BusinessException(
+          `Account Holder is not authorized to have this type of account`,
+        );
       }
     }
 
     if (request.type === AccountType.DONATION) {
-      const role = user.roles.find(role => role.roleCode === Role.CASHIER || role.roleCode === Role.ASSISTANT_CASHIER);
+      const role = user.roles.find(
+        (role) =>
+          role.roleCode === Role.CASHIER ||
+          role.roleCode === Role.ASSISTANT_CASHIER,
+      );
       if (!role) {
-        throw new BusinessException(`Account Holder is not authorized to have this type of account`);
+        throw new BusinessException(
+          `Account Holder is not authorized to have this type of account`,
+        );
       }
     }
 
@@ -97,5 +117,3 @@ export class CreateAccountUseCase implements IUseCase<CreateAccountDto, Account>
     return savedAccount;
   }
 }
-
-

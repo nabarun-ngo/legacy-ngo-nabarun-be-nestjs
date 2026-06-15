@@ -1,5 +1,5 @@
-import { DomainEvent } from '../../../../shared/models/domain-event';
-import { WorkflowTask } from '../model/workflow-task.model';
+import { DomainEvent } from "../../../../shared/models/domain-event";
+import { WorkflowTask } from "../model/workflow-task.model";
 
 export class TaskFailedEvent extends DomainEvent {
   constructor(
@@ -9,4 +9,3 @@ export class TaskFailedEvent extends DomainEvent {
     super(aggregateId, task);
   }
 }
-

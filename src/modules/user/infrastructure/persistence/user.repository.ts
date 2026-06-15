@@ -1,23 +1,22 @@
-import { Injectable } from '@nestjs/common';
-import { IUserRepository } from '../../domain/repositories/user.repository.interface';
-import { User, UserFilterProps } from '../../domain/model/user.model';
-import { Address, Prisma } from '@prisma/client';
-import { PrismaPostgresService } from 'src/modules/shared/database/prisma-postgres.service';
-import { Role } from '../../domain/model/role.model';
-import { UserInfraMapper } from '../user-infra.mapper';
-import { BaseFilter } from 'src/shared/models/base-filter-props';
-import { PagedResult } from 'src/shared/models/paged-result';
-import { DonationStatus } from 'src/modules/finance/domain/model/donation.model';
-import { ExpenseStatus } from 'src/modules/finance/domain/model/expense.model';
-import { WorkflowTask } from 'src/modules/workflow/domain/model/workflow-task.model';
-import { AccountType } from 'src/modules/finance/domain/model/account.model';
-import { TaskAssignment } from 'src/modules/workflow/domain/model/task-assignment.model';
-import { TransactionType } from 'src/modules/finance/domain/model/transaction.model';
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
+import { AccountType } from "src/modules/finance/domain/model/account.model";
+import { DonationStatus } from "src/modules/finance/domain/model/donation.model";
+import { ExpenseStatus } from "src/modules/finance/domain/model/expense.model";
+import { TransactionType } from "src/modules/finance/domain/model/transaction.model";
+import { PrismaPostgresService } from "src/modules/shared/database/prisma-postgres.service";
+import { TaskAssignment } from "src/modules/workflow/domain/model/task-assignment.model";
+import { WorkflowTask } from "src/modules/workflow/domain/model/workflow-task.model";
+import { BaseFilter } from "src/shared/models/base-filter-props";
+import { PagedResult } from "src/shared/models/paged-result";
+import { Role } from "../../domain/model/role.model";
+import { User,UserFilterProps } from "../../domain/model/user.model";
+import { IUserRepository } from "../../domain/repositories/user.repository.interface";
+import { UserInfraMapper } from "../user-infra.mapper";
 
 @Injectable()
-class UserRepository
-  implements IUserRepository {
-  constructor(private readonly prisma: PrismaPostgresService) { }
+class UserRepository implements IUserRepository {
+  constructor(private readonly prisma: PrismaPostgresService) {}
 
   async count(filter: UserFilterProps): Promise<number> {
     return await this.prisma.userProfile.count({
@@ -25,58 +24,74 @@ class UserRepository
     });
   }
 
-  async findPaged(filter?: BaseFilter<UserFilterProps> | undefined): Promise<PagedResult<User>> {
-
+  async findPaged(
+    filter?: BaseFilter<UserFilterProps>,
+  ): Promise<PagedResult<User>> {
     const [data, total] = await Promise.all([
       this.prisma.userProfile.findMany({
         where: this.whereQuery(filter?.props),
-        orderBy: { firstName: 'asc' },
+        orderBy: { firstName: "asc" },
         include: {
           roles: true,
-          socialMediaLinks: filter?.props?.includeLinks ?? false
+          socialMediaLinks: filter?.props?.includeLinks ?? false,
         },
         skip: (filter?.pageIndex ?? 0) * (filter?.pageSize ?? 1000),
         take: filter?.pageSize ?? 1000,
       }),
       this.prisma.userProfile.count({
         where: this.whereQuery(filter?.props),
-      })
+      }),
     ]);
 
     return new PagedResult<User>(
-      data.map(m => UserInfraMapper.toUserDomain(m)!),
+      data.map((m) => UserInfraMapper.toUserDomain(m)!),
       total,
       filter?.pageIndex ?? 0,
-      filter?.pageSize ?? 0
+      filter?.pageSize ?? 0,
     );
   }
 
-  async findAll(filter?: UserFilterProps | undefined): Promise<User[]> {
+  async findAll(filter?: UserFilterProps): Promise<User[]> {
     const users = await this.prisma.userProfile.findMany({
       where: this.whereQuery(filter),
-      orderBy: { firstName: 'asc' },
+      orderBy: { firstName: "asc" },
       include: {
         roles: true,
-        socialMediaLinks: filter?.includeLinks ?? false
+        socialMediaLinks: filter?.includeLinks ?? false,
       },
-    })
-    return users.map(m => UserInfraMapper.toUserDomain(m)!);
+    });
+    return users.map((m) => UserInfraMapper.toUserDomain(m)!);
   }
 
   private whereQuery(props?: UserFilterProps) {
     const where: Prisma.UserProfileWhereInput = {
-      ...(props?.firstName ? { firstName: { contains: props.firstName, mode: 'insensitive' } } : {}),
-      ...(props?.lastName ? { lastName: { contains: props.lastName, mode: 'insensitive' } } : {}),
-      ...(props?.email ? { email: { contains: props.email, mode: 'insensitive' } } : {}),
+      ...(props?.firstName
+        ? { firstName: { contains: props.firstName, mode: "insensitive" } }
+        : {}),
+      ...(props?.lastName
+        ? { lastName: { contains: props.lastName, mode: "insensitive" } }
+        : {}),
+      ...(props?.email
+        ? { email: { contains: props.email, mode: "insensitive" } }
+        : {}),
       ...(props?.status ? { status: props.status } : {}),
-      ...(props?.roleCodes ? { roles: { some: { AND: { roleCode: { in: [...props.roleCodes] }, expireAt: null } } } } : {}),
-      ...(props?.phoneNumber ? { phoneNumbers: { some: { phoneNumber: props.phoneNumber } } } : {}),
+      ...(props?.roleCodes
+        ? {
+            roles: {
+              some: {
+                AND: { roleCode: { in: [...props.roleCodes] }, expireAt: null },
+              },
+            },
+          }
+        : {}),
+      ...(props?.phoneNumber
+        ? { phoneNumbers: { some: { phoneNumber: props.phoneNumber } } }
+        : {}),
       ...(props?.public ? { isPublic: props.public } : {}),
-      deletedAt: null
+      deletedAt: null,
     };
     return where;
   }
-
 
   async findById(id: string): Promise<User | null> {
     const user = await this.prisma.userProfile.findUnique({
@@ -86,7 +101,7 @@ class UserRepository
         socialMediaLinks: true,
         addresses: true,
         phoneNumbers: true,
-      }
+      },
     });
     return UserInfraMapper.toUserDomain(user);
   }
@@ -99,7 +114,7 @@ class UserRepository
         socialMediaLinks: true,
         addresses: true,
         phoneNumbers: true,
-      }
+      },
     });
     return UserInfraMapper.toUserDomain(user);
   }
@@ -108,19 +123,21 @@ class UserRepository
     const createData: Prisma.UserProfileCreateInput = {
       ...UserInfraMapper.toUserCreatePersistence(user),
       roles: {
-        create: user.roles.map((role) => UserInfraMapper.toRolePersistance(role)),
+        create: user.roles.map((role) =>
+          UserInfraMapper.toRolePersistance(role),
+        ),
       },
       phoneNumbers: {
         create: user.primaryNumber
           ? [
-            {
-              id: user.primaryNumber.id,
-              phoneCode: user.primaryNumber.phoneCode,
-              phoneNumber: user.primaryNumber.phoneNumber,
-              hidden: user.primaryNumber.hidden,
-              primary: true,
-            },
-          ]
+              {
+                id: user.primaryNumber.id,
+                phoneCode: user.primaryNumber.phoneCode,
+                phoneNumber: user.primaryNumber.phoneNumber,
+                hidden: user.primaryNumber.hidden,
+                primary: true,
+              },
+            ]
           : [],
       },
     };
@@ -142,10 +159,14 @@ class UserRepository
     const data = UserInfraMapper.toUserCreatePersistence(user);
 
     // Filter phone numbers
-    const phoneNumbers = [user.primaryNumber, user.secondaryNumber].filter(Boolean);
+    const phoneNumbers = [user.primaryNumber, user.secondaryNumber].filter(
+      Boolean,
+    );
 
     // Build addresses array
-    const addressesData: (Omit<Prisma.AddressUncheckedCreateInput, 'userId'> & { addressType: string })[] = [];
+    const addressesData: (Omit<Prisma.AddressUncheckedCreateInput, "userId"> & {
+      addressType: string;
+    })[] = [];
     if (user.presentAddress) {
       addressesData.push({
         id: user.presentAddress.id,
@@ -157,7 +178,7 @@ class UserRepository
         state: user.presentAddress.state,
         district: user.presentAddress.district,
         country: user.presentAddress.country,
-        addressType: 'present',
+        addressType: "present",
       });
     }
     if (user.permanentAddress) {
@@ -171,7 +192,7 @@ class UserRepository
         state: user.permanentAddress.state,
         district: user.permanentAddress.district,
         country: user.permanentAddress.country,
-        addressType: 'permanent',
+        addressType: "permanent",
       });
     }
 
@@ -255,7 +276,7 @@ class UserRepository
 
     const mappedUser = UserInfraMapper.toUserDomain(updated);
     if (!mappedUser) {
-      throw new Error('Failed to map updated user');
+      throw new Error("Failed to map updated user");
     }
     return mappedUser;
   }
@@ -287,8 +308,8 @@ class UserRepository
     await this.prisma.userProfile.update({
       where: { id: id },
       data: {
-        deletedAt: new Date()
-      }
+        deletedAt: new Date(),
+      },
     });
   }
 
@@ -296,62 +317,76 @@ class UserRepository
     await this.prisma.userProfile.update({
       where: { id: id },
       data: {
-        deletedAt: null
-      }
+        deletedAt: null,
+      },
     });
   }
 
-
-  async findUserMetrics(id: string): Promise<{ pendingDonations: number; unsettledExpense: number; pendingTask: number; walletBalance: number; }> {
+  async findUserMetrics(id: string): Promise<{
+    pendingDonations: number;
+    unsettledExpense: number;
+    pendingTask: number;
+    walletBalance: number;
+  }> {
     const accounts = await this.prisma.account.findMany({
       where: { type: { in: [AccountType.WALLET] }, accountHolderId: id },
-      orderBy: { createdAt: 'desc' },
-      select: { id: true }
+      orderBy: { createdAt: "desc" },
+      select: { id: true },
     });
-    const accountIds = accounts.map(m => m.id);
+    const accountIds = accounts.map((m) => m.id);
     const [donations, expenses, transactions, pendingTask] = await Promise.all([
       this.prisma.donation.aggregate({
         where: {
           donorId: id,
-          status: { in: [DonationStatus.PENDING] }
+          status: { in: [DonationStatus.PENDING] },
         },
-        _sum: { amount: true }
+        _sum: { amount: true },
       }),
       this.prisma.expense.aggregate({
         where: {
           paidById: id,
           status: {
-            notIn: [ExpenseStatus.SETTLED, ExpenseStatus.REJECTED, ExpenseStatus.DRAFT]
-          }
+            notIn: [
+              ExpenseStatus.SETTLED,
+              ExpenseStatus.REJECTED,
+              ExpenseStatus.DRAFT,
+            ],
+          },
         },
-        _sum: { amount: true }
+        _sum: { amount: true },
       }),
       this.prisma.transaction.findMany({
         where: { accountId: { in: accountIds } },
-        select: { amount: true, type: true }
+        select: { amount: true, type: true },
       }),
       this.prisma.workflowTask.count({
         where: {
           status: {
-            in: WorkflowTask.pendingTaskStatus
+            in: WorkflowTask.pendingTaskStatus,
           },
           assignments: {
             some: {
               assignedToId: id,
               status: {
-                in: TaskAssignment.pendingStatus
-              }
-            }
-          }
-        }
-      })
+                in: TaskAssignment.pendingStatus,
+              },
+            },
+          },
+        },
+      }),
     ]);
 
     return {
       pendingDonations: Number(donations._sum.amount ?? 0),
       unsettledExpense: Number(expenses._sum.amount ?? 0),
       pendingTask,
-      walletBalance: Number(transactions.reduce((acc, t) => acc + Number(t.type === TransactionType.IN ? t.amount : -t.amount), 0))
+      walletBalance: Number(
+        transactions.reduce(
+          (acc, t) =>
+            acc + Number(t.type === TransactionType.IN ? t.amount : -t.amount),
+          0,
+        ),
+      ),
     };
   }
 }

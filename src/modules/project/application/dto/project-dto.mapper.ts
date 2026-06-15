@@ -1,7 +1,7 @@
-import { Project } from '../../domain/model/project.model';
-import { ProjectDetailDto } from './project.dto';
-import { Beneficiary } from '../../domain/model/beneficiary.model';
-import { BeneficiaryDetailDto } from './beneficiary.dto';
+import { Beneficiary } from "../../domain/model/beneficiary.model";
+import { Project } from "../../domain/model/project.model";
+import { BeneficiaryDetailDto } from "./beneficiary.dto";
+import { ProjectDetailDto } from "./project.dto";
 
 /**
  * Project DTO Mapper
@@ -31,15 +31,13 @@ export class ProjectDtoMapper {
       metadata: project.metadata,
       createdAt: project.createdAt,
       updatedAt: project.updatedAt,
-      nextStatus: project.nextStatus
+      nextStatus: project.nextStatus,
     };
   }
 }
 
-
-
-import { Activity } from '../../domain/model/activity.model';
-import { ActivityDetailDto } from './activity.dto';
+import { Activity } from "../../domain/model/activity.model";
+import { ActivityDetailDto } from "./activity.dto";
 
 /**
  * Activity DTO Mapper
@@ -73,7 +71,7 @@ export class ActivityDtoMapper {
       metadata: activity.metadata,
       createdAt: activity.createdAt,
       updatedAt: activity.updatedAt,
-      nextStatus: activity.nextStatus
+      nextStatus: activity.nextStatus,
     };
   }
 }
@@ -107,6 +105,3 @@ export class BeneficiaryDtoMapper {
     };
   }
 }
-
-
-

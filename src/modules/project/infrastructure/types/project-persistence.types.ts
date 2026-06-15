@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from "@prisma/client";
 
 export namespace ProjectPersistence {
   export type Base = Prisma.ProjectGetPayload<{
@@ -27,5 +27,3 @@ export namespace BeneficiaryPersistence {
     };
   }>;
 }
-
-

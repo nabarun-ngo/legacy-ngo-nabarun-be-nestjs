@@ -1,7 +1,8 @@
-import { IRepository } from 'src/shared/interfaces/repository.interface';
-import { Project, ProjectFilterProps } from '../model/project.model';
+import { IRepository } from "src/shared/interfaces/repository.interface";
+import { Project,ProjectFilterProps } from "../model/project.model";
 
-export interface IProjectRepository extends IRepository<Project, string, ProjectFilterProps> {
+export interface IProjectRepository
+  extends IRepository<Project, string, ProjectFilterProps> {
   findById(id: string): Promise<Project | null>;
   findByCode(code: string): Promise<Project | null>;
   findByStatus(status: string): Promise<Project[]>;
@@ -14,5 +15,4 @@ export interface IProjectRepository extends IRepository<Project, string, Project
   findAll(filter?: ProjectFilterProps): Promise<Project[]>;
 }
 
-export const PROJECT_REPOSITORY = Symbol('PROJECT_REPOSITORY');
-
+export const PROJECT_REPOSITORY = Symbol("PROJECT_REPOSITORY");

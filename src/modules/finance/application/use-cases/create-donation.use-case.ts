@@ -1,11 +1,15 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IUseCase } from '../../../../shared/interfaces/use-case.interface';
-import { Donation, DonationStatus, DonationType } from '../../domain/model/donation.model';
-import { DONATION_REPOSITORY } from '../../domain/repositories/donation.repository.interface';
-import type { IDonationRepository } from '../../domain/repositories/donation.repository.interface';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { BusinessException } from 'src/shared/exceptions/business-exception';
-import { formatDate } from 'src/shared/utilities/common.util';
+import { Inject,Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { BusinessException } from "src/shared/exceptions/business-exception";
+import { formatDate } from "src/shared/utilities/common.util";
+import { IUseCase } from "../../../../shared/interfaces/use-case.interface";
+import {
+Donation,
+DonationStatus,
+DonationType,
+} from "../../domain/model/donation.model";
+import type { IDonationRepository } from "../../domain/repositories/donation.repository.interface";
+import { DONATION_REPOSITORY } from "../../domain/repositories/donation.repository.interface";
 
 export class CreateDonation {
   donorId?: string;
@@ -21,15 +25,16 @@ export class CreateDonation {
 }
 
 @Injectable()
-export class CreateDonationUseCase implements IUseCase<CreateDonation, Donation> {
+export class CreateDonationUseCase
+  implements IUseCase<CreateDonation, Donation>
+{
   constructor(
     @Inject(DONATION_REPOSITORY)
     private readonly donationRepository: IDonationRepository,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   async execute(request: CreateDonation): Promise<Donation> {
-
     const donation = Donation.create({
       type: request.type,
       amount: request.amount,
@@ -56,7 +61,9 @@ export class CreateDonationUseCase implements IUseCase<CreateDonation, Donation>
         status: [...Donation.outstandingStatus, DonationStatus.PAID],
       });
       if (donations.length > 0) {
-        throw new BusinessException(`Donation already exists for this donor between ${formatDate(request.startDate!)} and ${formatDate(request.endDate!)} `);
+        throw new BusinessException(
+          `Donation already exists for this donor between ${formatDate(request.startDate!)} and ${formatDate(request.endDate!)} `,
+        );
       }
     }
 
@@ -70,5 +77,3 @@ export class CreateDonationUseCase implements IUseCase<CreateDonation, Donation>
     return savedDonation;
   }
 }
-
-

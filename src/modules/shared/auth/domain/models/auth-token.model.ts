@@ -1,6 +1,6 @@
-import { randomUUID } from 'crypto';
-import { AggregateRoot } from 'src/shared/models/aggregate-root';
-import { encryptText, decryptText } from 'src/shared/utilities/crypto.util';
+import { randomUUID } from "crypto";
+import { AggregateRoot } from "src/shared/models/aggregate-root";
+import { decryptText,encryptText } from "src/shared/utilities/crypto.util";
 
 export class AuthTokenFilter {
   provider?: string;

@@ -1,28 +1,26 @@
-import { AggregateRoot } from 'src/shared/models/aggregate-root';
-import { ExpenseRecordedEvent } from '../events/expense-recorded.event';
-import { BusinessException } from 'src/shared/exceptions/business-exception';
-import { User } from 'src/modules/user/domain/model/user.model';
-import { generateUniqueNDigitNumber } from 'src/shared/utilities/password-util';
+import { User } from "src/modules/user/domain/model/user.model";
+import { BusinessException } from "src/shared/exceptions/business-exception";
+import { AggregateRoot } from "src/shared/models/aggregate-root";
+import { generateUniqueNDigitNumber } from "src/shared/utilities/password-util";
+import { ExpenseRecordedEvent } from "../events/expense-recorded.event";
 
 export enum ExpenseStatus {
-  DRAFT = 'DRAFT',            // Legacy: Draft status
-  SUBMITTED = 'SUBMITTED',    // Legacy: Submitted for approval
-  FINALIZED = 'FINALIZED',    // Legacy: Finalized (approved)
-  SETTLED = 'SETTLED',        // Legacy: Settled (paid)
-  REJECTED = 'REJECTED',      // Rejected
+  DRAFT = "DRAFT", // Legacy: Draft status
+  SUBMITTED = "SUBMITTED", // Legacy: Submitted for approval
+  FINALIZED = "FINALIZED", // Legacy: Finalized (approved)
+  SETTLED = "SETTLED", // Legacy: Settled (paid)
+  REJECTED = "REJECTED", // Rejected
 }
 
 /**
  * Expense Reference Type Enum
  */
 export enum ExpenseRefType {
-
-  OPERATIONAL = 'OPERATIONAL', // Operational expenses
-  ADMINISTRATIVE = 'ADMINISTRATIVE', // Administrative expenses
-  EVENT = 'EVENT',            // Expenses on Project/Activity
-  ADHOC = 'ADHOC',            // Ad-hoc expenses
-  OTHER = 'OTHER',
-
+  OPERATIONAL = "OPERATIONAL", // Operational expenses
+  ADMINISTRATIVE = "ADMINISTRATIVE", // Administrative expenses
+  EVENT = "EVENT", // Expenses on Project/Activity
+  ADHOC = "ADHOC", // Ad-hoc expenses
+  OTHER = "OTHER",
 }
 
 /**
@@ -35,10 +33,10 @@ export class ExpenseItem {
     public amount: number,
   ) {
     if (!itemName || itemName.trim().length === 0) {
-      throw new BusinessException('Expense item name is required');
+      throw new BusinessException("Expense item name is required");
     }
     if (amount <= 0) {
-      throw new BusinessException('Expense item amount must be positive');
+      throw new BusinessException("Expense item amount must be positive");
     }
   }
 }
@@ -159,28 +157,30 @@ export class Expense extends AggregateRoot<string> {
     expenseDate?: Date;
   }): Expense {
     if (!props.name || props.name.trim().length === 0) {
-      throw new BusinessException('Expense name is required');
+      throw new BusinessException("Expense name is required");
     }
     // if (!props.description || props.description.trim().length === 0) {
     //   throw new BusinessException('Expense description is required');
     // }
-    const amount = props.expenseItems.reduce((sum, item) => sum + item.amount, 0);
+    const amount = props.expenseItems.reduce(
+      (sum, item) => sum + item.amount,
+      0,
+    );
     if (amount <= 0) {
-      throw new BusinessException('Expense amount must be greater than zero');
+      throw new BusinessException("Expense amount must be greater than zero");
     }
     if (!props.requestedBy) {
-      throw new BusinessException('Requested by user ID is required');
+      throw new BusinessException("Requested by user ID is required");
     }
 
     // Calculate final amount from items if provided, otherwise use amount
     const expenseItems = props.expenseItems || [];
 
-
     const expense = new Expense(
       `NEX${generateUniqueNDigitNumber(6)}`,
       props.name,
       amount,
-      props.currency || 'INR',
+      props.currency || "INR",
       ExpenseStatus.DRAFT,
       props.description,
       props.referenceId,
@@ -191,7 +191,7 @@ export class Expense extends AggregateRoot<string> {
       undefined, // finalizedBy
       undefined, // settledBy
       undefined, // rejectedBy
-      props.paidBy,//paidBy
+      props.paidBy, //paidBy
       undefined, // accountId
       undefined, // transactionId
       props.expenseDate || new Date(),
@@ -207,9 +207,7 @@ export class Expense extends AggregateRoot<string> {
       new Date(),
     );
 
-    expense.addDomainEvent(new ExpenseRecordedEvent(
-      expense,
-    ));
+    expense.addDomainEvent(new ExpenseRecordedEvent(expense));
 
     return expense;
   }
@@ -220,10 +218,10 @@ export class Expense extends AggregateRoot<string> {
    */
   submit(submittedBy: Partial<User>): void {
     if (this.#status !== ExpenseStatus.DRAFT) {
-      throw new BusinessException('Can only submit draft expenses');
+      throw new BusinessException("Can only submit draft expenses");
     }
     if (this.#amount <= 0) {
-      throw new BusinessException('Expense amount must be greater than zero');
+      throw new BusinessException("Expense amount must be greater than zero");
     }
     this.#status = ExpenseStatus.SUBMITTED;
     this.#submittedBy = submittedBy;
@@ -237,7 +235,7 @@ export class Expense extends AggregateRoot<string> {
    */
   finalize(finalizedBy: Partial<User>): void {
     if (this.#status !== ExpenseStatus.SUBMITTED) {
-      throw new BusinessException('Can only finalize submitted expenses');
+      throw new BusinessException("Can only finalize submitted expenses");
     }
     this.#status = ExpenseStatus.FINALIZED;
     this.#finalizedBy = finalizedBy;
@@ -250,8 +248,13 @@ export class Expense extends AggregateRoot<string> {
    * Business validation: Can only reject submitted expenses
    */
   reject(rejectedBy: Partial<User>, remarks?: string): void {
-    if (this.#status !== ExpenseStatus.SUBMITTED && this.#status !== ExpenseStatus.FINALIZED) {
-      throw new BusinessException('Can only reject submitted or finalized expenses');
+    if (
+      this.#status !== ExpenseStatus.SUBMITTED &&
+      this.#status !== ExpenseStatus.FINALIZED
+    ) {
+      throw new BusinessException(
+        "Can only reject submitted or finalized expenses",
+      );
     }
     this.#status = ExpenseStatus.REJECTED;
     this.#rejectedBy = rejectedBy;
@@ -272,7 +275,7 @@ export class Expense extends AggregateRoot<string> {
     transactionId: string;
   }): void {
     if (this.#status !== ExpenseStatus.FINALIZED) {
-      throw new BusinessException('Can only settle finalized expenses');
+      throw new BusinessException("Can only settle finalized expenses");
     }
 
     this.#status = ExpenseStatus.SETTLED;
@@ -299,12 +302,14 @@ export class Expense extends AggregateRoot<string> {
   }): void {
     const allowedStatus = [ExpenseStatus.DRAFT, ExpenseStatus.SUBMITTED];
     if (!allowedStatus.includes(this.#status)) {
-      throw new BusinessException('Can only update draft or submitted expenses');
+      throw new BusinessException(
+        "Can only update draft or submitted expenses",
+      );
     }
 
     if (props.name !== undefined) {
       if (!props.name || props.name.trim().length === 0) {
-        throw new BusinessException('Expense name cannot be empty');
+        throw new BusinessException("Expense name cannot be empty");
       }
       this.#name = props.name;
     }
@@ -317,11 +322,12 @@ export class Expense extends AggregateRoot<string> {
     if (props.expenseItems !== undefined) {
       this.#expenseItems = props.expenseItems;
       // Recalculate final amount
-      this.#amount = props.expenseItems.length > 0
-        ? props.expenseItems.reduce((sum, item) => sum + item.amount, 0)
-        : this.#amount;
+      this.#amount =
+        props.expenseItems.length > 0
+          ? props.expenseItems.reduce((sum, item) => sum + item.amount, 0)
+          : this.#amount;
       if (this.#amount <= 0) {
-        throw new BusinessException('Expense amount must be greater than zero');
+        throw new BusinessException("Expense amount must be greater than zero");
       }
     }
     if (props.remarks !== undefined) {
@@ -336,32 +342,82 @@ export class Expense extends AggregateRoot<string> {
   }
 
   // Getters
-  get name(): string { return this.#name; }
-  get amount(): number { return this.#amount; }
-  get currency(): string { return this.#currency; }
-  get status(): ExpenseStatus { return this.#status; }
-  get description(): string { return this.#description; }
-  get referenceId(): string | undefined { return this.#referenceId; }
-  get referenceType(): ExpenseRefType | undefined { return this.#referenceType; }
-  get activityId(): string | undefined { return this.#referenceId; }
+  get name(): string {
+    return this.#name;
+  }
+  get amount(): number {
+    return this.#amount;
+  }
+  get currency(): string {
+    return this.#currency;
+  }
+  get status(): ExpenseStatus {
+    return this.#status;
+  }
+  get description(): string {
+    return this.#description;
+  }
+  get referenceId(): string | undefined {
+    return this.#referenceId;
+  }
+  get referenceType(): ExpenseRefType | undefined {
+    return this.#referenceType;
+  }
+  get activityId(): string | undefined {
+    return this.#referenceId;
+  }
 
-  get activityName(): string | undefined { return this.#activityName; }
-  get requestedBy(): Partial<User> { return this.#requestedBy; }
-  get paidBy(): Partial<User> { return this.#paidBy; }
-  get submittedBy(): Partial<User> | undefined { return this.#submittedBy; }
-  get finalizedBy(): Partial<User> | undefined { return this.#finalizedBy; }
-  get settledBy(): Partial<User> | undefined { return this.#settledBy; }
-  get rejectedBy(): Partial<User> | undefined { return this.#rejectedBy; }
-  get accountId(): string | undefined { return this.#accountId; }
-  get transactionId(): string | undefined { return this.#transactionId; }
-  get expenseDate(): Date { return this.#expenseDate; }
-  get submittedDate(): Date | undefined { return this.#submittedDate; }
-  get finalizedDate(): Date | undefined { return this.#finalizedDate; }
-  get settledDate(): Date | undefined { return this.#settledDate; }
-  get rejectedDate(): Date | undefined { return this.#rejectedDate; }
-  get expenseItems(): ExpenseItem[] { return [...this.#expenseItems]; }
-  get remarks(): string | undefined { return this.#remarks; }
-  get isDelegated(): boolean { return this.#isDelegated; }
+  get activityName(): string | undefined {
+    return this.#activityName;
+  }
+  get requestedBy(): Partial<User> {
+    return this.#requestedBy;
+  }
+  get paidBy(): Partial<User> {
+    return this.#paidBy;
+  }
+  get submittedBy(): Partial<User> | undefined {
+    return this.#submittedBy;
+  }
+  get finalizedBy(): Partial<User> | undefined {
+    return this.#finalizedBy;
+  }
+  get settledBy(): Partial<User> | undefined {
+    return this.#settledBy;
+  }
+  get rejectedBy(): Partial<User> | undefined {
+    return this.#rejectedBy;
+  }
+  get accountId(): string | undefined {
+    return this.#accountId;
+  }
+  get transactionId(): string | undefined {
+    return this.#transactionId;
+  }
+  get expenseDate(): Date {
+    return this.#expenseDate;
+  }
+  get submittedDate(): Date | undefined {
+    return this.#submittedDate;
+  }
+  get finalizedDate(): Date | undefined {
+    return this.#finalizedDate;
+  }
+  get settledDate(): Date | undefined {
+    return this.#settledDate;
+  }
+  get rejectedDate(): Date | undefined {
+    return this.#rejectedDate;
+  }
+  get expenseItems(): ExpenseItem[] {
+    return [...this.#expenseItems];
+  }
+  get remarks(): string | undefined {
+    return this.#remarks;
+  }
+  get isDelegated(): boolean {
+    return this.#isDelegated;
+  }
 
   /**
    * Check if expense needs approval

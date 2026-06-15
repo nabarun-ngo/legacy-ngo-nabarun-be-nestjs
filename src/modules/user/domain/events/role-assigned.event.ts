@@ -1,6 +1,6 @@
-import { DomainEvent } from '../../../../shared/models/domain-event';
-import { Role } from '../model/role.model';
-import { User } from '../model/user.model';
+import { DomainEvent } from "../../../../shared/models/domain-event";
+import { Role } from "../model/role.model";
+import { User } from "../model/user.model";
 
 export class RoleAssignedEvent extends DomainEvent {
   constructor(

@@ -1,28 +1,33 @@
-import { Injectable } from '@nestjs/common';
-import { IActivityRepository } from '../../domain/repositories/activity.repository.interface';
-import { Activity, ActivityFilterProps } from '../../domain/model/activity.model';
-import { Prisma } from '@prisma/client';
-import { PrismaPostgresService } from 'src/modules/shared/database/prisma-postgres.service';
-import { ProjectInfraMapper } from '../project-infra.mapper';
-import { BaseFilter } from 'src/shared/models/base-filter-props';
-import { PagedResult } from 'src/shared/models/paged-result';
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
+import { PrismaPostgresService } from "src/modules/shared/database/prisma-postgres.service";
+import { BaseFilter } from "src/shared/models/base-filter-props";
+import { PagedResult } from "src/shared/models/paged-result";
+import {
+Activity,
+ActivityFilterProps,
+} from "../../domain/model/activity.model";
+import { IActivityRepository } from "../../domain/repositories/activity.repository.interface";
+import { ProjectInfraMapper } from "../project-infra.mapper";
 
 @Injectable()
 class ActivityRepository implements IActivityRepository {
-  constructor(private readonly prisma: PrismaPostgresService) { }
+  constructor(private readonly prisma: PrismaPostgresService) {}
 
   async count(filter: ActivityFilterProps): Promise<number> {
     const where = this.whereQuery(filter);
     return await this.prisma.activity.count({ where });
   }
 
-  async findPaged(filter?: BaseFilter<ActivityFilterProps>): Promise<PagedResult<Activity>> {
+  async findPaged(
+    filter?: BaseFilter<ActivityFilterProps>,
+  ): Promise<PagedResult<Activity>> {
     const where = this.whereQuery(filter?.props);
 
     const [data, total] = await Promise.all([
       this.prisma.activity.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           project: true,
           assignee: true,
@@ -36,7 +41,7 @@ class ActivityRepository implements IActivityRepository {
     ]);
 
     return new PagedResult<Activity>(
-      data.map(m => ProjectInfraMapper.toActivityDomain(m)!),
+      data.map((m) => ProjectInfraMapper.toActivityDomain(m)!),
       total,
       filter?.pageIndex ?? 0,
       filter?.pageSize ?? 1000,
@@ -46,7 +51,7 @@ class ActivityRepository implements IActivityRepository {
   async findAll(filter?: ActivityFilterProps): Promise<Activity[]> {
     const activities = await this.prisma.activity.findMany({
       where: this.whereQuery(filter),
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: {
         project: true,
         assignee: true,
@@ -54,7 +59,7 @@ class ActivityRepository implements IActivityRepository {
         parentActivity: true,
       },
     });
-    return activities.map(m => ProjectInfraMapper.toActivityDomain(m)!);
+    return activities.map((m) => ProjectInfraMapper.toActivityDomain(m)!);
   }
 
   private whereQuery(props?: ActivityFilterProps): Prisma.ActivityWhereInput {
@@ -65,7 +70,9 @@ class ActivityRepository implements IActivityRepository {
       ...(props?.type ? { type: props.type } : {}),
       ...(props?.assignedTo ? { assignedTo: props.assignedTo } : {}),
       ...(props?.organizerId ? { organizerId: props.organizerId } : {}),
-      ...(props?.parentActivityId ? { parentActivityId: props.parentActivityId } : {}),
+      ...(props?.parentActivityId
+        ? { parentActivityId: props.parentActivityId }
+        : {}),
       deletedAt: null,
     };
   }
@@ -93,7 +100,7 @@ class ActivityRepository implements IActivityRepository {
         parentActivity: true,
       },
     });
-    return activities.map(m => ProjectInfraMapper.toActivityDomain(m)!);
+    return activities.map((m) => ProjectInfraMapper.toActivityDomain(m)!);
   }
 
   async findByStatus(status: string): Promise<Activity[]> {
@@ -106,7 +113,7 @@ class ActivityRepository implements IActivityRepository {
         parentActivity: true,
       },
     });
-    return activities.map(m => ProjectInfraMapper.toActivityDomain(m)!);
+    return activities.map((m) => ProjectInfraMapper.toActivityDomain(m)!);
   }
 
   async findByScale(scale: string): Promise<Activity[]> {
@@ -119,7 +126,7 @@ class ActivityRepository implements IActivityRepository {
         parentActivity: true,
       },
     });
-    return activities.map(m => ProjectInfraMapper.toActivityDomain(m)!);
+    return activities.map((m) => ProjectInfraMapper.toActivityDomain(m)!);
   }
 
   async findByType(type: string): Promise<Activity[]> {
@@ -132,7 +139,7 @@ class ActivityRepository implements IActivityRepository {
         parentActivity: true,
       },
     });
-    return activities.map(m => ProjectInfraMapper.toActivityDomain(m)!);
+    return activities.map((m) => ProjectInfraMapper.toActivityDomain(m)!);
   }
 
   async findByAssignedTo(userId: string): Promise<Activity[]> {
@@ -145,7 +152,7 @@ class ActivityRepository implements IActivityRepository {
         parentActivity: true,
       },
     });
-    return activities.map(m => ProjectInfraMapper.toActivityDomain(m)!);
+    return activities.map((m) => ProjectInfraMapper.toActivityDomain(m)!);
   }
 
   async findByOrganizerId(organizerId: string): Promise<Activity[]> {
@@ -158,7 +165,7 @@ class ActivityRepository implements IActivityRepository {
         parentActivity: true,
       },
     });
-    return activities.map(m => ProjectInfraMapper.toActivityDomain(m)!);
+    return activities.map((m) => ProjectInfraMapper.toActivityDomain(m)!);
   }
 
   async findByParentActivityId(parentActivityId: string): Promise<Activity[]> {
@@ -171,7 +178,7 @@ class ActivityRepository implements IActivityRepository {
         parentActivity: true,
       },
     });
-    return activities.map(m => ProjectInfraMapper.toActivityDomain(m)!);
+    return activities.map((m) => ProjectInfraMapper.toActivityDomain(m)!);
   }
 
   async create(activity: Activity): Promise<Activity> {
@@ -210,4 +217,3 @@ class ActivityRepository implements IActivityRepository {
 }
 
 export { ActivityRepository };
-

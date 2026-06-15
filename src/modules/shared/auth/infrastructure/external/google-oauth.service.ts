@@ -1,19 +1,24 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { OAuth2Client } from 'google-auth-library';
-import { Configkey } from 'src/shared/config-keys';
-import { TOKEN_REPOSITORY, type ITokenRepository } from '../../domain/repository/token.repository.interface';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { CACHE_MANAGER, Cache } from '@nestjs/cache-manager';
-import { GOOGLE_SCOPES } from '../../scopes';
-import { AppTechnicalError } from 'src/shared/exceptions/app-tech-error';
-import { OAuthService } from '../../application/services/oauth.service';
-import { Credentials } from 'google-auth-library';
+import { Inject,Injectable,Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { Credentials,OAuth2Client } from "google-auth-library";
+import { CacheService } from "src/modules/shared/database";
+import { AppTechnicalError } from "src/modules/shared/observability/application/events/app-technical-error.event";
+import { Configkey } from "src/shared/config-keys";
+import { OAuthService } from "../../application/services/oauth.service";
+import {
+TOKEN_REPOSITORY,
+type ITokenRepository,
+} from "../../domain/repository/token.repository.interface";
+import { GOOGLE_SCOPES } from "../../scopes";
 
 @Injectable()
-export class GoogleOAuthService extends OAuthService<Credentials, OAuth2Client> {
+export class GoogleOAuthService extends OAuthService<
+  Credentials,
+  OAuth2Client
+> {
   protected readonly logger = new Logger(GoogleOAuthService.name);
-  protected readonly provider = 'google';
+  protected readonly provider = "google";
   private readonly oauth2Client: OAuth2Client;
   private readonly clientId: string;
 
@@ -21,16 +26,22 @@ export class GoogleOAuthService extends OAuthService<Credentials, OAuth2Client> 
     configService: ConfigService,
     @Inject(TOKEN_REPOSITORY) tokenRepository: ITokenRepository,
     private readonly eventEmitter: EventEmitter2,
-    @Inject(CACHE_MANAGER) cacheManager: Cache,
+    cacheService: CacheService,
   ) {
-    super(configService, tokenRepository, cacheManager);
+    super(configService, tokenRepository, cacheService);
 
     this.clientId = this.configService.get<string>(Configkey.GOOGLE_CLIENT_ID)!;
-    const clientSecret = this.configService.get<string>(Configkey.GOOGLE_CLIENT_SECRET)!;
-    const redirectUri = this.configService.get<string>(Configkey.GOOGLE_REDIRECT_URI)!;
+    const clientSecret = this.configService.get<string>(
+      Configkey.GOOGLE_CLIENT_SECRET,
+    )!;
+    const redirectUri = this.configService.get<string>(
+      Configkey.GOOGLE_REDIRECT_URI,
+    )!;
 
     if (!this.clientId || !clientSecret) {
-      throw new Error('Google OAuth credentials are missing. Please configure GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET');
+      throw new Error(
+        "Google OAuth credentials are missing. Please configure GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET",
+      );
     }
 
     this.oauth2Client = new OAuth2Client({
@@ -51,11 +62,11 @@ export class GoogleOAuthService extends OAuthService<Credentials, OAuth2Client> 
 
   private getDefaultScopes(): string[] {
     return [
-      'https://www.googleapis.com/auth/userinfo.email',
-      'https://www.googleapis.com/auth/userinfo.profile',
-      'openid',
-      'email',
-      'profile',
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile",
+      "openid",
+      "email",
+      "profile",
     ];
   }
 
@@ -63,14 +74,17 @@ export class GoogleOAuthService extends OAuthService<Credentials, OAuth2Client> 
     return this.clientId;
   }
 
-  protected async generateProviderAuthUrl(scopes: string[], state: string): Promise<string> {
+  protected async generateProviderAuthUrl(
+    scopes: string[],
+    state: string,
+  ): Promise<string> {
     const finalScopes = [...new Set([...this.getDefaultScopes(), ...scopes])];
     return this.oauth2Client.generateAuthUrl({
-      access_type: 'offline', // Required to get refresh token
+      access_type: "offline", // Required to get refresh token
       scope: finalScopes,
-      prompt: 'consent', // Force consent to get refresh token
+      prompt: "consent", // Force consent to get refresh token
       state: state,
-      response_type: 'code',
+      response_type: "code",
       include_granted_scopes: true,
     });
   }
@@ -78,7 +92,7 @@ export class GoogleOAuthService extends OAuthService<Credentials, OAuth2Client> 
   protected async exchangeCodeForTokens(code: string): Promise<Credentials> {
     const { tokens } = await this.oauth2Client.getToken(code);
     if (!tokens.access_token) {
-      throw new Error('No access token received from Google');
+      throw new Error("No access token received from Google");
     }
     return tokens;
   }
@@ -94,7 +108,7 @@ export class GoogleOAuthService extends OAuthService<Credentials, OAuth2Client> 
     const email = payload?.email;
 
     if (!email) {
-      throw new Error('Could not retrieve email from Google userinfo');
+      throw new Error("Could not retrieve email from Google userinfo");
     }
     return email;
   }
@@ -112,7 +126,7 @@ export class GoogleOAuthService extends OAuthService<Credentials, OAuth2Client> 
   }
 
   protected getTokenTypeFromTokens(tokens: Credentials): string {
-    return tokens.token_type || 'Bearer';
+    return tokens.token_type || "Bearer";
   }
 
   protected getScopeFromTokens(tokens: Credentials): string {
@@ -123,7 +137,9 @@ export class GoogleOAuthService extends OAuthService<Credentials, OAuth2Client> 
     await this.oauth2Client.revokeToken(accessToken);
   }
 
-  protected async refreshProviderToken(refreshToken: string): Promise<Credentials> {
+  protected async refreshProviderToken(
+    refreshToken: string,
+  ): Promise<Credentials> {
     this.oauth2Client.setCredentials({
       refresh_token: refreshToken,
     });
@@ -131,7 +147,7 @@ export class GoogleOAuthService extends OAuthService<Credentials, OAuth2Client> 
     const { credentials } = await this.oauth2Client.refreshAccessToken();
 
     if (!credentials.access_token) {
-      throw new Error('Failed to refresh Google access token');
+      throw new Error("Failed to refresh Google access token");
     }
     return credentials;
   }
@@ -151,7 +167,10 @@ export class GoogleOAuthService extends OAuthService<Credentials, OAuth2Client> 
       });
       return this.oauth2Client;
     } catch (error) {
-      this.eventEmitter.emit(AppTechnicalError.name, new AppTechnicalError(error));
+      this.eventEmitter.emit(
+        AppTechnicalError.name,
+        new AppTechnicalError(error),
+      );
       this.logger.fatal(
         `Failed to get authenticated client: ${error.message}`,
         error.stack,

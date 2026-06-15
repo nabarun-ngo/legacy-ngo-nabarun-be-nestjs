@@ -1,28 +1,30 @@
-import { Injectable } from '@nestjs/common';
-import { IProjectRepository } from '../../domain/repositories/project.repository.interface';
-import { Project, ProjectFilterProps } from '../../domain/model/project.model';
-import { Prisma } from '@prisma/client';
-import { PrismaPostgresService } from 'src/modules/shared/database/prisma-postgres.service';
-import { ProjectInfraMapper } from '../project-infra.mapper';
-import { BaseFilter } from 'src/shared/models/base-filter-props';
-import { PagedResult } from 'src/shared/models/paged-result';
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
+import { PrismaPostgresService } from "src/modules/shared/database/prisma-postgres.service";
+import { BaseFilter } from "src/shared/models/base-filter-props";
+import { PagedResult } from "src/shared/models/paged-result";
+import { Project,ProjectFilterProps } from "../../domain/model/project.model";
+import { IProjectRepository } from "../../domain/repositories/project.repository.interface";
+import { ProjectInfraMapper } from "../project-infra.mapper";
 
 @Injectable()
 class ProjectRepository implements IProjectRepository {
-  constructor(private readonly prisma: PrismaPostgresService) { }
+  constructor(private readonly prisma: PrismaPostgresService) {}
 
   async count(filter: ProjectFilterProps): Promise<number> {
     const where = this.whereQuery(filter);
     return await this.prisma.project.count({ where });
   }
 
-  async findPaged(filter?: BaseFilter<ProjectFilterProps>): Promise<PagedResult<Project>> {
+  async findPaged(
+    filter?: BaseFilter<ProjectFilterProps>,
+  ): Promise<PagedResult<Project>> {
     const where = this.whereQuery(filter?.props);
 
     const [data, total] = await Promise.all([
       this.prisma.project.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           manager: true,
           sponsor: true,
@@ -34,7 +36,7 @@ class ProjectRepository implements IProjectRepository {
     ]);
 
     return new PagedResult<Project>(
-      data.map(m => ProjectInfraMapper.toProjectDomain(m)!),
+      data.map((m) => ProjectInfraMapper.toProjectDomain(m)!),
       total,
       filter?.pageIndex ?? 0,
       filter?.pageSize ?? 1000,
@@ -44,14 +46,14 @@ class ProjectRepository implements IProjectRepository {
   async findAll(filter?: ProjectFilterProps): Promise<Project[]> {
     const projects = await this.prisma.project.findMany({
       where: this.whereQuery(filter),
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       include: {
         manager: true,
         sponsor: true,
       },
     });
 
-    return projects.map(m => ProjectInfraMapper.toProjectDomain(m)!);
+    return projects.map((m) => ProjectInfraMapper.toProjectDomain(m)!);
   }
 
   private whereQuery(props?: ProjectFilterProps): Prisma.ProjectWhereInput {
@@ -61,8 +63,12 @@ class ProjectRepository implements IProjectRepository {
       ...(props?.phase ? { phase: props.phase } : {}),
       ...(props?.managerId ? { managerId: props.managerId } : {}),
       ...(props?.sponsorId ? { sponsorId: props.sponsorId } : {}),
-      ...(props?.location ? { location: { contains: props.location, mode: 'insensitive' } } : {}),
-      ...(props?.tags && props.tags.length > 0 ? { tags: { hasSome: props.tags } } : {}),
+      ...(props?.location
+        ? { location: { contains: props.location, mode: "insensitive" } }
+        : {}),
+      ...(props?.tags && props.tags.length > 0
+        ? { tags: { hasSome: props.tags } }
+        : {}),
       deletedAt: null,
     };
     return where;
@@ -98,7 +104,7 @@ class ProjectRepository implements IProjectRepository {
         sponsor: true,
       },
     });
-    return projects.map(m => ProjectInfraMapper.toProjectDomain(m)!);
+    return projects.map((m) => ProjectInfraMapper.toProjectDomain(m)!);
   }
 
   async findByCategory(category: string): Promise<Project[]> {
@@ -109,7 +115,7 @@ class ProjectRepository implements IProjectRepository {
         sponsor: true,
       },
     });
-    return projects.map(m => ProjectInfraMapper.toProjectDomain(m)!);
+    return projects.map((m) => ProjectInfraMapper.toProjectDomain(m)!);
   }
 
   async findByManagerId(managerId: string): Promise<Project[]> {
@@ -120,7 +126,7 @@ class ProjectRepository implements IProjectRepository {
         sponsor: true,
       },
     });
-    return projects.map(m => ProjectInfraMapper.toProjectDomain(m)!);
+    return projects.map((m) => ProjectInfraMapper.toProjectDomain(m)!);
   }
 
   async findByPhase(phase: string): Promise<Project[]> {
@@ -131,7 +137,7 @@ class ProjectRepository implements IProjectRepository {
         sponsor: true,
       },
     });
-    return projects.map(m => ProjectInfraMapper.toProjectDomain(m)!);
+    return projects.map((m) => ProjectInfraMapper.toProjectDomain(m)!);
   }
 
   async create(project: Project): Promise<Project> {
@@ -166,4 +172,3 @@ class ProjectRepository implements IProjectRepository {
 }
 
 export { ProjectRepository };
-

@@ -1,27 +1,26 @@
 import {
-  Injectable,
-  CanActivate,
-  ExecutionContext,
-  UnauthorizedException,
-} from '@nestjs/common';
-import { Reflector } from '@nestjs/core';
-import { ApiKeyService } from '../services/api-key.service';
-import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
-import { USE_API_KEY } from '../decorators/use-api-key.decorator';
-import { JwtAuthService } from '../services/jwt-auth.service';
-import { IGNORE_CAPTCHA } from '../decorators/ignore-captcha.decorator';
-import { RecaptchaService } from '../services/google-recaptcha.service';
-import { traceStorage } from 'src/shared/utilities/trace-context.util';
+CanActivate,
+ExecutionContext,
+Injectable,
+UnauthorizedException,
+} from "@nestjs/common";
+import { Reflector } from "@nestjs/core";
+import { traceStorage } from "src/shared/utilities/trace-context.util";
+import { IGNORE_CAPTCHA } from "../decorators/ignore-captcha.decorator";
+import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
+import { USE_API_KEY } from "../decorators/use-api-key.decorator";
+import { ApiKeyService } from "../services/api-key.service";
+import { RecaptchaService } from "../services/google-recaptcha.service";
+import { JwtAuthService } from "../services/jwt-auth.service";
 
 @Injectable()
 export class UnifiedAuthGuard implements CanActivate {
-
   constructor(
     private authService: JwtAuthService,
     private apiKeyService: ApiKeyService,
     private recaptchaService: RecaptchaService,
     private reflector: Reflector,
-  ) { }
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if route is public
@@ -35,8 +34,9 @@ export class UnifiedAuthGuard implements CanActivate {
         IGNORE_CAPTCHA,
         [context.getHandler(), context.getClass()],
       );
-      return ignoreCaptcha ? true :
-        this.validateCaptcha(context.switchToHttp().getRequest());
+      return ignoreCaptcha
+        ? true
+        : this.validateCaptcha(context.switchToHttp().getRequest());
     }
 
     // Check if route explicitly requires API key
@@ -56,12 +56,11 @@ export class UnifiedAuthGuard implements CanActivate {
     }
   }
 
-
   private async validateJwt(request: any): Promise<boolean> {
     const token = this.extractJwtToken(request);
 
     if (!token) {
-      throw new UnauthorizedException('JWT token is required');
+      throw new UnauthorizedException("JWT token is required");
     }
 
     try {
@@ -71,13 +70,13 @@ export class UnifiedAuthGuard implements CanActivate {
       // Update trace context with user info
       const store = traceStorage.getStore();
       if (store && store.user) {
-        store.user.userId = user.profile_id || 'unknown';
-        store.user.userName = user.profile_name || user.email || 'unknown';
+        store.user.userId = user.profile_id || "unknown";
+        store.user.userName = user.profile_name || user.email || "unknown";
       }
 
       return true;
     } catch (error) {
-      throw new UnauthorizedException('Invalid or expired JWT token.');
+      throw new UnauthorizedException("Invalid or expired JWT token.");
     }
   }
 
@@ -85,9 +84,8 @@ export class UnifiedAuthGuard implements CanActivate {
     const apiKey = this.extractApiKey(request);
 
     if (!apiKey) {
-      throw new UnauthorizedException('API key is required');
+      throw new UnauthorizedException("API key is required");
     }
-
 
     const user = await this.apiKeyService.validateApiKey(apiKey);
     request.user = user;
@@ -95,10 +93,10 @@ export class UnifiedAuthGuard implements CanActivate {
     // Update trace context with user info
     const store = traceStorage.getStore();
     if (store && store.user) {
-      store.user.userId = (user as any).user_id || (user as any).sub || 'unknown';
-      store.user.userName = user.profile_name || user.email || 'unknown';
+      store.user.userId =
+        (user as any).user_id || (user as any).sub || "unknown";
+      store.user.userName = user.profile_name || user.email || "unknown";
     }
-
 
     return true;
   }
@@ -115,11 +113,11 @@ export class UnifiedAuthGuard implements CanActivate {
         Number.isFinite(threshold) ? threshold : 0.5,
       );
     }
-    throw new UnauthorizedException('Captcha token and action is required');
+    throw new UnauthorizedException("Captcha token and action is required");
   }
   private extractCaptchaToken(request: any): { token: string; action: string } {
-    const captchaToken = request.headers['x-recaptcha-token'];
-    const captchAction = request.headers['x-recaptcha-action'];
+    const captchaToken = request.headers["x-recaptcha-token"];
+    const captchAction = request.headers["x-recaptcha-action"];
     return { token: captchaToken, action: captchAction };
   }
 
@@ -127,9 +125,9 @@ export class UnifiedAuthGuard implements CanActivate {
     const authHeader = request.headers.authorization;
     if (!authHeader) return null;
 
-    const [type, token] = authHeader.split(' ');
+    const [type, token] = authHeader.split(" ");
     // JWT tokens don't start with 'sk_'
-    if (type === 'Bearer' && token && !token.startsWith('sk_')) {
+    if (type === "Bearer" && token && !token.startsWith("sk_")) {
       return token;
     }
     return null;
@@ -139,20 +137,18 @@ export class UnifiedAuthGuard implements CanActivate {
     // Check Authorization header for API key (starts with sk_)
     const authHeader = request.headers.authorization;
     if (authHeader) {
-      const [type, key] = authHeader.split(' ');
-      if (type.toLowerCase() === 'apikey') {
+      const [type, key] = authHeader.split(" ");
+      if (type.toLowerCase() === "apikey") {
         return key;
       }
     }
 
     // Check X-API-Key header
-    const apiKeyHeader = request.headers['x-api-key'];
+    const apiKeyHeader = request.headers["x-api-key"];
     if (apiKeyHeader) {
       return apiKeyHeader;
     }
 
     return null;
   }
-
-
 }

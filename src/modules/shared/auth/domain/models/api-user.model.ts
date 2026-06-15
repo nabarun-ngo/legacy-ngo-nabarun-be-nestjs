@@ -1,5 +1,5 @@
 export interface AuthUser {
-  type: 'apikey' | 'jwt';
+  type: "apikey" | "jwt";
   sub: string;
   email?: string;
   email_verified?: boolean;

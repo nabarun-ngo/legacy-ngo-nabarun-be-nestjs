@@ -7,8 +7,6 @@ export interface AssignedToDef {
   roleNames: string | string[];
 }
 
-
-
 export interface TaskDetailDef {
   assignedTo?: AssignedToDef;
   isAutoCloseable?: boolean;
@@ -32,7 +30,7 @@ export interface TaskDef {
 }
 
 export interface StepTransitionsDef {
-  condition: string | 'default';
+  condition: string | "default";
   nextStepId: string;
 }
 

@@ -1,4 +1,4 @@
-import { Prisma } from '@prisma/client';
+import { Prisma } from "@prisma/client";
 
 /**
  * Helper functions for repository operations
@@ -111,7 +111,7 @@ export class RepositoryHelpers {
   static isOptimisticLockingError(error: any): boolean {
     return (
       error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === 'P2025' // Record not found (version mismatch)
+      error.code === "P2025" // Record not found (version mismatch)
     );
   }
 
@@ -134,8 +134,8 @@ export class RepositoryHelpers {
    * Build order by with multiple fields
    */
   static buildMultiFieldOrderBy<T>(
-    fields: Array<{ field: keyof T; direction: 'asc' | 'desc' }>,
-  ): Record<string, 'asc' | 'desc'>[] {
+    fields: Array<{ field: keyof T; direction: "asc" | "desc" }>,
+  ): Record<string, "asc" | "desc">[] {
     return fields.map(({ field, direction }) => ({
       [field as string]: direction,
     }));
@@ -164,7 +164,7 @@ export class RepositoryHelpers {
 
         if (i < maxRetries - 1) {
           const delay = initialDelay * Math.pow(2, i);
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }

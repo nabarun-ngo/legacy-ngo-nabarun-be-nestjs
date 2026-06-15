@@ -1,14 +1,14 @@
-import { LoginMethod, User, UserStatus } from '../domain/model/user.model';
-import { PhoneNumber } from '../domain/model/phone-number.model';
-import { Role } from '../domain/model/role.model';
-import { Address } from '../domain/model/address.model';
-import { Link, LinkType } from '../domain/model/link.model';
-import { Auth0User } from './external/auth0-user.service';
-import { Prisma } from '@prisma/client';
-import { UserPersistence } from './types/user-persistence.types';
-import { UserMapperHelpers } from './user-mapper-helpers';
-import { MapperUtils } from 'src/modules/shared/database/mapper-utils';
-import { CommonMappers } from 'src/modules/shared/database/common-mappers';
+import { Prisma } from "@prisma/client";
+import { CommonMappers } from "src/modules/shared/database/common-mappers";
+import { MapperUtils } from "src/modules/shared/database/mapper-utils";
+import { Address } from "../domain/model/address.model";
+import { Link,LinkType } from "../domain/model/link.model";
+import { PhoneNumber } from "../domain/model/phone-number.model";
+import { Role } from "../domain/model/role.model";
+import { LoginMethod,User,UserStatus } from "../domain/model/user.model";
+import { Auth0User } from "./external/auth0-user.service";
+import { UserPersistence } from "./types/user-persistence.types";
+import { UserMapperHelpers } from "./user-mapper-helpers";
 
 export class UserInfraMapper {
   /**
@@ -18,7 +18,11 @@ export class UserInfraMapper {
    * @returns User domain model or null if model is null
    */
   static toUserDomain(
-    model: UserPersistence.Full | UserPersistence.WithRoles | UserPersistence.WithAuth | null,
+    model:
+      | UserPersistence.Full
+      | UserPersistence.WithRoles
+      | UserPersistence.WithAuth
+      | null,
   ): User | null {
     if (!model) return null;
 
@@ -36,11 +40,11 @@ export class UserInfraMapper {
       model.email,
       primaryNumber
         ? new PhoneNumber(
-          primaryNumber.id,
-          primaryNumber.phoneCode ?? '',
-          primaryNumber.phoneNumber ?? '',
-          primaryNumber.hidden,
-        )
+            primaryNumber.id,
+            primaryNumber.phoneCode ?? "",
+            primaryNumber.phoneNumber ?? "",
+            primaryNumber.hidden,
+          )
         : undefined,
       model.status as UserStatus,
       model.isTemporary,
@@ -50,70 +54,74 @@ export class UserInfraMapper {
       MapperUtils.nullToUndefined(model.gender),
       MapperUtils.nullToUndefined(model.about),
       MapperUtils.nullToUndefined(model.picture),
-      MapperUtils.mapArray(roles, (r) =>
-        new Role(
-          r.id,
-          r.roleCode,
-          r.roleName,
-          r.authRoleCode,
-          MapperUtils.nullToUndefined(r.isDefault),
-          MapperUtils.nullToUndefined(r.expireAt),
-        ),
+      MapperUtils.mapArray(
+        roles,
+        (r) =>
+          new Role(
+            r.id,
+            r.roleCode,
+            r.roleName,
+            r.authRoleCode,
+            MapperUtils.nullToUndefined(r.isDefault),
+            MapperUtils.nullToUndefined(r.expireAt),
+          ),
       ),
       secondaryNumber
         ? new PhoneNumber(
-          secondaryNumber.id,
-          secondaryNumber.phoneCode ?? '',
-          secondaryNumber.phoneNumber ?? '',
-          secondaryNumber.hidden,
-        )
+            secondaryNumber.id,
+            secondaryNumber.phoneCode ?? "",
+            secondaryNumber.phoneNumber ?? "",
+            secondaryNumber.hidden,
+          )
         : undefined,
       presentAddress
         ? new Address(
-          presentAddress.id,
-          presentAddress.addressLine1 ?? '',
-          presentAddress.addressLine2 ?? '',
-          presentAddress.addressLine3 ?? '',
-          presentAddress.hometown ?? '',
-          presentAddress.zipCode ?? '',
-          presentAddress.state ?? '',
-          presentAddress.district ?? '',
-          presentAddress.country ?? '',
-        )
+            presentAddress.id,
+            presentAddress.addressLine1 ?? "",
+            presentAddress.addressLine2 ?? "",
+            presentAddress.addressLine3 ?? "",
+            presentAddress.hometown ?? "",
+            presentAddress.zipCode ?? "",
+            presentAddress.state ?? "",
+            presentAddress.district ?? "",
+            presentAddress.country ?? "",
+          )
         : undefined,
       permanentAddress
         ? new Address(
-          permanentAddress.id,
-          permanentAddress.addressLine1 ?? '',
-          permanentAddress.addressLine2 ?? '',
-          permanentAddress.addressLine3 ?? '',
-          permanentAddress.hometown ?? '',
-          permanentAddress.zipCode ?? '',
-          permanentAddress.state ?? '',
-          permanentAddress.district ?? '',
-          permanentAddress.country ?? '',
-        )
+            permanentAddress.id,
+            permanentAddress.addressLine1 ?? "",
+            permanentAddress.addressLine2 ?? "",
+            permanentAddress.addressLine3 ?? "",
+            permanentAddress.hometown ?? "",
+            permanentAddress.zipCode ?? "",
+            permanentAddress.state ?? "",
+            permanentAddress.district ?? "",
+            permanentAddress.country ?? "",
+          )
         : undefined,
       MapperUtils.withDefault(model.isPublic, true),
       MapperUtils.nullToUndefined(model.authUserId),
       MapperUtils.nullToUndefined(model.isSameAddress),
       model.loginMethods
-        ? CommonMappers.splitToArray(model.loginMethods) as LoginMethod[]
+        ? (CommonMappers.splitToArray(model.loginMethods) as LoginMethod[])
         : [LoginMethod.EMAIL, LoginMethod.PASSWORD],
-      MapperUtils.mapArray(socialLinks, (l) =>
-        new Link(l.id, l.linkName, l.linkType as LinkType, l.linkValue),
+      MapperUtils.mapArray(
+        socialLinks,
+        (l) => new Link(l.id, l.linkName, l.linkType as LinkType, l.linkValue),
       ),
       MapperUtils.nullToUndefined(model.donationPauseStart),
       MapperUtils.nullToUndefined(model.donationPauseEnd),
       MapperUtils.nullToUndefined(model.panNumber),
       MapperUtils.nullToUndefined(model.aadharNumber),
-      MapperUtils.nullToUndefined(model.deletedAt) == undefined ? undefined : true,
+      MapperUtils.nullToUndefined(model.deletedAt) == undefined
+        ? undefined
+        : true,
       MapperUtils.nullToUndefined(Number(model.donationAmount)),
       model.createdAt,
       model.updatedAt,
     );
   }
-
 
   /**
    * Convert User domain model to Prisma create input
@@ -204,18 +212,18 @@ export class UserInfraMapper {
   static loginMethod2Connection(method: LoginMethod): string {
     switch (method) {
       case LoginMethod.EMAIL:
-        return 'email';
+        return "email";
       case LoginMethod.PASSWORD:
-        return 'Username-Password-Authentication';
+        return "Username-Password-Authentication";
       default:
-        return 'Username-Password-Authentication';
+        return "Username-Password-Authentication";
     }
   }
   static connection2LoginMethod(connection: string): LoginMethod {
     switch (connection) {
-      case 'email':
+      case "email":
         return LoginMethod.EMAIL;
-      case 'Username-Password-Authentication':
+      case "Username-Password-Authentication":
         return LoginMethod.PASSWORD;
       default:
         return LoginMethod.PASSWORD;

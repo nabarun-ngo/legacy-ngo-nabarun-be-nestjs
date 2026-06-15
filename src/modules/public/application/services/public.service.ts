@@ -1,71 +1,65 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject,Injectable } from "@nestjs/common";
+import { Cacheable } from "src/modules/shared/database";
 import { UserStatus } from "src/modules/user/domain/model/user.model";
-import { dtoToRecord, toTeamMemberDTO } from "../dto/public-dto.mapper";
-import { WorkflowService } from "src/modules/workflow/application/services/workflow.service";
-import { ContactFormDto, DonationFormDto, SignUpDto, TeamMember } from "../dto/public.dto";
-import { CACHE_MANAGER, Cache } from "@nestjs/cache-manager";
-import { USER_REPOSITORY, type IUserRepository } from "src/modules/user/domain/repositories/user.repository.interface";
+import {
+USER_REPOSITORY,
+type IUserRepository,
+} from "src/modules/user/domain/repositories/user.repository.interface";
+import { WorkflowFacade } from "src/modules/workflow/application/services/workflow-facade.service";
+import { dtoToRecord,toTeamMemberDTO } from "../dto/public-dto.mapper";
+import {
+ContactFormDto,
+DonationFormDto,
+SignUpDto
+} from "../dto/public.dto";
 
 @Injectable()
 export class PublicService {
-    private cacheTTL: number = 10 * 24 * 3600 * 1000;
+  constructor(
+    @Inject(USER_REPOSITORY)
+    private readonly userRepository: IUserRepository,
+    private readonly workflowFacade: WorkflowFacade,
+  ) {}
 
-    constructor(
-        @Inject(USER_REPOSITORY)
-        private readonly userRepository: IUserRepository,
-        private readonly workflowService: WorkflowService,
-        @Inject(CACHE_MANAGER) private cacheManager: Cache,
-    ) { }
+  @Cacheable({ key: "team-members", ttl: 10 * 24 * 3600 * 1000 })
+  async getTeamMembers() {
+    return (
+      await this.userRepository.findAll({
+        public: true,
+        status: UserStatus.ACTIVE,
+        includeLinks: true,
+      })
+    ).map(toTeamMemberDTO);
+  }
 
-    async getTeamMembers() {
-        const cached = await this.cacheManager.get<TeamMember[]>('team-members');
-        if (!cached) {
-            const users = (await this.userRepository.findAll({
-                public: true,
-                status: UserStatus.ACTIVE,
-                includeLinks: true,
-            })).map(toTeamMemberDTO);
-            await this.cacheManager.set('team-members', users, this.cacheTTL);
-            return users;
-        } else {
-            return cached;
-        }
-    }
+  async contactUs(dto: ContactFormDto) {
+    const workflow = await this.workflowFacade.createWorkflow({
+      type: "CONTACT_REQUEST",
+      data: dtoToRecord(dto),
+      forExternalUser: true,
+      externalUserEmail: dto.email,
+    });
+    return workflow.id;
+  }
 
+  async signUp(dto: SignUpDto) {
+    const workflow = await this.workflowFacade.createWorkflow({
+      type: "JOIN_REQUEST",
+      data: dtoToRecord(dto),
+      forExternalUser: true,
+      externalUserEmail: dto.email,
+    });
+    return workflow.id;
+  }
 
-    async contactUs(dto: ContactFormDto) {
-        const workflow = await this.workflowService.createWorkflow({
-            type: "CONTACT_REQUEST",
-            data: dtoToRecord(dto),
-            forExternalUser: true,
-            externalUserEmail: dto.email
-        })
-        return workflow.id;
-    }
+  async donate(dto: DonationFormDto) {
+    const workflow = await this.workflowFacade.createWorkflow({
+      type: "DONATION_REQUEST",
+      data: dtoToRecord(dto),
+      forExternalUser: true,
+      externalUserEmail: dto.email,
+    });
 
-
-    async signUp(dto: SignUpDto) {
-        const workflow = await this.workflowService.createWorkflow({
-            type: "JOIN_REQUEST",
-            data: dtoToRecord(dto),
-            forExternalUser: true,
-            externalUserEmail: dto.email
-        })
-        return workflow.id;
-    }
-
-
-    async donate(dto: DonationFormDto) {
-        const workflow = await this.workflowService.createWorkflow({
-            type: "DONATION_REQUEST",
-            data: dtoToRecord(dto),
-            forExternalUser: true,
-            externalUserEmail: dto.email
-        })
-
-        return workflow.id;
-    }
-
-
-
+    return workflow.id;
+  }
 }

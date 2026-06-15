@@ -1,23 +1,29 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DONATION_REPOSITORY } from '../../domain/repositories/donation.repository.interface';
-import type { IDonationRepository } from '../../domain/repositories/donation.repository.interface';
-import { DonationDto, DonationDetailFilterDto, CreateDonationDto, UpdateDonationDto, DonationSummaryDto, DonationRefDataDto, CreateGuestDonationDto } from '../dto/donation.dto';
-import { DonationDtoMapper } from '../dto/mapper/donation-dto.mapper';
-import { PagedResult } from 'src/shared/models/paged-result';
-import { BaseFilter } from 'src/shared/models/base-filter-props';
-import { CreateDonationUseCase } from '../use-cases/create-donation.use-case';
-import { UpdateDonationUseCase } from '../use-cases/update-donation.use-case';
-import { ProcessDonationPaymentUseCase } from '../use-cases/process-donation-payment.use-case';
-import { Donation, DonationType } from '../../domain/model/donation.model';
-import { BusinessException } from 'src/shared/exceptions/business-exception';
-import { MetadataService } from '../../infrastructure/external/metadata.service';
-import { toKeyValueDto } from 'src/shared/utilities/kv-config.util';
-import { formatDate } from 'src/shared/utilities/common.util';
+import { Inject,Injectable } from "@nestjs/common";
+import { BusinessException } from "src/shared/exceptions/business-exception";
+import { BaseFilter } from "src/shared/models/base-filter-props";
+import { PagedResult } from "src/shared/models/paged-result";
+import { formatDate } from "src/shared/utilities/common.util";
+import { toKeyValueDto } from "src/shared/utilities/kv-config.util";
+import { Donation,DonationType } from "../../domain/model/donation.model";
+import type { IDonationRepository } from "../../domain/repositories/donation.repository.interface";
+import { DONATION_REPOSITORY } from "../../domain/repositories/donation.repository.interface";
+import { MetadataService } from "../../infrastructure/external/metadata.service";
+import {
+CreateDonationDto,
+CreateGuestDonationDto,
+DonationDetailFilterDto,
+DonationDto,
+DonationRefDataDto,
+DonationSummaryDto,
+UpdateDonationDto,
+} from "../dto/donation.dto";
+import { DonationDtoMapper } from "../dto/mapper/donation-dto.mapper";
+import { CreateDonationUseCase } from "../use-cases/create-donation.use-case";
+import { ProcessDonationPaymentUseCase } from "../use-cases/process-donation-payment.use-case";
+import { UpdateDonationUseCase } from "../use-cases/update-donation.use-case";
 
 @Injectable()
 export class DonationService {
-
-
   constructor(
     @Inject(DONATION_REPOSITORY)
     private readonly donationRepository: IDonationRepository,
@@ -25,9 +31,11 @@ export class DonationService {
     private readonly updateDonationUseCase: UpdateDonationUseCase,
     private readonly processPaymentUseCase: ProcessDonationPaymentUseCase,
     private readonly metadataService: MetadataService,
-  ) { }
+  ) {}
 
-  async list(filter: BaseFilter<DonationDetailFilterDto>): Promise<PagedResult<DonationDto>> {
+  async list(
+    filter: BaseFilter<DonationDetailFilterDto>,
+  ): Promise<PagedResult<DonationDto>> {
     const result = await this.donationRepository.findPaged({
       pageIndex: filter.pageIndex,
       pageSize: filter.pageSize,
@@ -37,13 +45,15 @@ export class DonationService {
         donorName: filter.props?.donorName,
         status: filter.props?.status,
         type: filter.props?.type,
-        isGuest: filter.props?.isGuest ? (filter.props?.isGuest === 'Y') : undefined,
+        isGuest: filter.props?.isGuest
+          ? filter.props?.isGuest === "Y"
+          : undefined,
         startDate_raisedOn: filter.props?.startDate,
         endDate_raisedOn: filter.props?.endDate,
-      }
+      },
     });
     return new PagedResult(
-      result.content.map(d => DonationDtoMapper.toDto(d)),
+      result.content.map((d) => DonationDtoMapper.toDto(d)),
       result.totalSize,
       result.pageIndex,
       result.pageSize,
@@ -84,7 +94,11 @@ export class DonationService {
     return DonationDtoMapper.toDto(donation);
   }
 
-  async update(id: string, dto: UpdateDonationDto, userId: string): Promise<DonationDto> {
+  async update(
+    id: string,
+    dto: UpdateDonationDto,
+    userId: string,
+  ): Promise<DonationDto> {
     const donation = await this.updateDonationUseCase.execute({
       status: dto.status,
       remarks: dto.remarks,
@@ -112,21 +126,26 @@ export class DonationService {
     const donations = await this.donationRepository.findAll({
       donorId: donorId,
       status: Donation.outstandingStatus,
-      type: [DonationType.REGULAR]
+      type: [DonationType.REGULAR],
     });
     return {
-      outstandingAmount: donations.reduce((total, donation) => total + donation.amount, 0),
+      outstandingAmount: donations.reduce(
+        (total, donation) => total + donation.amount,
+        0,
+      ),
       hasOutstanding: donations.length > 0,
       outstandingMonths: donations
-        .filter(d => d.startDate)
-        .map(d => formatDate(d.startDate!, {
-          format: 'MMMM yyyy'
-        })),
+        .filter((d) => d.startDate)
+        .map((d) =>
+          formatDate(d.startDate!, {
+            format: "MMMM yyyy",
+          }),
+        ),
     };
   }
 
   async getReferenceData(): Promise<DonationRefDataDto> {
-    const data = await this.metadataService.getReferenceData()
+    const data = await this.metadataService.getReferenceData();
     return {
       donationStatuses: data.donationStatus.map(toKeyValueDto),
       donationTypes: data.donationType.map(toKeyValueDto),
@@ -134,8 +153,4 @@ export class DonationService {
       upiOptions: data.upiOption.map(toKeyValueDto),
     };
   }
-
-
 }
-
-

@@ -1,5 +1,5 @@
-import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
-import { Redis } from 'ioredis';
+import { Injectable,Logger } from "@nestjs/common";
+import { Redis } from "ioredis";
 
 export interface CacheOptions {
   prefix?: string;
@@ -133,14 +133,14 @@ export class RedisHashCacheService {
     prefix: string,
     options: FindOptions = {},
   ): Promise<FindResult<T>> {
-    const { cursor = '0', count = 100 } = options;
+    const { cursor = "0", count = 100 } = options;
     const pattern = this.getPattern(prefix);
 
     const [nextCursor, keys] = await this.redis.scan(
       cursor,
-      'MATCH',
+      "MATCH",
       pattern,
-      'COUNT',
+      "COUNT",
       count,
     );
 
@@ -163,7 +163,7 @@ export class RedisHashCacheService {
     return {
       items,
       cursor: nextCursor,
-      hasMore: nextCursor !== '0',
+      hasMore: nextCursor !== "0",
     };
   }
 
@@ -173,13 +173,13 @@ export class RedisHashCacheService {
    */
   async getAll<T>(prefix: string): Promise<T[]> {
     const allItems: T[] = [];
-    let cursor = '0';
+    let cursor = "0";
 
     do {
       const result = await this.findAll<T>(prefix, { cursor, count: 1000 });
       allItems.push(...result.items);
       cursor = result.cursor;
-    } while (cursor !== '0');
+    } while (cursor !== "0");
 
     return allItems;
   }
@@ -240,16 +240,16 @@ export class RedisHashCacheService {
    * @param prefix - Namespace prefix
    */
   async deleteAll(prefix: string): Promise<number> {
-    let cursor = '0';
+    let cursor = "0";
     let totalDeleted = 0;
     const pattern = this.getPattern(prefix);
 
     do {
       const [nextCursor, keys] = await this.redis.scan(
         cursor,
-        'MATCH',
+        "MATCH",
         pattern,
-        'COUNT',
+        "COUNT",
         1000,
       );
 
@@ -259,7 +259,7 @@ export class RedisHashCacheService {
       }
 
       cursor = nextCursor;
-    } while (cursor !== '0');
+    } while (cursor !== "0");
 
     this.logger.debug(`Deleted ${totalDeleted} keys with prefix ${prefix}`);
     return totalDeleted;
@@ -355,21 +355,21 @@ export class RedisHashCacheService {
    * @param prefix - Namespace prefix
    */
   async count(prefix: string): Promise<number> {
-    let cursor = '0';
+    let cursor = "0";
     let count = 0;
     const pattern = this.getPattern(prefix);
 
     do {
       const [nextCursor, keys] = await this.redis.scan(
         cursor,
-        'MATCH',
+        "MATCH",
         pattern,
-        'COUNT',
+        "COUNT",
         1000,
       );
       count += keys.length;
       cursor = nextCursor;
-    } while (cursor !== '0');
+    } while (cursor !== "0");
 
     return count;
   }
@@ -380,7 +380,7 @@ export class RedisHashCacheService {
    */
   private flattenObject(
     obj: Record<string, any>,
-    prefix: string = '',
+    prefix: string = "",
   ): Record<string, string> {
     const flattened: Record<string, string> = {};
 
@@ -390,8 +390,12 @@ export class RedisHashCacheService {
         const newKey = prefix ? `${prefix}.${key}` : key;
 
         if (value === null || value === undefined) {
-          flattened[newKey] = '';
-        } else if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+          flattened[newKey] = "";
+        } else if (
+          typeof value === "object" &&
+          !Array.isArray(value) &&
+          !(value instanceof Date)
+        ) {
           // Recursively flatten nested objects
           Object.assign(flattened, this.flattenObject(value, newKey));
         } else if (Array.isArray(value) || value instanceof Date) {
@@ -415,7 +419,7 @@ export class RedisHashCacheService {
     for (const key in flatData) {
       if (flatData.hasOwnProperty(key)) {
         const value = flatData[key];
-        const keys = key.split('.');
+        const keys = key.split(".");
         let current = result;
 
         for (let i = 0; i < keys.length - 1; i++) {
@@ -431,12 +435,12 @@ export class RedisHashCacheService {
         // Safer parsing logic
         try {
           if (
-            (value.startsWith('[') && value.endsWith(']')) ||
-            (value.startsWith('{') && value.endsWith('}')) ||
+            (value.startsWith("[") && value.endsWith("]")) ||
+            (value.startsWith("{") && value.endsWith("}")) ||
             value.startsWith('"')
           ) {
             current[lastKey] = JSON.parse(value);
-          } else if (value === '') {
+          } else if (value === "") {
             current[lastKey] = null;
           } else {
             // Keep as string to avoid data corruption (e.g. phone numbers becoming numbers)
@@ -471,9 +475,8 @@ export class RedisHashCacheService {
   ): Promise<void> {
     const key = this.getKey(prefix, id);
     const pipeline = this.redis.pipeline();
-    const serialized = typeof item === 'object' ? this.serialize(item) : String(item);
-
-
+    const serialized =
+      typeof item === "object" ? this.serialize(item) : String(item);
 
     pipeline.lpush(key, serialized); // Add to head
     pipeline.ltrim(key, 0, maxSize - 1); // Keep only top N
@@ -533,7 +536,8 @@ export class RedisHashCacheService {
     count: number = 0,
   ): Promise<number> {
     const key = this.getKey(prefix, id);
-    const serialized = typeof item === 'object' ? this.serialize(item) : String(item);
+    const serialized =
+      typeof item === "object" ? this.serialize(item) : String(item);
     const result = await this.redis.lrem(key, count, serialized);
     this.logger.debug(`Removed ${result} items from list ${key}`);
     return result;
@@ -541,16 +545,20 @@ export class RedisHashCacheService {
 
   private serialize(r: any) {
     {
-      if (r && typeof r === 'object' && !(r instanceof Date) && !Array.isArray(r)) {
+      if (
+        r &&
+        typeof r === "object" &&
+        !(r instanceof Date) &&
+        !Array.isArray(r)
+      ) {
         // If it's a complex object like a timer handle (Immediate), skip it or stringify safely
         try {
           return JSON.stringify(r);
         } catch {
-          return '[Non-Serializable Object]';
+          return "[Non-Serializable Object]";
         }
       }
       return r;
     }
   }
-
 }

@@ -1,6 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsArray, IsBoolean, IsDateString, IsEnum, IsNumber, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
+import {
+IsArray,
+IsBoolean,
+IsDateString,
+IsOptional,
+IsString,
+ValidateNested
+} from "class-validator";
 
 export class SpeakerDto {
   @ApiProperty()

@@ -1,9 +1,13 @@
-import { TaskAssignmentDto, WorkflowInstanceDto, WorkflowStepDto, WorkflowTaskDto } from "./workflow.dto";
 import { TaskAssignment } from "../../domain/model/task-assignment.model";
 import { WorkflowInstance } from "../../domain/model/workflow-instance.model";
 import { WorkflowStep } from "../../domain/model/workflow-step.model";
 import { WorkflowTask } from "../../domain/model/workflow-task.model";
-
+import {
+TaskAssignmentDto,
+WorkflowInstanceDto,
+WorkflowStepDto,
+WorkflowTaskDto,
+} from "./workflow.dto";
 
 /**
  * Converts between DTOs and Domain aggregate.
@@ -11,7 +15,6 @@ import { WorkflowTask } from "../../domain/model/workflow-task.model";
  * - toDto(domain) creates the DTO representation.
  */
 export class WorkflowDtoMapper {
-
   static toDto(domain: WorkflowInstance): WorkflowInstanceDto {
     return {
       id: domain.id,
@@ -29,9 +32,9 @@ export class WorkflowDtoMapper {
       remarks: domain.remarks,
       createdAt: domain.createdAt,
       updatedAt: domain.updatedAt,
-      steps: domain.steps.map(s => this.stepDomainToDto(s)),
-      expectedSteps: domain.actualSteps.map(s => this.stepDomainToDto(s)),
-      actualSteps: domain.actualSteps.map(s => this.stepDomainToDto(s)),
+      steps: domain.steps.map((s) => this.stepDomainToDto(s)),
+      expectedSteps: domain.actualSteps.map((s) => this.stepDomainToDto(s)),
+      actualSteps: domain.actualSteps.map((s) => this.stepDomainToDto(s)),
     };
   }
 
@@ -48,10 +51,9 @@ export class WorkflowDtoMapper {
       completedAt: step.completedAt,
       createdAt: step.createdAt,
       updatedAt: step.updatedAt,
-      tasks: step.tasks.map(t => this.taskDomainToDto(t)),
+      tasks: step.tasks.map((t) => this.taskDomainToDto(t)),
     };
   }
-
 
   static taskDomainToDto(task: WorkflowTask): WorkflowTaskDto {
     return {
@@ -74,8 +76,8 @@ export class WorkflowDtoMapper {
       remarks: task.remarks,
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
-      assignments: task.assignments.map(a => this.assignmentDomainToDto(a)),
-      autoCloseable: task.isAutoCloseable ?? false
+      assignments: task.assignments.map((a) => this.assignmentDomainToDto(a)),
+      autoCloseable: task.isAutoCloseable ?? false,
     };
   }
 
@@ -92,7 +94,4 @@ export class WorkflowDtoMapper {
       notes: a.notes,
     };
   }
-
-
-
 }

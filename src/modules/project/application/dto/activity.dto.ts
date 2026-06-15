@@ -1,10 +1,23 @@
-import { IsString, IsOptional, IsNumber, IsDate, IsArray, IsEnum, Min, IsInt } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ActivityScale, ActivityType, ActivityStatus, ActivityPriority } from '../../domain/model/activity.model';
+import { ApiProperty,ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
+import {
+IsArray,
+IsDate,
+IsEnum,
+IsInt,
+IsNumber,
+IsOptional,
+IsString,
+Min,
+} from "class-validator";
+import {
+ActivityPriority,
+ActivityScale,
+ActivityStatus,
+ActivityType,
+} from "../../domain/model/activity.model";
 
 export class CreateActivityDto {
-
   @IsString()
   @ApiProperty()
   name: string;
@@ -29,13 +42,13 @@ export class CreateActivityDto {
   @IsOptional()
   @IsDate()
   @Type(() => Date)
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   startDate?: Date;
 
   @IsOptional()
   @IsDate()
   @Type(() => Date)
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   endDate?: Date;
 
   @IsOptional()
@@ -125,13 +138,13 @@ export class UpdateActivityDto {
   @IsOptional()
   @IsDate()
   @Type(() => Date)
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   startDate?: Date;
 
   @IsOptional()
   @IsDate()
   @Type(() => Date)
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   endDate?: Date;
 
   @IsOptional()
@@ -249,16 +262,16 @@ export class ActivityDetailDto {
   @ApiProperty({ enum: ActivityPriority })
   priority: ActivityPriority;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   startDate?: Date;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   endDate?: Date;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   actualStartDate?: Date;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   actualEndDate?: Date;
 
   @ApiPropertyOptional()
@@ -297,20 +310,19 @@ export class ActivityDetailDto {
   @ApiPropertyOptional()
   metadata?: Record<string, any>;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: Date;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   updatedAt: Date;
 
   @ApiProperty({ type: [String] })
   @IsArray()
   @IsString({ each: true })
-  nextStatus: ActivityStatus[]
+  nextStatus: ActivityStatus[];
 }
 
 export class ActivityDetailFilterDto {
-
   @IsOptional()
   @IsEnum(ActivityScale)
   @ApiPropertyOptional({ enum: ActivityScale })
@@ -341,4 +353,3 @@ export class ActivityDetailFilterDto {
   @ApiPropertyOptional()
   parentActivityId?: string;
 }
-

@@ -1,5 +1,5 @@
-import { EarningDetailDto } from "../earning.dto";
 import { Earning } from "../../../domain/model/earning.model";
+import { EarningDetailDto } from "../earning.dto";
 
 /**
  * Earning DTO Mapper
@@ -24,5 +24,3 @@ export class EarningDtoMapper {
     };
   }
 }
-
-

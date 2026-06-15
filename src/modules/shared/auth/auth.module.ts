@@ -1,27 +1,27 @@
-import { Global, Module } from '@nestjs/common';
-import { PermissionsGuard } from './application/guards/permissions.guard';
-import { APP_GUARD } from '@nestjs/core';
-import { OAuthController } from './presentation/controllers/oauth.controller';
-import { GoogleOAuthService } from './infrastructure/external/google-oauth.service';
-import { TokenRepository } from './infrastructure/persistence/token.repository';
-import { TOKEN_REPOSITORY } from './domain/repository/token.repository.interface';
-import { JwtAuthService } from './application/services/jwt-auth.service';
-import { ApiKeyService } from './application/services/api-key.service';
-import { UnifiedAuthGuard } from './application/guards/unified-auth.guard';
-import { ApiKeyRepository } from './infrastructure/persistence/api-key.repository';
-import { ApiKeyController } from './presentation/controllers/api-key.controller';
-import { ApiKeyEventsHandler } from './application/handler/api-key-events.handler';
-import { API_KEY_REPOSITORY } from './domain/repository/api-key.repository.interface';
-import { HttpModule } from '@nestjs/axios';
-import { RecaptchaService } from './application/services/google-recaptcha.service';
-import { Auth0OAuthService } from './infrastructure/external/auth0-oauth.service';
-import { AUTH0_OAUTH_SERVICE, GOOGLE_OAUTH_SERVICE } from './application/services';
-
+import { HttpModule } from "@nestjs/axios";
+import { Module } from "@nestjs/common";
+import { APP_GUARD } from "@nestjs/core";
+import { PermissionsGuard } from "./application/guards/permissions.guard";
+import { UnifiedAuthGuard } from "./application/guards/unified-auth.guard";
+import { ApiKeyEventsHandler } from "./application/handler/api-key-events.handler";
+import {
+AUTH0_OAUTH_SERVICE,
+GOOGLE_OAUTH_SERVICE,
+} from "./application/services";
+import { ApiKeyService } from "./application/services/api-key.service";
+import { RecaptchaService } from "./application/services/google-recaptcha.service";
+import { JwtAuthService } from "./application/services/jwt-auth.service";
+import { API_KEY_REPOSITORY } from "./domain/repository/api-key.repository.interface";
+import { TOKEN_REPOSITORY } from "./domain/repository/token.repository.interface";
+import { Auth0OAuthService } from "./infrastructure/external/auth0-oauth.service";
+import { GoogleOAuthService } from "./infrastructure/external/google-oauth.service";
+import { ApiKeyRepository } from "./infrastructure/persistence/api-key.repository";
+import { TokenRepository } from "./infrastructure/persistence/token.repository";
+import { ApiKeyController } from "./presentation/controllers/api-key.controller";
+import { OAuthController } from "./presentation/controllers/oauth.controller";
 
 @Module({
-  imports: [
-    HttpModule
-  ],
+  imports: [HttpModule],
   controllers: [OAuthController, ApiKeyController],
   providers: [
     {
@@ -59,5 +59,4 @@ import { AUTH0_OAUTH_SERVICE, GOOGLE_OAUTH_SERVICE } from './application/service
   ],
   exports: [GOOGLE_OAUTH_SERVICE, AUTH0_OAUTH_SERVICE],
 })
-export class AuthModule { }
-
+export class AuthModule {}

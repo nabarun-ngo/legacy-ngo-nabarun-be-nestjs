@@ -1,4 +1,4 @@
-import { createParamDecorator, ExecutionContext } from "@nestjs/common";
+import { createParamDecorator,ExecutionContext } from "@nestjs/common";
 import { AuthUser } from "../../domain/models/api-user.model";
 
 export const CurrentUser = createParamDecorator(

@@ -1,13 +1,16 @@
-import { Injectable } from '@nestjs/common';
-import { IExpenseRepository } from '../../domain/repositories/expense.repository.interface';
-import { Expense, ExpenseFilter, ExpenseStatus } from '../../domain/model/expense.model';
-import { Prisma } from '@prisma/client';
-import { PrismaPostgresService } from 'src/modules/shared/database/prisma-postgres.service';
-import { BaseFilter } from 'src/shared/models/base-filter-props';
-import { PagedResult } from 'src/shared/models/paged-result';
-import { ExpenseDetailFilterDto } from '../../application/dto/expense.dto';
-import { ExpenseInfraMapper } from '../mapper/expense-infra.mapper';
-
+import { Injectable } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
+import { PrismaPostgresService } from "src/modules/shared/database/prisma-postgres.service";
+import { BaseFilter } from "src/shared/models/base-filter-props";
+import { PagedResult } from "src/shared/models/paged-result";
+import { ExpenseDetailFilterDto } from "../../application/dto/expense.dto";
+import {
+Expense,
+ExpenseFilter,
+ExpenseStatus,
+} from "../../domain/model/expense.model";
+import { IExpenseRepository } from "../../domain/repositories/expense.repository.interface";
+import { ExpenseInfraMapper } from "../mapper/expense-infra.mapper";
 
 export type ExpensePersistence = Prisma.ExpenseGetPayload<{
   include: {
@@ -20,25 +23,27 @@ export type ExpensePersistence = Prisma.ExpenseGetPayload<{
     submittedBy: true;
     paidBy: true;
     activity: true;
-  }
+  };
 }>;
 
 @Injectable()
 class ExpenseRepository implements IExpenseRepository {
-  constructor(private readonly prisma: PrismaPostgresService) { }
+  constructor(private readonly prisma: PrismaPostgresService) {}
 
   async count(filter: ExpenseFilter): Promise<number> {
     const where = this.whereQuery(filter);
     return await this.prisma.expense.count({ where });
   }
 
-  async findPaged(filter?: BaseFilter<ExpenseDetailFilterDto>): Promise<PagedResult<Expense>> {
+  async findPaged(
+    filter?: BaseFilter<ExpenseDetailFilterDto>,
+  ): Promise<PagedResult<Expense>> {
     const where = this.whereQuery(filter?.props);
 
     const [data, total] = await Promise.all([
       this.prisma.expense.findMany({
         where,
-        orderBy: { expenseDate: 'desc' },
+        orderBy: { expenseDate: "desc" },
         include: {
           account: true,
           createdBy: true,
@@ -57,7 +62,7 @@ class ExpenseRepository implements IExpenseRepository {
     ]);
 
     return new PagedResult<Expense>(
-      data.map(m => ExpenseInfraMapper.toExpenseDomain(m)!),
+      data.map((m) => ExpenseInfraMapper.toExpenseDomain(m)!),
       total,
       filter?.pageIndex ?? 0,
       filter?.pageSize ?? 1000,
@@ -67,7 +72,7 @@ class ExpenseRepository implements IExpenseRepository {
   async findAll(filter?: ExpenseDetailFilterDto): Promise<Expense[]> {
     const expenses = await this.prisma.expense.findMany({
       where: this.whereQuery(filter),
-      orderBy: { expenseDate: 'desc' },
+      orderBy: { expenseDate: "desc" },
       include: {
         account: true,
         createdBy: true,
@@ -81,7 +86,7 @@ class ExpenseRepository implements IExpenseRepository {
       },
     });
 
-    return expenses.map(m => ExpenseInfraMapper.toExpenseDomain(m)!);
+    return expenses.map((m) => ExpenseInfraMapper.toExpenseDomain(m)!);
   }
 
   private whereQuery(props?: ExpenseFilter): Prisma.ExpenseWhereInput {
@@ -92,11 +97,11 @@ class ExpenseRepository implements IExpenseRepository {
       ...(props?.expenseRefId ? { referenceId: props.expenseRefId } : {}),
       ...(props?.startDate || props?.endDate
         ? {
-          expenseDate: {
-            ...(props.startDate ? { gte: props.startDate } : {}),
-            ...(props.endDate ? { lte: props.endDate } : {}),
-          },
-        }
+            expenseDate: {
+              ...(props.startDate ? { gte: props.startDate } : {}),
+              ...(props.endDate ? { lte: props.endDate } : {}),
+            },
+          }
         : {}),
       deletedAt: null,
     };
@@ -122,11 +127,10 @@ class ExpenseRepository implements IExpenseRepository {
     return ExpenseInfraMapper.toExpenseDomain(expense!);
   }
 
-
   async findByStatus(status: ExpenseStatus): Promise<Expense[]> {
     const expenses = await this.prisma.expense.findMany({
       where: { status, deletedAt: null },
-      orderBy: { expenseDate: 'desc' },
+      orderBy: { expenseDate: "desc" },
       include: {
         account: true,
         createdBy: true,
@@ -140,13 +144,13 @@ class ExpenseRepository implements IExpenseRepository {
       },
     });
 
-    return expenses.map(m => ExpenseInfraMapper.toExpenseDomain(m)!);
+    return expenses.map((m) => ExpenseInfraMapper.toExpenseDomain(m)!);
   }
 
   async findByRequestedBy(userId: string): Promise<Expense[]> {
     const expenses = await this.prisma.expense.findMany({
       where: { createdById: userId, deletedAt: null },
-      orderBy: { expenseDate: 'desc' },
+      orderBy: { expenseDate: "desc" },
       include: {
         account: true,
         createdBy: true,
@@ -160,10 +164,8 @@ class ExpenseRepository implements IExpenseRepository {
       },
     });
 
-    return expenses.map(m => ExpenseInfraMapper.toExpenseDomain(m)!);
+    return expenses.map((m) => ExpenseInfraMapper.toExpenseDomain(m)!);
   }
-
-
 
   async create(expense: Expense): Promise<Expense> {
     const createData: Prisma.ExpenseUncheckedCreateInput = {

@@ -1,7 +1,11 @@
-import { IRepository } from 'src/shared/interfaces/repository.interface';
-import { Beneficiary, BeneficiaryFilterProps } from '../model/beneficiary.model';
+import { IRepository } from "src/shared/interfaces/repository.interface";
+import {
+Beneficiary,
+BeneficiaryFilterProps,
+} from "../model/beneficiary.model";
 
-export interface IBeneficiaryRepository extends IRepository<Beneficiary, string, BeneficiaryFilterProps> {
+export interface IBeneficiaryRepository
+  extends IRepository<Beneficiary, string, BeneficiaryFilterProps> {
   findById(id: string): Promise<Beneficiary | null>;
   findByProjectId(projectId: string): Promise<Beneficiary[]>;
   findByStatus(status: string): Promise<Beneficiary[]>;
@@ -12,5 +16,4 @@ export interface IBeneficiaryRepository extends IRepository<Beneficiary, string,
   findAll(filter?: BeneficiaryFilterProps): Promise<Beneficiary[]>;
 }
 
-export const BENEFICIARY_REPOSITORY = Symbol('BENEFICIARY_REPOSITORY');
-
+export const BENEFICIARY_REPOSITORY = Symbol("BENEFICIARY_REPOSITORY");

@@ -1,26 +1,40 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
-import { WorkflowFilter, WorkflowInstance } from '../../domain/model/workflow-instance.model';
-import { TaskFilter, WorkflowTask, WorkflowTaskStatus } from '../../domain/model/workflow-task.model';
-import { WorkflowInstanceDto, WorkflowTaskDto, StartWorkflowDto, UpdateTaskDto, WorkflowRefDataDto } from '../dto/workflow.dto';
-import { BusinessException } from '../../../../shared/exceptions/business-exception';
-import { type IWorkflowInstanceRepository, WORKFLOW_INSTANCE_REPOSITORY } from '../../domain/repositories/workflow-instance.repository.interface';
-import { WorkflowDtoMapper } from '../dto/workflow-dto.mapper';
-import { StartWorkflowUseCase } from '../use-cases/start-workflow.use-case';
-import { AuthUser } from 'src/modules/shared/auth/domain/models/api-user.model';
-import { BaseFilter } from 'src/shared/models/base-filter-props';
-import { PagedResult } from 'src/shared/models/paged-result';
-import { CompleteTaskUseCase } from '../use-cases/complete-task.use-case';
-import { AutomaticTaskService } from './automatic-task.service';
-import { WorkflowDefService } from '../../infrastructure/external/workflow-def.service';
-import { toKeyValueDto } from 'src/shared/utilities/kv-config.util';
-import { ReassignTaskUseCase } from '../use-cases/reassign-task.use-case';
-import { CancelWorkflowUseCase } from '../use-cases/cancel-workflow.use-case';
-import { fieldAttributeDomainToDto } from 'src/shared/utilities/additional-field.util';
+import { Inject,Injectable,Logger } from "@nestjs/common";
+import { AuthUser } from "src/modules/shared/auth/domain/models/api-user.model";
+import { BaseFilter } from "src/shared/models/base-filter-props";
+import { PagedResult } from "src/shared/models/paged-result";
+import { fieldAttributeDomainToDto } from "src/shared/utilities/additional-field.util";
+import { toKeyValueDto } from "src/shared/utilities/kv-config.util";
+import { BusinessException } from "../../../../shared/exceptions/business-exception";
+import {
+WorkflowFilter,
+WorkflowInstance,
+} from "../../domain/model/workflow-instance.model";
+import {
+TaskFilter,
+WorkflowTask,
+WorkflowTaskStatus,
+} from "../../domain/model/workflow-task.model";
+import {
+type IWorkflowInstanceRepository,
+WORKFLOW_INSTANCE_REPOSITORY,
+} from "../../domain/repositories/workflow-instance.repository.interface";
+import { WorkflowDefService } from "../../infrastructure/external/workflow-def.service";
+import { WorkflowDtoMapper } from "../dto/workflow-dto.mapper";
+import {
+StartWorkflowDto,
+UpdateTaskDto,
+WorkflowInstanceDto,
+WorkflowRefDataDto,
+WorkflowTaskDto,
+} from "../dto/workflow.dto";
+import { CancelWorkflowUseCase } from "../use-cases/cancel-workflow.use-case";
+import { CompleteTaskUseCase } from "../use-cases/complete-task.use-case";
+import { ReassignTaskUseCase } from "../use-cases/reassign-task.use-case";
+import { StartWorkflowUseCase } from "../use-cases/start-workflow.use-case";
+import { AutomaticTaskService } from "./automatic-task.service";
 
 @Injectable()
 export class WorkflowService {
-
-
   private readonly logger = new Logger(WorkflowService.name);
 
   constructor(
@@ -32,46 +46,58 @@ export class WorkflowService {
     private readonly workflowDefService: WorkflowDefService,
     private readonly reassignTaskUseCase: ReassignTaskUseCase,
     private readonly cancelWorkflowUseCase: CancelWorkflowUseCase,
-  ) { }
+  ) {}
 
-  async getWorkflows(filter: BaseFilter<WorkflowFilter>): Promise<PagedResult<WorkflowInstanceDto>> {
+  async getWorkflows(
+    filter: BaseFilter<WorkflowFilter>,
+  ): Promise<PagedResult<WorkflowInstanceDto>> {
     const result = await this.instanceRepository.findPaged({
       pageIndex: filter.pageIndex,
       pageSize: filter.pageSize,
       props: filter.props,
     });
     return new PagedResult<WorkflowInstanceDto>(
-      result.content.map(m => WorkflowDtoMapper.toDto(m)),
+      result.content.map((m) => WorkflowDtoMapper.toDto(m)),
       result.totalSize,
       result.pageIndex,
       result.pageSize,
     );
   }
 
-  async getWorkflow(id: string, includeTask: boolean): Promise<WorkflowInstanceDto> {
+  async getWorkflow(
+    id: string,
+    includeTask: boolean,
+  ): Promise<WorkflowInstanceDto> {
     const instance = await this.instanceRepository.findById(id, includeTask);
     return WorkflowDtoMapper.toDto(instance!);
   }
 
-  async getWorkflowTasks(filter: BaseFilter<TaskFilter>): Promise<PagedResult<WorkflowTaskDto>> {
+  async getWorkflowTasks(
+    filter: BaseFilter<TaskFilter>,
+  ): Promise<PagedResult<WorkflowTaskDto>> {
     const instance = await this.instanceRepository.findTasksPaged(filter);
     return new PagedResult<WorkflowTaskDto>(
-      instance.content.map(m => WorkflowDtoMapper.taskDomainToDto(m)),
+      instance.content.map((m) => WorkflowDtoMapper.taskDomainToDto(m)),
       instance.totalSize,
       instance.pageIndex,
       instance.pageSize,
     );
   }
 
-  async updateTask(id: string, taskId: string, dto: UpdateTaskDto, authUser: AuthUser): Promise<WorkflowTaskDto> {
+  async updateTask(
+    id: string,
+    taskId: string,
+    dto: UpdateTaskDto,
+    authUser: AuthUser,
+  ): Promise<WorkflowTaskDto> {
     const instance = await this.completeTask.execute({
       instanceId: id,
       taskId: taskId,
-      remarks: dto.remarks ?? '',
+      remarks: dto.remarks ?? "",
       status: dto.status,
       completedBy: { id: authUser.profile_id },
       data: dto.resultData,
-    })
+    });
     return WorkflowDtoMapper.taskDomainToDto(instance);
   }
 
@@ -82,7 +108,9 @@ export class WorkflowService {
       requestedBy: requestedBy?.profile_id!,
       requestedFor: input.requestedFor,
       forExternalUser: input.forExternalUser,
-      externalUserEmail: input.forExternalUser ? input.externalUserEmail : undefined,
+      externalUserEmail: input.forExternalUser
+        ? input.externalUserEmail
+        : undefined,
     });
     return WorkflowDtoMapper.toDto(workflow);
   }
@@ -91,10 +119,14 @@ export class WorkflowService {
     instance: string | WorkflowInstance,
     taskId: string,
   ): Promise<WorkflowTaskDto> {
-    const workflow: WorkflowInstance | null = instance instanceof WorkflowInstance ? instance :
-      await this.instanceRepository.findById(instance, true);
-    const step = workflow?.steps.find(s => s.stepDefId === workflow.currentStepDefId);
-    const task = step?.tasks?.find(t => t.id == taskId);
+    const workflow: WorkflowInstance | null =
+      instance instanceof WorkflowInstance
+        ? instance
+        : await this.instanceRepository.findById(instance, true);
+    const step = workflow?.steps.find(
+      (s) => s.stepDefId === workflow.currentStepDefId,
+    );
+    const task = step?.tasks?.find((t) => t.id == taskId);
 
     if (!task) {
       throw new BusinessException(`Task not found: ${taskId}`);
@@ -107,9 +139,21 @@ export class WorkflowService {
     try {
       workflow?.updateTask(task.id, WorkflowTaskStatus.IN_PROGRESS);
       await this.taskService.handleTask(task, workflow?.context);
-      workflow?.updateTask(task.id, WorkflowTaskStatus.COMPLETED, undefined, undefined, task.resultData);
+      workflow?.updateTask(
+        task.id,
+        WorkflowTaskStatus.COMPLETED,
+        undefined,
+        undefined,
+        task.resultData,
+      );
     } catch (error) {
-      workflow?.updateTask(task.id, WorkflowTaskStatus.FAILED, undefined, error.message, task.resultData);
+      workflow?.updateTask(
+        task.id,
+        WorkflowTaskStatus.FAILED,
+        undefined,
+        error.message,
+        task.resultData,
+      );
     }
 
     await this.instanceRepository.update(workflow?.id!, workflow!);
@@ -126,19 +170,32 @@ export class WorkflowService {
       workflowTaskStatuses: refData.workflowTaskStatus.map(toKeyValueDto),
       workflowTaskTypes: refData.workflowTaskType.map(toKeyValueDto),
       visibleTaskStatuses: refData.visibleTaskStatus.map(toKeyValueDto),
-      outstandingTaskStatuses: refData.workflowTaskStatus.filter(s => !WorkflowTask.completedTaskStatus.includes(s.KEY as any)).map(toKeyValueDto),
-      completedTaskStatuses: refData.workflowTaskStatus.filter(s => WorkflowTask.completedTaskStatus.includes(s.KEY as any)).map(toKeyValueDto),
-    }
+      outstandingTaskStatuses: refData.workflowTaskStatus
+        .filter((s) => !WorkflowTask.completedTaskStatus.includes(s.KEY as any))
+        .map(toKeyValueDto),
+      completedTaskStatuses: refData.workflowTaskStatus
+        .filter((s) => WorkflowTask.completedTaskStatus.includes(s.KEY as any))
+        .map(toKeyValueDto),
+    };
   }
 
   async getAdditionalFields(type: string, stepId?: string, taskId?: string) {
-    const additionalFields = await this.workflowDefService.getAdditionalFields(type, stepId, taskId);
-    return additionalFields.map(m => fieldAttributeDomainToDto(m));
+    const additionalFields = await this.workflowDefService.getAdditionalFields(
+      type,
+      stepId,
+      taskId,
+    );
+    return additionalFields.map((m) => fieldAttributeDomainToDto(m));
   }
 
-  async reassignTask(instanceId: string, taskId: string, userId?: string, fromDefinition?: boolean): Promise<WorkflowTaskDto> {
+  async reassignTask(
+    instanceId: string,
+    taskId: string,
+    userId?: string,
+    fromDefinition?: boolean,
+  ): Promise<WorkflowTaskDto> {
     if (fromDefinition == false && !userId) {
-      throw new BusinessException('User is required for reassignment');
+      throw new BusinessException("User is required for reassignment");
     }
     const task = await this.reassignTaskUseCase.execute({
       instanceId,
@@ -149,7 +206,11 @@ export class WorkflowService {
     return WorkflowDtoMapper.taskDomainToDto(task);
   }
 
-  async cancelWorkflow(instanceId: string, reason: string, authUser: AuthUser): Promise<WorkflowInstanceDto> {
+  async cancelWorkflow(
+    instanceId: string,
+    reason: string,
+    authUser: AuthUser,
+  ): Promise<WorkflowInstanceDto> {
     const workflow = await this.cancelWorkflowUseCase.execute({
       id: instanceId,
       reason: reason,
@@ -158,4 +219,3 @@ export class WorkflowService {
     return WorkflowDtoMapper.toDto(workflow);
   }
 }
-

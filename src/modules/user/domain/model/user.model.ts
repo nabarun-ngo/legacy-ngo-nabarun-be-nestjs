@@ -1,24 +1,24 @@
-import { AggregateRoot } from '../../../../shared/models/aggregate-root';
-import { UserCreatedEvent } from '../events/user-created.event';
-import { randomUUID } from 'crypto';
-import { BusinessException } from 'src/shared/exceptions/business-exception';
-import { Role } from './role.model';
-import { Address } from './address.model';
-import { PhoneNumber } from './phone-number.model';
-import { Link } from './link.model';
-import { generatePassword } from '../../../../shared/utilities/password-util';
-import { RoleAssignedEvent } from '../events/role-assigned.event';
-import { UserDeletedEvent } from '../events/user-deleted.event';
+import { randomUUID } from "crypto";
+import { BusinessException } from "src/shared/exceptions/business-exception";
+import { AggregateRoot } from "../../../../shared/models/aggregate-root";
+import { generatePassword } from "../../../../shared/utilities/password-util";
+import { RoleAssignedEvent } from "../events/role-assigned.event";
+import { UserCreatedEvent } from "../events/user-created.event";
+import { UserDeletedEvent } from "../events/user-deleted.event";
+import { Address } from "./address.model";
+import { Link } from "./link.model";
+import { PhoneNumber } from "./phone-number.model";
+import { Role } from "./role.model";
 
 export enum UserStatus {
-  DRAFT = 'DRAFT',
-  ACTIVE = 'ACTIVE',
+  DRAFT = "DRAFT",
+  ACTIVE = "ACTIVE",
   BLOCKED = "BLOCKED",
   DELETED = "DELETED",
 }
 export enum LoginMethod {
-  EMAIL = 'EMAIL',
-  PASSWORD = 'PASSWORD',
+  EMAIL = "EMAIL",
+  PASSWORD = "PASSWORD",
 }
 
 export class UserFilterProps {
@@ -55,11 +55,10 @@ export class UserAttributesProps {
   userId?: string;
   loginMethods?: LoginMethod[];
   aadharNumber?: string;
-  panNumber?: string
+  panNumber?: string;
   donationAmount?: number;
   donationPauseStart?: Date;
   donationPauseEnd?: Date;
-
 }
 
 export class User extends AggregateRoot<string> {
@@ -98,18 +97,20 @@ export class User extends AggregateRoot<string> {
   #isDeleted?: boolean;
   #donationAmount?: number;
 
-
   // ---- Factory
-  public static create(data: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    number: PhoneNumber;
-    isTemporary: boolean;
-  }, existingUser?: User | null): User {
+  public static create(
+    data: {
+      firstName: string;
+      lastName: string;
+      email: string;
+      number: PhoneNumber;
+      isTemporary: boolean;
+    },
+    existingUser?: User | null,
+  ): User {
     if (!data.firstName || !data.lastName || !data.email || !data.number) {
       throw new BusinessException(
-        'firstName, lastName, phoneNumber and email are required',
+        "firstName, lastName, phoneNumber and email are required",
       );
     }
     const user = new User(
@@ -151,17 +152,16 @@ export class User extends AggregateRoot<string> {
     this.#password = generatePassword({ length: 12 });
   }
 
-
   // ---- Domain behaviors (helpers) ----
   private computeFullName(): string | undefined {
     if (!this.firstName || !this.lastName) return undefined;
-    const f = this.firstName ?? '';
-    const l = this.lastName ?? '';
-    return (f + ' ' + l).trim();
+    const f = this.firstName ?? "";
+    const l = this.lastName ?? "";
+    return (f + " " + l).trim();
   }
 
   private computeInitials(): string {
-    if (!this.firstName || !this.lastName) return '';
+    if (!this.firstName || !this.lastName) return "";
     return (this.firstName[0] + this.lastName[0]).toUpperCase();
   }
 
@@ -169,7 +169,7 @@ export class User extends AggregateRoot<string> {
     // note: this mirrors original behavior (may run before names assigned)
     return `https://ui-avatars.com/api/?name=${this.firstName}+${this.lastName}&background=random`.replace(
       /\s+/g,
-      '',
+      "",
     );
   }
 
@@ -253,7 +253,8 @@ export class User extends AggregateRoot<string> {
     this.#isProfileCompleted = this.checkComplteness();
     this.#fullName = this.computeFullName();
     this.#initials = this.computeInitials();
-    this.#picture = detail.picture ?? this.#picture ?? this.generatePictureUrl();
+    this.#picture =
+      detail.picture ?? this.#picture ?? this.generatePictureUrl();
     this.#updateAuth =
       detail.firstName !== undefined ||
       detail.lastName !== undefined ||
@@ -269,28 +270,28 @@ export class User extends AggregateRoot<string> {
       this.#gender &&
       this.#email &&
       this.#authUserId
-    )
+    );
   }
 
   public updateAdmin(detail: UserAttributesProps): void {
     this.#status = detail.status ?? this.#status;
     this.#authUserId = detail.userId ?? this.#authUserId;
-    this.#updateAuth = detail.userId !== undefined || this.#status !== undefined;
+    this.#updateAuth =
+      detail.userId !== undefined || this.#status !== undefined;
     this.#donationAmount = detail.donationAmount ?? this.#donationAmount;
     this.#aadharNumber = detail.aadharNumber ?? this.#aadharNumber;
     this.#panNumber = detail.panNumber ?? this.#panNumber;
-    this.#donationPauseStart = detail.donationPauseStart ?? this.#donationPauseStart;
+    this.#donationPauseStart =
+      detail.donationPauseStart ?? this.#donationPauseStart;
     this.#donationPauseEnd = detail.donationPauseEnd ?? this.#donationPauseEnd;
     this.touch();
   }
 
-  public addLoginMethod(
-    newMethods?: LoginMethod[],
-  ): LoginMethod[] {
+  public addLoginMethod(newMethods?: LoginMethod[]): LoginMethod[] {
     if (!newMethods) {
       return [];
     }
-    var toAdd: LoginMethod[] = [];
+    const toAdd: LoginMethod[] = [];
     for (const newMethod of newMethods) {
       if (!this.#loginMethod.includes(newMethod)) {
         this.#loginMethod.push(newMethod);
@@ -334,11 +335,15 @@ export class User extends AggregateRoot<string> {
     });
 
     incomingRoles.forEach((role) => {
-      this.#roles.push(Role.create(role.roleCode, role.roleName, role.authRoleCode));
+      this.#roles.push(
+        Role.create(role.roleCode, role.roleName, role.authRoleCode),
+      );
     });
 
     if (toAdd.length > 0 || toRemove.length > 0) {
-      this.addDomainEvent(new RoleAssignedEvent(this.id, this, toAdd, toRemove));
+      this.addDomainEvent(
+        new RoleAssignedEvent(this.id, this, toAdd, toRemove),
+      );
     }
     return { toAdd, toRemove };
   }
@@ -358,16 +363,18 @@ export class User extends AggregateRoot<string> {
 
   public getRoleHistory(): Record<string, Role[]> {
     const format = (d: Date) =>
-      d.toLocaleString('en-US', { month: 'short', year: 'numeric' });
-    return this.#roles.reverse()
-      .reduce((acc, role) => {
+      d.toLocaleString("en-US", { month: "short", year: "numeric" });
+    return this.#roles.reverse().reduce(
+      (acc, role) => {
         const start = format(role.createdAt);
-        const end = role.expireAt ? format(role.expireAt) : 'Present';
+        const end = role.expireAt ? format(role.expireAt) : "Present";
         const key = `${start} - ${end}`;
         acc[key] = acc[key] || [];
         acc[key].unshift(role);
         return acc;
-      }, {} as Record<string, Role[]>);
+      },
+      {} as Record<string, Role[]>,
+    );
   }
 
   // ---- Constructors & getters region ----

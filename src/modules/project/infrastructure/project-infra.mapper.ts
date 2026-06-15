@@ -1,13 +1,29 @@
-import { Project, ProjectCategory, ProjectStatus, ProjectPhase } from '../domain/model/project.model';
-import { Activity, ActivityScale, ActivityType, ActivityStatus, ActivityPriority } from '../domain/model/activity.model';
-import { Beneficiary, BeneficiaryType, BeneficiaryGender, BeneficiaryStatus } from '../domain/model/beneficiary.model';
-import { Prisma } from '@prisma/client';
+import { Prisma } from "@prisma/client";
+import { MapperUtils } from "src/modules/shared/database/mapper-utils";
 import {
-  ProjectPersistence,
-  ActivityPersistence,
-  BeneficiaryPersistence,
-} from './types/project-persistence.types';
-import { MapperUtils } from 'src/modules/shared/database/mapper-utils';
+Activity,
+ActivityPriority,
+ActivityScale,
+ActivityStatus,
+ActivityType,
+} from "../domain/model/activity.model";
+import {
+Beneficiary,
+BeneficiaryGender,
+BeneficiaryStatus,
+BeneficiaryType,
+} from "../domain/model/beneficiary.model";
+import {
+Project,
+ProjectCategory,
+ProjectPhase,
+ProjectStatus,
+} from "../domain/model/project.model";
+import {
+ActivityPersistence,
+BeneficiaryPersistence,
+ProjectPersistence,
+} from "./types/project-persistence.types";
 
 /**
  * Project Infrastructure Mapper
@@ -44,7 +60,9 @@ export class ProjectInfraMapper {
     );
   }
 
-  static toProjectCreatePersistence(domain: Project): Prisma.ProjectUncheckedCreateInput {
+  static toProjectCreatePersistence(
+    domain: Project,
+  ): Prisma.ProjectUncheckedCreateInput {
     return {
       id: domain.id,
       name: domain.name,
@@ -60,8 +78,12 @@ export class ProjectInfraMapper {
       spentAmount: domain.spentAmount ?? 0,
       currency: domain.currency,
       location: MapperUtils.undefinedToNull(domain.location),
-      targetBeneficiaryCount: MapperUtils.undefinedToNull(domain.targetBeneficiaryCount),
-      actualBeneficiaryCount: MapperUtils.undefinedToNull(domain.actualBeneficiaryCount),
+      targetBeneficiaryCount: MapperUtils.undefinedToNull(
+        domain.targetBeneficiaryCount,
+      ),
+      actualBeneficiaryCount: MapperUtils.undefinedToNull(
+        domain.actualBeneficiaryCount,
+      ),
       managerId: domain.managerId,
       sponsorId: MapperUtils.undefinedToNull(domain.sponsorId),
       tags: domain.tags,
@@ -72,7 +94,9 @@ export class ProjectInfraMapper {
     };
   }
 
-  static toProjectUpdatePersistence(domain: Project): Prisma.ProjectUncheckedUpdateInput {
+  static toProjectUpdatePersistence(
+    domain: Project,
+  ): Prisma.ProjectUncheckedUpdateInput {
     return {
       name: domain.name,
       description: domain.description,
@@ -84,8 +108,12 @@ export class ProjectInfraMapper {
       budget: domain.budget,
       spentAmount: domain.spentAmount,
       location: MapperUtils.undefinedToNull(domain.location),
-      targetBeneficiaryCount: MapperUtils.undefinedToNull(domain.targetBeneficiaryCount),
-      actualBeneficiaryCount: MapperUtils.undefinedToNull(domain.actualBeneficiaryCount),
+      targetBeneficiaryCount: MapperUtils.undefinedToNull(
+        domain.targetBeneficiaryCount,
+      ),
+      actualBeneficiaryCount: MapperUtils.undefinedToNull(
+        domain.actualBeneficiaryCount,
+      ),
       sponsorId: MapperUtils.undefinedToNull(domain.sponsorId),
       tags: domain.tags,
       metadata: domain.metadata as Prisma.InputJsonValue,
@@ -131,7 +159,9 @@ export class ProjectInfraMapper {
     return activity;
   }
 
-  static toActivityCreatePersistence(domain: Activity): Prisma.ActivityUncheckedCreateInput {
+  static toActivityCreatePersistence(
+    domain: Activity,
+  ): Prisma.ActivityUncheckedCreateInput {
     return {
       id: domain.id,
       projectId: domain.projectId,
@@ -150,8 +180,12 @@ export class ProjectInfraMapper {
       assignedTo: MapperUtils.undefinedToNull(domain.assignedTo),
       organizerId: MapperUtils.undefinedToNull(domain.organizerId),
       parentActivityId: MapperUtils.undefinedToNull(domain.parentActivityId),
-      expectedParticipants: MapperUtils.undefinedToNull(domain.expectedParticipants),
-      actualParticipants: MapperUtils.undefinedToNull(domain.actualParticipants),
+      expectedParticipants: MapperUtils.undefinedToNull(
+        domain.expectedParticipants,
+      ),
+      actualParticipants: MapperUtils.undefinedToNull(
+        domain.actualParticipants,
+      ),
       estimatedCost: MapperUtils.undefinedToNull(domain.estimatedCost),
       actualCost: MapperUtils.undefinedToNull(domain.actualCost),
       currency: MapperUtils.undefinedToNull(domain.currency),
@@ -163,7 +197,9 @@ export class ProjectInfraMapper {
     };
   }
 
-  static toActivityUpdatePersistence(domain: Activity): Prisma.ActivityUncheckedUpdateInput {
+  static toActivityUpdatePersistence(
+    domain: Activity,
+  ): Prisma.ActivityUncheckedUpdateInput {
     return {
       name: domain.name,
       description: MapperUtils.undefinedToNull(domain.description),
@@ -179,8 +215,12 @@ export class ProjectInfraMapper {
       assignedTo: MapperUtils.undefinedToNull(domain.assignedTo),
       organizerId: MapperUtils.undefinedToNull(domain.organizerId),
       parentActivityId: MapperUtils.undefinedToNull(domain.parentActivityId),
-      expectedParticipants: MapperUtils.undefinedToNull(domain.expectedParticipants),
-      actualParticipants: MapperUtils.undefinedToNull(domain.actualParticipants),
+      expectedParticipants: MapperUtils.undefinedToNull(
+        domain.expectedParticipants,
+      ),
+      actualParticipants: MapperUtils.undefinedToNull(
+        domain.actualParticipants,
+      ),
       estimatedCost: MapperUtils.undefinedToNull(domain.estimatedCost),
       actualCost: MapperUtils.undefinedToNull(domain.actualCost),
       currency: MapperUtils.undefinedToNull(domain.currency),
@@ -192,14 +232,18 @@ export class ProjectInfraMapper {
 
   // ===== BENEFICIARY MAPPERS =====
 
-  static toBeneficiaryDomain(p: BeneficiaryPersistence.Base | any): Beneficiary | null {
+  static toBeneficiaryDomain(
+    p: BeneficiaryPersistence.Base | any,
+  ): Beneficiary | null {
     if (!p) return null;
 
     const beneficiary = Beneficiary.create({
       projectId: p.projectId,
       name: p.name,
       type: p.type as BeneficiaryType,
-      gender: MapperUtils.nullToUndefined(p.gender) as BeneficiaryGender | undefined,
+      gender: MapperUtils.nullToUndefined(p.gender) as
+        | BeneficiaryGender
+        | undefined,
       age: MapperUtils.nullToUndefined(p.age),
       dateOfBirth: MapperUtils.nullToUndefined(p.dateOfBirth),
       contactNumber: MapperUtils.nullToUndefined(p.contactNumber),
@@ -213,16 +257,18 @@ export class ProjectInfraMapper {
       metadata: p.metadata as Record<string, any> | undefined,
     });
 
-    (beneficiary as any)['#id'] = p.id;
-    (beneficiary as any)['#exitDate'] = MapperUtils.nullToUndefined(p.exitDate);
-    (beneficiary as any)['#status'] = p.status as BeneficiaryStatus;
-    (beneficiary as any)['createdAt'] = p.createdAt;
-    (beneficiary as any)['updatedAt'] = p.updatedAt;
+    (beneficiary as any)["#id"] = p.id;
+    (beneficiary as any)["#exitDate"] = MapperUtils.nullToUndefined(p.exitDate);
+    (beneficiary as any)["#status"] = p.status as BeneficiaryStatus;
+    (beneficiary as any)["createdAt"] = p.createdAt;
+    (beneficiary as any)["updatedAt"] = p.updatedAt;
 
     return beneficiary;
   }
 
-  static toBeneficiaryCreatePersistence(domain: Beneficiary): Prisma.BeneficiaryUncheckedCreateInput {
+  static toBeneficiaryCreatePersistence(
+    domain: Beneficiary,
+  ): Prisma.BeneficiaryUncheckedCreateInput {
     return {
       id: domain.id,
       projectId: domain.projectId,
@@ -247,7 +293,9 @@ export class ProjectInfraMapper {
     };
   }
 
-  static toBeneficiaryUpdatePersistence(domain: Beneficiary): Prisma.BeneficiaryUncheckedUpdateInput {
+  static toBeneficiaryUpdatePersistence(
+    domain: Beneficiary,
+  ): Prisma.BeneficiaryUncheckedUpdateInput {
     return {
       name: domain.name,
       type: domain.type,
@@ -267,7 +315,4 @@ export class ProjectInfraMapper {
       updatedAt: new Date(),
     };
   }
-
-
 }
-

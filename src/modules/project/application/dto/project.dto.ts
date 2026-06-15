@@ -1,9 +1,21 @@
-import { IsString, IsOptional, IsNumber, IsDate, IsArray, IsEnum, Min } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ProjectCategory, ProjectStatus, ProjectPhase } from '../../domain/model/project.model';
-import { KeyValueDto } from 'src/shared/dto/KeyValue.dto';
-import { UpdateActivityDto } from './activity.dto';
+import { ApiProperty,ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
+import {
+IsArray,
+IsDate,
+IsEnum,
+IsNumber,
+IsOptional,
+IsString,
+Min,
+} from "class-validator";
+import { KeyValueDto } from "src/shared/dto/KeyValue.dto";
+import {
+ProjectCategory,
+ProjectPhase,
+ProjectStatus,
+} from "../../domain/model/project.model";
+import { UpdateActivityDto } from "./activity.dto";
 
 export class CreateProjectDto {
   @IsString()
@@ -34,13 +46,13 @@ export class CreateProjectDto {
 
   @IsDate()
   @Type(() => Date)
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   startDate: Date;
 
   @IsOptional()
   @IsDate()
   @Type(() => Date)
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   endDate?: Date;
 
   @IsNumber()
@@ -118,7 +130,7 @@ export class UpdateProjectDto {
   @IsOptional()
   @IsDate()
   @Type(() => Date)
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   endDate?: Date;
 
   @IsOptional()
@@ -152,7 +164,6 @@ export class UpdateProjectDto {
   @IsOptional()
   @ApiPropertyOptional()
   metadata?: Record<string, any>;
-
 }
 
 export class ProjectDetailDto {
@@ -184,17 +195,17 @@ export class ProjectDetailDto {
   @IsEnum(ProjectPhase)
   phase: ProjectPhase;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   @IsDate()
   @Type(() => Date)
   startDate: Date;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   @IsDate()
   @Type(() => Date)
   endDate?: Date;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   @IsDate()
   @Type(() => Date)
   actualEndDate?: Date;
@@ -245,12 +256,12 @@ export class ProjectDetailDto {
   @ApiPropertyOptional()
   metadata?: Record<string, any>;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   @IsDate()
   @Type(() => Date)
   createdAt: Date;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   @IsDate()
   @Type(() => Date)
   updatedAt: Date;
@@ -299,7 +310,6 @@ export class ProjectDetailFilterDto {
   tags?: string[];
 }
 
-
 export class ProjectRefDataDto {
   @ApiProperty({ isArray: true })
   projectCategories: KeyValueDto[];
@@ -321,6 +331,4 @@ export class ProjectRefDataDto {
 
   @ApiProperty({ isArray: true })
   activityPriorities: KeyValueDto[];
-
 }
-

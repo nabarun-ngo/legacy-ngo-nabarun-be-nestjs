@@ -1,9 +1,15 @@
-import { Donation, DonationType, DonationStatus, PaymentMethod, UPIPaymentType } from '../../domain/model/donation.model';
-import { Prisma } from '@prisma/client';
-import { MapperUtils } from 'src/modules/shared/database/mapper-utils';
-import { UserInfraMapper } from 'src/modules/user/infrastructure/user-infra.mapper';
-import { FullDonation } from '../persistence/donation.repository';
-import { AccountInfraMapper } from './account-infra.mapper';
+import { Prisma } from "@prisma/client";
+import { MapperUtils } from "src/modules/shared/database/mapper-utils";
+import { UserInfraMapper } from "src/modules/user/infrastructure/user-infra.mapper";
+import {
+Donation,
+DonationStatus,
+DonationType,
+PaymentMethod,
+UPIPaymentType,
+} from "../../domain/model/donation.model";
+import { FullDonation } from "../persistence/donation.repository";
+import { AccountInfraMapper } from "./account-infra.mapper";
 
 /**
  * Donation Infrastructure Mapper
@@ -32,12 +38,12 @@ export class DonationInfraMapper {
       MapperUtils.nullToUndefined(p.startDate),
       MapperUtils.nullToUndefined(p.endDate),
       MapperUtils.nullToUndefined(
-        UserInfraMapper.toUserDomain(p.confirmedBy as any)
+        UserInfraMapper.toUserDomain(p.confirmedBy as any),
       ),
       MapperUtils.nullToUndefined(p.confirmedOn),
       MapperUtils.nullToUndefined(p.paymentMethod) as PaymentMethod,
       MapperUtils.nullToUndefined(
-        AccountInfraMapper.toAccountDomain(p.paidToAccount as any)
+        AccountInfraMapper.toAccountDomain(p.paidToAccount as any),
       ), // paidToAccount
       MapperUtils.nullToUndefined(p.forEventId),
       MapperUtils.nullToUndefined(p.activity?.name ?? null),
@@ -52,7 +58,9 @@ export class DonationInfraMapper {
     );
   }
 
-  static toDonationCreatePersistence(domain: Donation): Prisma.DonationUncheckedCreateInput {
+  static toDonationCreatePersistence(
+    domain: Donation,
+  ): Prisma.DonationUncheckedCreateInput {
     return {
       id: domain.id,
       type: domain.type,
@@ -77,15 +85,23 @@ export class DonationInfraMapper {
       paidUsingUPI: MapperUtils.undefinedToNull(domain.paidUsingUPI),
       isPaymentNotified: domain.isPaymentNotified,
       remarks: MapperUtils.undefinedToNull(domain.remarks),
-      cancelletionReason: MapperUtils.undefinedToNull(domain.cancelletionReason),
-      laterPaymentReason: MapperUtils.undefinedToNull(domain.laterPaymentReason),
-      paymentFailureDetail: MapperUtils.undefinedToNull(domain.paymentFailureDetail),
+      cancelletionReason: MapperUtils.undefinedToNull(
+        domain.cancelletionReason,
+      ),
+      laterPaymentReason: MapperUtils.undefinedToNull(
+        domain.laterPaymentReason,
+      ),
+      paymentFailureDetail: MapperUtils.undefinedToNull(
+        domain.paymentFailureDetail,
+      ),
       createdAt: domain.createdAt,
       updatedAt: domain.updatedAt,
     };
   }
 
-  static toDonationUpdatePersistence(domain: Donation): Prisma.DonationUncheckedUpdateInput {
+  static toDonationUpdatePersistence(
+    domain: Donation,
+  ): Prisma.DonationUncheckedUpdateInput {
     return {
       status: domain.status,
       amount: domain.amount,
@@ -98,13 +114,16 @@ export class DonationInfraMapper {
       paidUsingUPI: MapperUtils.undefinedToNull(domain.paidUsingUPI),
       isPaymentNotified: domain.isPaymentNotified,
       remarks: MapperUtils.undefinedToNull(domain.remarks),
-      cancelletionReason: MapperUtils.undefinedToNull(domain.cancelletionReason),
-      laterPaymentReason: MapperUtils.undefinedToNull(domain.laterPaymentReason),
-      paymentFailureDetail: MapperUtils.undefinedToNull(domain.paymentFailureDetail),
+      cancelletionReason: MapperUtils.undefinedToNull(
+        domain.cancelletionReason,
+      ),
+      laterPaymentReason: MapperUtils.undefinedToNull(
+        domain.laterPaymentReason,
+      ),
+      paymentFailureDetail: MapperUtils.undefinedToNull(
+        domain.paymentFailureDetail,
+      ),
       updatedAt: domain.updatedAt,
     };
   }
-
-
-
 }

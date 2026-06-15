@@ -1,17 +1,37 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty,ApiPropertyOptional } from "@nestjs/swagger";
 // Import BullMQ's types
-import * as bullmq from 'bullmq';
-import { IsArray, IsBoolean, IsDate, IsEnum, IsNumber, IsObject, IsOptional, IsString } from 'class-validator';
-import { JobName } from 'src/shared/job-names';
+import * as bullmq from "bullmq";
+import {
+IsArray,
+IsBoolean,
+IsDate,
+IsNumber,
+IsObject,
+IsOptional,
+IsString
+} from "class-validator";
+import { JobName } from "src/shared/job-names";
 
 // Re-export BullMQ's types as our types with better generic support
 export type JobOptions = bullmq.JobsOptions;
-export type Job<TData = unknown, TResult = unknown> = bullmq.Job<TData, TResult>;
+export type Job<TData = unknown, TResult = unknown> = bullmq.Job<
+  TData,
+  TResult
+>;
 export interface JobExecutionContext {
-  addChildJob: <T = any>(name: JobName, data: T, options?: JobOptions) => string;
+  addChildJob: <T = any>(
+    name: JobName,
+    data: T,
+    options?: JobOptions,
+  ) => string;
 }
-export type JobProcessor<TData = unknown, TResult = unknown> = (job: Job<TData, TResult>, ctx: JobExecutionContext) => Promise<TResult>;
-export interface JobData { [key: string]: any; }
+export type JobProcessor<TData = unknown, TResult = unknown> = (
+  job: Job<TData, TResult>,
+  ctx: JobExecutionContext,
+) => Promise<TResult>;
+export interface JobData {
+  [key: string]: any;
+}
 
 export class JobMetrics {
   @ApiProperty()
@@ -69,7 +89,6 @@ export class JobPerformanceMetrics {
   @IsNumber()
   totalProcessingTime: number;
 }
-
 
 export class JobDetail {
   @ApiPropertyOptional()
@@ -139,7 +158,7 @@ export class JobDetail {
 export class QueueHealth {
   @ApiProperty()
   @IsString()
-  status: 'healthy' | 'unhealthy' | 'degraded' | 'paused' | 'error';
+  status: "healthy" | "unhealthy" | "degraded" | "paused" | "error";
 
   @ApiProperty()
   @IsArray()

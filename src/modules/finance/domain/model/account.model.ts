@@ -1,20 +1,24 @@
-import { AggregateRoot } from 'src/shared/models/aggregate-root';
-import { BusinessException } from 'src/shared/exceptions/business-exception';
-import { AccountCreatedEvent } from '../events/account-created.event';
-import { generateUniqueNDigitNumber } from 'src/shared/utilities/password-util';
-import { Transaction, TransactionRefType, TransactionType } from './transaction.model';
-import { TransactionCreatedEvent } from '../events/transaction-created.event';
+import { BusinessException } from "src/shared/exceptions/business-exception";
+import { AggregateRoot } from "src/shared/models/aggregate-root";
+import { generateUniqueNDigitNumber } from "src/shared/utilities/password-util";
+import { AccountCreatedEvent } from "../events/account-created.event";
+import { TransactionCreatedEvent } from "../events/transaction-created.event";
+import {
+Transaction,
+TransactionRefType,
+TransactionType,
+} from "./transaction.model";
 
 export enum AccountType {
-  PRINCIPAL = 'PRINCIPAL',    // Legacy: Principal account
-  GENERAL = 'GENERAL',        // Legacy: General account // Not in use
-  DONATION = 'DONATION',      // Legacy: Donation account // Cashier Account
-  PUBLIC_DONATION = 'PUBLIC_DONATION', // Legacy: Public donation account
-  WALLET = 'WALLET',
+  PRINCIPAL = "PRINCIPAL", // Legacy: Principal account
+  GENERAL = "GENERAL", // Legacy: General account // Not in use
+  DONATION = "DONATION", // Legacy: Donation account // Cashier Account
+  PUBLIC_DONATION = "PUBLIC_DONATION", // Legacy: Public donation account
+  WALLET = "WALLET",
 }
 export enum AccountStatus {
-  ACTIVE = 'ACTIVE',
-  CLOSED = 'CLOSED',
+  ACTIVE = "ACTIVE",
+  CLOSED = "CLOSED",
 }
 
 /**
@@ -28,7 +32,7 @@ export class BankDetail {
     public bankAccountNumber?: string,
     public bankAccountType?: string,
     public IFSCNumber?: string,
-  ) { }
+  ) {}
 }
 
 class TxnDetail {
@@ -49,7 +53,7 @@ export class UPIDetail {
     public upiId?: string,
     public mobileNumber?: string,
     public qrData?: string,
-  ) { }
+  ) {}
 }
 
 export interface AccountFilter {
@@ -58,7 +62,7 @@ export interface AccountFilter {
   status?: AccountStatus[];
   accountHolderName?: string;
   accountHolderId?: string;
-  includeBalance?: boolean
+  includeBalance?: boolean;
 }
 
 /**
@@ -126,13 +130,13 @@ export class Account extends AggregateRoot<string> {
     upiDetail?: UPIDetail;
   }): Account {
     if (!props.name || props.name.trim().length === 0) {
-      throw new BusinessException('Account name is required');
+      throw new BusinessException("Account name is required");
     }
     if (!props.currency || props.currency.trim().length === 0) {
-      throw new BusinessException('Currency is required');
+      throw new BusinessException("Currency is required");
     }
     if (props.initialBalance !== undefined && props.initialBalance < 0) {
-      throw new BusinessException('Initial balance cannot be negative');
+      throw new BusinessException("Initial balance cannot be negative");
     }
 
     const now = new Date();
@@ -155,7 +159,7 @@ export class Account extends AggregateRoot<string> {
     if (props.initialBalance) {
       account.credit(props.initialBalance, {
         transactionRef: `TXR${generateUniqueNDigitNumber(10)}`,
-        description: 'Initial balance',
+        description: "Initial balance",
         txnDate: now,
       });
     }
@@ -169,11 +173,13 @@ export class Account extends AggregateRoot<string> {
    */
   credit(amount: number, txnDetail: TxnDetail): void {
     if (amount <= 0) {
-      throw new BusinessException('Credit amount must be positive');
+      throw new BusinessException("Credit amount must be positive");
     }
 
     if (this.#status !== AccountStatus.ACTIVE) {
-      throw new BusinessException('Cannot credit to inactive or blocked account');
+      throw new BusinessException(
+        "Cannot credit to inactive or blocked account",
+      );
     }
 
     const transaction = Transaction.createIn({
@@ -200,15 +206,17 @@ export class Account extends AggregateRoot<string> {
    */
   debit(amount: number, txnDetail: TxnDetail): void {
     if (amount <= 0) {
-      throw new BusinessException('Debit amount must be positive');
+      throw new BusinessException("Debit amount must be positive");
     }
 
     if (this.#status !== AccountStatus.ACTIVE) {
-      throw new BusinessException('Cannot debit from inactive or blocked account');
+      throw new BusinessException(
+        "Cannot debit from inactive or blocked account",
+      );
     }
 
     if (!this.hasSufficientFunds(amount)) {
-      throw new BusinessException('You dont have sufficiend balance.');
+      throw new BusinessException("You dont have sufficiend balance.");
     }
 
     const transaction = Transaction.createOut({
@@ -235,10 +243,10 @@ export class Account extends AggregateRoot<string> {
    */
   close(): void {
     if (this.#status === AccountStatus.CLOSED) {
-      throw new BusinessException('Cannot close a already closed account');
+      throw new BusinessException("Cannot close a already closed account");
     }
     if (this.balance !== 0) {
-      throw new BusinessException('Cannot close an account with balance');
+      throw new BusinessException("Cannot close an account with balance");
     }
     this.#status = AccountStatus.CLOSED;
     this.touch();
@@ -250,7 +258,7 @@ export class Account extends AggregateRoot<string> {
    */
   activate(): void {
     if (this.#status === AccountStatus.CLOSED) {
-      throw new BusinessException('Cannot activate a closed account');
+      throw new BusinessException("Cannot activate a closed account");
     }
     this.#status = AccountStatus.ACTIVE;
     if (!this.#activatedOn) {
@@ -272,7 +280,7 @@ export class Account extends AggregateRoot<string> {
   }): void {
     if (props.name !== undefined) {
       if (!props.name || props.name.trim().length === 0) {
-        throw new BusinessException('Account name cannot be empty');
+        throw new BusinessException("Account name cannot be empty");
       }
       this.#name = props.name;
     }
@@ -292,8 +300,12 @@ export class Account extends AggregateRoot<string> {
   }
 
   // Getters
-  get name(): string { return this.#name; }
-  get type(): AccountType { return this.#type; }
+  get name(): string {
+    return this.#name;
+  }
+  get type(): AccountType {
+    return this.#type;
+  }
   get balance(): number {
     return this.#transactions.reduce((acc, txn) => {
       if (txn.type === TransactionType.IN) {
@@ -303,15 +315,33 @@ export class Account extends AggregateRoot<string> {
       }
     }, 0);
   }
-  get currency(): string { return this.#currency; }
-  get status(): AccountStatus { return this.#status; }
-  get description(): string | undefined { return this.#description; }
-  get accountHolderName(): string | undefined { return this.#accountHolderName; }
-  get accountHolderId(): string | undefined { return this.#accountHolderId; }
-  get activatedOn(): Date | undefined { return this.#activatedOn; }
-  get bankDetail(): BankDetail | undefined { return this.#bankDetail; }
-  get upiDetail(): UPIDetail | undefined { return this.#upiDetail; }
-  get transactions(): ReadonlyArray<Transaction> { return this.#transactions; }
+  get currency(): string {
+    return this.#currency;
+  }
+  get status(): AccountStatus {
+    return this.#status;
+  }
+  get description(): string | undefined {
+    return this.#description;
+  }
+  get accountHolderName(): string | undefined {
+    return this.#accountHolderName;
+  }
+  get accountHolderId(): string | undefined {
+    return this.#accountHolderId;
+  }
+  get activatedOn(): Date | undefined {
+    return this.#activatedOn;
+  }
+  get bankDetail(): BankDetail | undefined {
+    return this.#bankDetail;
+  }
+  get upiDetail(): UPIDetail | undefined {
+    return this.#upiDetail;
+  }
+  get transactions(): ReadonlyArray<Transaction> {
+    return this.#transactions;
+  }
 
   /**
    * Check if account has sufficient funds

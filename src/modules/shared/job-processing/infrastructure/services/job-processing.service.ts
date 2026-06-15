@@ -1,22 +1,22 @@
-import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue } from 'bullmq';
-import { JobName } from 'src/shared/job-names';
-import { ProcessJobOptions } from '../../application/decorators/process-job.decorator';
-import { JobProcessorRegistry } from './job-processor-registry.service';
-import { Job, JobOptions } from '../../presentation/dto/job.dto';
-import { config } from 'src/config/app.config';
-import { JobType } from 'bullmq';
+import { InjectQueue } from "@nestjs/bullmq";
+import { Inject,Injectable,Logger,forwardRef } from "@nestjs/common";
+import { JobType,Queue } from "bullmq";
+import { config } from "src/config/app.config";
+import { JobName } from "src/shared/job-names";
+import { ProcessJobOptions } from "../../application/decorators/process-job.decorator";
+import { Job,JobOptions } from "../../presentation/dto/job.dto";
+import { JobProcessorRegistry } from "./job-processor-registry.service";
 
 @Injectable()
 export class JobProcessingService {
   private readonly logger = new Logger(JobProcessingService.name);
 
   constructor(
-    @InjectQueue(config.jobProcessing.queueName) private readonly defaultQueue: Queue,
+    @InjectQueue(config.jobProcessing.queueName)
+    private readonly defaultQueue: Queue,
     @Inject(forwardRef(() => JobProcessorRegistry))
     private readonly registry: JobProcessorRegistry,
-  ) { }
+  ) {}
 
   /**
    * Add a job to the default queue
@@ -59,7 +59,10 @@ export class JobProcessingService {
   /**
    * Get a job by ID
    */
-  async getJob<T>(jobId: string, queueName?: string): Promise<Job<T> | undefined> {
+  async getJob<T>(
+    jobId: string,
+    queueName?: string,
+  ): Promise<Job<T> | undefined> {
     try {
       const queue = queueName ? this.getQueue(queueName) : this.defaultQueue;
       const job = await queue.getJob(jobId);
@@ -104,9 +107,13 @@ export class JobProcessingService {
 
       const state = await job.getState();
 
-      if (state !== 'failed') {
-        this.logger.warn(`Job ${jobId} is not in failed state (current state: ${state})`);
-        throw new Error(`Job ${jobId} is not in failed state. Current state: ${state}`);
+      if (state !== "failed") {
+        this.logger.warn(
+          `Job ${jobId} is not in failed state (current state: ${state})`,
+        );
+        throw new Error(
+          `Job ${jobId} is not in failed state. Current state: ${state}`,
+        );
       }
 
       // Retry the job
@@ -121,7 +128,9 @@ export class JobProcessingService {
   /**
    * Clean completed and failed jobs
    */
-  async cleanJobs(queueName?: string): Promise<{ completed: string[]; failed: string[] }> {
+  async cleanJobs(
+    queueName?: string,
+  ): Promise<{ completed: string[]; failed: string[] }> {
     try {
       const queue = queueName ? this.getQueue(queueName) : this.defaultQueue;
       // Get retention settings from environment variables
@@ -130,8 +139,12 @@ export class JobProcessingService {
       const completedCount = config.jobProcessing.removeOnComplete.count;
       const failedCount = config.jobProcessing.removeOnFail.count;
 
-      const completedJobs = await queue.clean(completedGrace, completedCount, 'completed');
-      const failedJobs = await queue.clean(failedGrace, failedCount, 'failed');
+      const completedJobs = await queue.clean(
+        completedGrace,
+        completedCount,
+        "completed",
+      );
+      const failedJobs = await queue.clean(failedGrace, failedCount, "failed");
       this.logger.log(`Cleaned completed and failed jobs`);
       return { completed: completedJobs, failed: failedJobs };
     } catch (error) {
@@ -146,9 +159,9 @@ export class JobProcessingService {
   async pauseQueue(): Promise<void> {
     try {
       await this.defaultQueue.pause();
-      this.logger.log('Queue paused');
+      this.logger.log("Queue paused");
     } catch (error) {
-      this.logger.error('Failed to pause queue', error);
+      this.logger.error("Failed to pause queue", error);
       throw error;
     }
   }
@@ -159,9 +172,9 @@ export class JobProcessingService {
   async resumeQueue(): Promise<void> {
     try {
       await this.defaultQueue.resume();
-      this.logger.log('Queue resumed');
+      this.logger.log("Queue resumed");
     } catch (error) {
-      this.logger.error('Failed to resume queue', error);
+      this.logger.error("Failed to resume queue", error);
       throw error;
     }
   }
@@ -173,7 +186,7 @@ export class JobProcessingService {
     try {
       return await this.defaultQueue.isPaused();
     } catch (error) {
-      this.logger.error('Failed to check queue pause status', error);
+      this.logger.error("Failed to check queue pause status", error);
       throw error;
     }
   }
@@ -200,7 +213,10 @@ export class JobProcessingService {
         return { jobs: jobs as Job<any>[], count: count[status] };
       }
       const count = await queue.getJobCounts();
-      const totalCount = Object.values(count).reduce((acc, count) => acc + count, 0);
+      const totalCount = Object.values(count).reduce(
+        (acc, count) => acc + count,
+        0,
+      );
       return { jobs: jobs as Job<any>[], count: totalCount };
     } catch (error) {
       this.logger.error(`Failed to get jobs for status: ${status}`, error);
@@ -211,7 +227,10 @@ export class JobProcessingService {
   /**
    * Get job logs
    */
-  async getJobLogs(jobId: string, queueName?: string): Promise<{ logs: string[]; count: number }> {
+  async getJobLogs(
+    jobId: string,
+    queueName?: string,
+  ): Promise<{ logs: string[]; count: number }> {
     try {
       const queue = queueName ? this.getQueue(queueName) : this.defaultQueue;
       return await queue.getJobLogs(jobId);
@@ -226,7 +245,10 @@ export class JobProcessingService {
       const queue = queueName ? this.getQueue(queueName) : this.defaultQueue;
       return await queue.getJobCounts();
     } catch (error) {
-      this.logger.error(`Failed to get job counts for queue: ${queueName}`, error);
+      this.logger.error(
+        `Failed to get job counts for queue: ${queueName}`,
+        error,
+      );
       throw error;
     }
   }
@@ -235,10 +257,10 @@ export class JobProcessingService {
    * Set TTL for jobs based on configuration
    */
   private setJobTTL(options?: JobOptions): JobOptions {
-
     return {
       ...options,
-      removeOnComplete: options?.removeOnComplete ?? config.jobProcessing.removeOnComplete,
+      removeOnComplete:
+        options?.removeOnComplete ?? config.jobProcessing.removeOnComplete,
       removeOnFail: options?.removeOnFail ?? config.jobProcessing.removeOnFail,
     };
   }

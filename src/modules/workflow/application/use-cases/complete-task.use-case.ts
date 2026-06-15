@@ -1,11 +1,14 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { IUseCase } from '../../../../shared/interfaces/use-case.interface';
-import { WORKFLOW_INSTANCE_REPOSITORY } from '../../domain/repositories/workflow-instance.repository.interface';
-import type { IWorkflowInstanceRepository } from '../../domain/repositories/workflow-instance.repository.interface';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { BusinessException } from '../../../../shared/exceptions/business-exception';
-import { WorkflowTask, WorkflowTaskStatus } from '../../domain/model/workflow-task.model';
-import { User } from 'src/modules/user/domain/model/user.model';
+import { Inject,Injectable,Logger } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { User } from "src/modules/user/domain/model/user.model";
+import { BusinessException } from "../../../../shared/exceptions/business-exception";
+import { IUseCase } from "../../../../shared/interfaces/use-case.interface";
+import {
+WorkflowTask,
+WorkflowTaskStatus,
+} from "../../domain/model/workflow-task.model";
+import type { IWorkflowInstanceRepository } from "../../domain/repositories/workflow-instance.repository.interface";
+import { WORKFLOW_INSTANCE_REPOSITORY } from "../../domain/repositories/workflow-instance.repository.interface";
 
 class TaskUpdate {
   instanceId: string;
@@ -23,19 +26,26 @@ export class CompleteTaskUseCase implements IUseCase<TaskUpdate, WorkflowTask> {
     @Inject(WORKFLOW_INSTANCE_REPOSITORY)
     private readonly instanceRepository: IWorkflowInstanceRepository,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   async execute(request: TaskUpdate): Promise<WorkflowTask> {
     // Find instance with steps and tasks
-    const instance = await this.instanceRepository.findById(request.instanceId, true);
+    const instance = await this.instanceRepository.findById(
+      request.instanceId,
+      true,
+    );
     if (!instance) {
-      throw new BusinessException(`Workflow instance not found: ${request.instanceId}`);
+      throw new BusinessException(
+        `Workflow instance not found: ${request.instanceId}`,
+      );
     }
-    this.logger.log(`Updating task: ${request.taskId} in instance: ${request.instanceId}`);
+    this.logger.log(
+      `Updating task: ${request.taskId} in instance: ${request.instanceId}`,
+    );
     const task = instance.updateTask(
       request.taskId,
       request.status,
-      request.completedBy!,
+      request.completedBy,
       request.remarks,
       request.data,
     );
@@ -52,4 +62,3 @@ export class CompleteTaskUseCase implements IUseCase<TaskUpdate, WorkflowTask> {
     return task;
   }
 }
-

@@ -1,69 +1,86 @@
+import { ApiProperty,ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform } from "class-transformer";
 import {
-  IsString,
-  IsNotEmpty,
-  IsObject,
-  IsOptional,
-  IsDefined,
-  IsBoolean,
-  IsArray,
-  IsEnum,
-} from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+IsArray,
+IsBoolean,
+IsDefined,
+IsEnum,
+IsNotEmpty,
+IsObject,
+IsOptional,
+IsString,
+} from "class-validator";
+import { KeyValueDto } from "src/shared/dto/KeyValue.dto";
+import { TaskAssignmentStatus as TaskAssignmentStatusEnum } from "../../domain/model/task-assignment.model";
+import { WorkflowInstanceStatus } from "../../domain/model/workflow-instance.model";
+import { WorkflowStepStatus } from "../../domain/model/workflow-step.model";
 import {
-  WorkflowInstanceStatus,
-} from '../../domain/model/workflow-instance.model';
-import {
-  WorkflowTaskType,
-  WorkflowTaskStatus,
-} from '../../domain/model/workflow-task.model';
-import { WorkflowStepStatus } from '../../domain/model/workflow-step.model';
-import { TaskAssignmentStatus as TaskAssignmentStatusEnum } from '../../domain/model/task-assignment.model';
-import { KeyValueDto } from 'src/shared/dto/KeyValue.dto';
-import { Transform } from 'class-transformer';
+WorkflowTaskStatus,
+WorkflowTaskType,
+} from "../../domain/model/workflow-task.model";
 
 export class StartWorkflowDto {
-  @ApiProperty({ description: 'Workflow type (e.g., JOIN_REQUEST)', required: true })
+  @ApiProperty({
+    description: "Workflow type (e.g., JOIN_REQUEST)",
+    required: true,
+  })
   @IsDefined()
   @IsString()
   @IsNotEmpty()
   type: string;
 
-  @ApiProperty({ description: 'Request data for the workflow', required: true })
+  @ApiProperty({ description: "Request data for the workflow", required: true })
   @IsDefined()
   @IsObject()
   @IsNotEmpty()
   data: Record<string, any>;
 
-  @ApiProperty({ description: 'User ID for whom the workflow is initiated', required: false })
+  @ApiProperty({
+    description: "User ID for whom the workflow is initiated",
+    required: false,
+  })
   @IsOptional()
   @IsString()
   requestedFor?: string;
 
-  @ApiProperty({ description: 'Is external user (use only when requestedFor id is not available)', required: false })
+  @ApiProperty({
+    description:
+      "Is external user (use only when requestedFor id is not available)",
+    required: false,
+  })
   @IsOptional()
   @IsBoolean()
   forExternalUser?: boolean;
 
-  @ApiProperty({ description: 'External user email (use only when forExternalUser is true)', required: false })
+  @ApiProperty({
+    description: "External user email (use only when forExternalUser is true)",
+    required: false,
+  })
   @IsOptional()
   @IsString()
   externalUserEmail?: string;
 }
 
 export class UpdateTaskDto {
-  @ApiProperty({ description: 'Task status', required: true })
+  @ApiProperty({ description: "Task status", required: true })
   @IsDefined()
   @IsString()
   @IsEnum(WorkflowTaskStatus)
   @IsNotEmpty()
   status: WorkflowTaskStatus;
 
-  @ApiPropertyOptional({ description: 'Remarks for task update', required: false })
+  @ApiPropertyOptional({
+    description: "Remarks for task update",
+    required: false,
+  })
   @IsOptional()
   @IsString()
   remarks?: string;
 
-  @ApiProperty({ description: 'Result data from task completion', required: false })
+  @ApiProperty({
+    description: "Result data from task completion",
+    required: false,
+  })
   @IsOptional()
   @IsObject()
   resultData?: Record<string, any>;
@@ -194,7 +211,7 @@ export class WorkflowTaskDto {
 
   @ApiProperty({ required: false })
   @IsBoolean()
-  autoCloseable: boolean
+  autoCloseable: boolean;
 }
 
 export class WorkflowStepDto {
@@ -319,7 +336,6 @@ export class WorkflowInstanceDto {
   actualSteps: WorkflowStepDto[];
 }
 
-
 export class WorkflowRefDataDto {
   @ApiProperty()
   workflowTypes?: KeyValueDto[];
@@ -343,9 +359,7 @@ export class WorkflowRefDataDto {
   completedTaskStatuses?: KeyValueDto[];
 }
 
-
 export class WorkflowFilterDto {
-
   @ApiPropertyOptional()
   @IsOptional()
   readonly workflowId?: string;
@@ -354,24 +368,25 @@ export class WorkflowFilterDto {
   @IsOptional()
   @IsArray()
   @Transform(({ value }) =>
-    Array.isArray(value) ? value : value ? [value] : undefined
-  ) readonly status?: WorkflowInstanceStatus[];
+    Array.isArray(value) ? value : value ? [value] : undefined,
+  )
+  readonly status?: WorkflowInstanceStatus[];
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsArray()
   @Transform(({ value }) =>
-    Array.isArray(value) ? value : value ? [value] : undefined
-  ) readonly type?: string[];
+    Array.isArray(value) ? value : value ? [value] : undefined,
+  )
+  readonly type?: string[];
 
-  @ApiPropertyOptional({ enum: ['Y', 'N'] })
+  @ApiPropertyOptional({ enum: ["Y", "N"] })
   @IsOptional()
-  @IsEnum(['Y', 'N'])
-  readonly delegated?: 'Y' | 'N';
+  @IsEnum(["Y", "N"])
+  readonly delegated?: "Y" | "N";
 }
 
 export class TaskFilterDto {
-
   @ApiPropertyOptional()
   @IsOptional()
   readonly taskId?: string;
@@ -384,12 +399,12 @@ export class TaskFilterDto {
   @IsOptional()
   @IsArray()
   @Transform(({ value }) =>
-    Array.isArray(value) ? value : value ? [value] : undefined
+    Array.isArray(value) ? value : value ? [value] : undefined,
   )
   readonly type?: WorkflowTaskType[];
 
-  @ApiPropertyOptional({ enum: ['Y', 'N'] })
+  @ApiPropertyOptional({ enum: ["Y", "N"] })
   @IsOptional()
-  @IsEnum(['Y', 'N'])
-  readonly completed?: 'Y' | 'N';
+  @IsEnum(["Y", "N"])
+  readonly completed?: "Y" | "N";
 }

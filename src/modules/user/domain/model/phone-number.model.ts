@@ -1,10 +1,9 @@
-import { Expose } from 'class-transformer';
-import { randomUUID } from 'crypto';
-import { BaseDomain } from 'src/shared/models/base-domain';
+import { Expose } from "class-transformer";
+import { randomUUID } from "crypto";
+import { BaseDomain } from "src/shared/models/base-domain";
 
 @Expose()
 export class PhoneNumber extends BaseDomain<string> {
-
   // 🔒 TRUE private fields
   #phoneCode: string;
   #phoneNumber: string;
@@ -33,7 +32,7 @@ export class PhoneNumber extends BaseDomain<string> {
     hidden = false,
   ): PhoneNumber {
     if (!phoneCode || !phoneNumber) {
-      throw new Error('phoneCode and phoneNumber are required');
+      throw new Error("phoneCode and phoneNumber are required");
     }
     return new PhoneNumber(randomUUID(), phoneCode, phoneNumber, hidden);
   }

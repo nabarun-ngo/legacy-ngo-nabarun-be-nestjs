@@ -1,21 +1,21 @@
-import { User } from 'src/modules/user/domain/model/user.model';
-import { BusinessException } from 'src/shared/exceptions/business-exception';
-import { AggregateRoot } from 'src/shared/models/aggregate-root';
-import { generateUniqueNDigitNumber } from 'src/shared/utilities/password-util';
+import { User } from "src/modules/user/domain/model/user.model";
+import { BusinessException } from "src/shared/exceptions/business-exception";
+import { AggregateRoot } from "src/shared/models/aggregate-root";
+import { generateUniqueNDigitNumber } from "src/shared/utilities/password-util";
 
 export enum EarningCategory {
-  INTEREST = 'INTEREST',      // Interest from investments
-  SERVICE = 'SERVICE',        // Service-based earnings
-  PRODUCT = 'PRODUCT',        // Product sales
-  GRANT = 'GRANT',            // Grants received
-  SPONSORSHIP = 'SPONSORSHIP', // Sponsorships
-  OTHER = 'OTHER',            // Other earnings
+  INTEREST = "INTEREST", // Interest from investments
+  SERVICE = "SERVICE", // Service-based earnings
+  PRODUCT = "PRODUCT", // Product sales
+  GRANT = "GRANT", // Grants received
+  SPONSORSHIP = "SPONSORSHIP", // Sponsorships
+  OTHER = "OTHER", // Other earnings
 }
 
 export enum EarningStatus {
-  PENDING = 'PENDING',
-  RECEIVED = 'RECEIVED',
-  CANCELLED = 'CANCELLED',
+  PENDING = "PENDING",
+  RECEIVED = "RECEIVED",
+  CANCELLED = "CANCELLED",
 }
 
 export class EarningFilter {
@@ -37,11 +37,11 @@ export class Earning extends AggregateRoot<string> {
   #currency: string;
   #status: EarningStatus;
   #description: string;
-  #source: string;                       // Source of earning
-  #referenceId: string | undefined;      // Project ID, Event ID, etc.
-  #referenceType: string | undefined;    // 'Project', 'Event', etc.
-  #accountId: string | undefined;        // Account to which credited
-  #transactionId: string | undefined;    // Transaction ID after receipt
+  #source: string; // Source of earning
+  #referenceId: string | undefined; // Project ID, Event ID, etc.
+  #referenceType: string | undefined; // 'Project', 'Event', etc.
+  #accountId: string | undefined; // Account to which credited
+  #transactionId: string | undefined; // Transaction ID after receipt
   #earningDate: Date | undefined;
   #createdBy: Partial<User>;
   #receivedBy: Partial<User> | undefined;
@@ -52,11 +52,11 @@ export class Earning extends AggregateRoot<string> {
     currency: string,
     status: EarningStatus,
     description: string,
-    source: string,                       // Source of earning
-    referenceId: string | undefined,      // Project ID, Event ID, etc.
-    referenceType: string | undefined,    // 'Project', 'Event', etc.
-    accountId: string | undefined,        // Account to which credited
-    transactionId: string | undefined,    // Transaction ID after receipt
+    source: string, // Source of earning
+    referenceId: string | undefined, // Project ID, Event ID, etc.
+    referenceType: string | undefined, // 'Project', 'Event', etc.
+    accountId: string | undefined, // Account to which credited
+    transactionId: string | undefined, // Transaction ID after receipt
     earningDate: Date | undefined,
     createdBy: Partial<User>,
     receivedBy: Partial<User> | undefined,
@@ -79,8 +79,6 @@ export class Earning extends AggregateRoot<string> {
     this.#receivedBy = receivedBy;
   }
 
-
-
   /**
    * Factory method to create a new Earning
    */
@@ -102,7 +100,7 @@ export class Earning extends AggregateRoot<string> {
       props.currency,
       EarningStatus.PENDING,
       props.description,
-      props.source || '',
+      props.source || "",
       props.referenceId,
       props.referenceType,
       undefined,
@@ -118,9 +116,13 @@ export class Earning extends AggregateRoot<string> {
   /**
    * Mark earning as received
    */
-  markAsReceived(accountId: string, earningDate: Date, receivedById: string): void {
+  markAsReceived(
+    accountId: string,
+    earningDate: Date,
+    receivedById: string,
+  ): void {
     if (this.status !== EarningStatus.PENDING) {
-      throw new BusinessException('Can only mark pending earnings as received');
+      throw new BusinessException("Can only mark pending earnings as received");
     }
     this.#status = EarningStatus.RECEIVED;
     this.#accountId = accountId;
@@ -137,7 +139,7 @@ export class Earning extends AggregateRoot<string> {
    */
   cancel(): void {
     if (this.status === EarningStatus.RECEIVED) {
-      throw new BusinessException('Cannot cancel received earning');
+      throw new BusinessException("Cannot cancel received earning");
     }
 
     this.#status = EarningStatus.CANCELLED;
@@ -152,10 +154,12 @@ export class Earning extends AggregateRoot<string> {
     earningDate?: Date;
   }): void {
     if (dto.amount && this.status !== EarningStatus.PENDING) {
-      throw new BusinessException('Can not update amount of received earning');
+      throw new BusinessException("Can not update amount of received earning");
     }
     if (dto.category && this.status !== EarningStatus.PENDING) {
-      throw new BusinessException('Can not update category of received earning');
+      throw new BusinessException(
+        "Can not update category of received earning",
+      );
     }
     this.#category = dto.category ?? this.#category;
     this.#amount = dto.amount ?? this.#amount;
@@ -164,7 +168,6 @@ export class Earning extends AggregateRoot<string> {
     this.#source = dto.source ?? this.#source;
     this.#earningDate = dto.earningDate ?? this.#earningDate;
   }
-
 
   get category(): EarningCategory {
     return this.#category;

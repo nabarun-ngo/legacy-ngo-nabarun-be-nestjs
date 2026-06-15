@@ -1,16 +1,15 @@
-import { BaseDomain } from '../../../../shared/models/base-domain';
-import { randomUUID } from 'crypto';
+import { randomUUID } from "crypto";
+import { BaseDomain } from "../../../../shared/models/base-domain";
 
 export enum LinkType {
-  FACEBOOK = 'facebook',
-  WHATSAPP = 'whatsapp',
-  TWITTER = 'twitter',
-  LINKEDIN = 'linkedin',
-  INSTAGRAM = 'instagram',
+  FACEBOOK = "facebook",
+  WHATSAPP = "whatsapp",
+  TWITTER = "twitter",
+  LINKEDIN = "linkedin",
+  INSTAGRAM = "instagram",
 }
 
 export class Link extends BaseDomain<string> {
-
   // 🔒 TRUE private fields
   #linkName: string;
   #linkType: LinkType;

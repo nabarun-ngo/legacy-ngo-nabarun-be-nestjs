@@ -1,8 +1,18 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsEnum, IsDate, Min } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
-import { EarningCategory, EarningStatus } from '../../domain/model/earning.model';
-import { KeyValueDto } from 'src/shared/dto/KeyValue.dto';
+import { ApiProperty,ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform,Type } from "class-transformer";
+import {
+IsDate,
+IsEnum,
+IsNumber,
+IsOptional,
+IsString,
+Min,
+} from "class-validator";
+import { KeyValueDto } from "src/shared/dto/KeyValue.dto";
+import {
+EarningCategory,
+EarningStatus,
+} from "../../domain/model/earning.model";
 
 /**
  * Earning Detail DTO
@@ -41,16 +51,16 @@ export class EarningDetailDto {
   @ApiPropertyOptional()
   transactionId?: string;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   earningDate?: Date;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   receivedDate?: Date;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   createdAt?: Date;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   updatedAt?: Date;
 
   @ApiPropertyOptional()
@@ -71,14 +81,14 @@ export class EarningDetailFilterDto {
   @ApiPropertyOptional({ enum: EarningStatus, isArray: true })
   @IsOptional()
   @Transform(({ value }) =>
-    Array.isArray(value) ? value : value ? [value] : undefined
+    Array.isArray(value) ? value : value ? [value] : undefined,
   )
   status?: EarningStatus[];
 
   @ApiPropertyOptional({ enum: EarningCategory, isArray: true })
   @IsOptional()
   @Transform(({ value }) =>
-    Array.isArray(value) ? value : value ? [value] : undefined
+    Array.isArray(value) ? value : value ? [value] : undefined,
   )
   category?: EarningCategory[];
 
@@ -92,13 +102,13 @@ export class EarningDetailFilterDto {
   @IsString()
   referenceId?: string;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   @IsOptional()
   @IsDate()
   @Type(() => Date)
   startDate?: Date;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   @IsOptional()
   @IsDate()
   @Type(() => Date)
@@ -130,7 +140,6 @@ export class CreateEarningDto {
   @ApiPropertyOptional()
   @IsString()
   description?: string;
-
 }
 
 /**
@@ -158,7 +167,7 @@ export class UpdateEarningDto {
   @Min(0.01)
   amount?: number;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   @IsOptional()
   @IsDate()
   @Type(() => Date)
@@ -168,7 +177,6 @@ export class UpdateEarningDto {
   @IsOptional()
   @IsEnum(EarningStatus)
   status?: EarningStatus;
-
 
   @ApiPropertyOptional()
   @IsOptional()

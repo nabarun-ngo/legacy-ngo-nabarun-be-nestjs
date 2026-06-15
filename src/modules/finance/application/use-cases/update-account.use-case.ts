@@ -1,19 +1,28 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IUseCase } from '../../../../shared/interfaces/use-case.interface';
-import { Account, BankDetail, UPIDetail } from '../../domain/model/account.model';
-import { ACCOUNT_REPOSITORY } from '../../domain/repositories/account.repository.interface';
-import type { IAccountRepository } from '../../domain/repositories/account.repository.interface';
-import { BusinessException } from '../../../../shared/exceptions/business-exception';
-import { UpdateAccountDto } from '../dto/account.dto';
+import { Inject,Injectable } from "@nestjs/common";
+import { BusinessException } from "../../../../shared/exceptions/business-exception";
+import { IUseCase } from "../../../../shared/interfaces/use-case.interface";
+import {
+Account,
+BankDetail,
+UPIDetail,
+} from "../../domain/model/account.model";
+import type { IAccountRepository } from "../../domain/repositories/account.repository.interface";
+import { ACCOUNT_REPOSITORY } from "../../domain/repositories/account.repository.interface";
+import { UpdateAccountDto } from "../dto/account.dto";
 
 @Injectable()
-export class UpdateAccountUseCase implements IUseCase<{ id: string; dto: UpdateAccountDto }, Account> {
+export class UpdateAccountUseCase
+  implements IUseCase<{ id: string; dto: UpdateAccountDto }, Account>
+{
   constructor(
     @Inject(ACCOUNT_REPOSITORY)
     private readonly accountRepository: IAccountRepository,
-  ) { }
+  ) {}
 
-  async execute(request: { id: string; dto: UpdateAccountDto }): Promise<Account> {
+  async execute(request: {
+    id: string;
+    dto: UpdateAccountDto;
+  }): Promise<Account> {
     const account = await this.accountRepository.findById(request.id);
     if (!account) {
       throw new BusinessException(`Account not found with id: ${request.id}`);
@@ -50,16 +59,17 @@ export class UpdateAccountUseCase implements IUseCase<{ id: string; dto: UpdateA
     });
 
     if (request.dto.accountStatus) {
-      if (request.dto.accountStatus === 'ACTIVE') {
+      if (request.dto.accountStatus === "ACTIVE") {
         account.activate();
-      } else if (request.dto.accountStatus === 'CLOSED') {
+      } else if (request.dto.accountStatus === "CLOSED") {
         account.close();
       }
     }
 
-    const updatedAccount = await this.accountRepository.update(request.id, account);
+    const updatedAccount = await this.accountRepository.update(
+      request.id,
+      account,
+    );
     return updatedAccount;
   }
 }
-
-

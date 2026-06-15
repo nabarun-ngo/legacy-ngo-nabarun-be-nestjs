@@ -1,45 +1,45 @@
-import { AggregateRoot } from '../../../../shared/models/aggregate-root';
-import { BusinessException } from '../../../../shared/exceptions/business-exception';
-import { randomUUID } from 'crypto';
-import { ActivityCompletedEvent } from '../events/activity-completed.event';
+import { randomUUID } from "crypto";
+import { BusinessException } from "../../../../shared/exceptions/business-exception";
+import { AggregateRoot } from "../../../../shared/models/aggregate-root";
+import { ActivityCompletedEvent } from "../events/activity-completed.event";
 
 export enum ActivityScale {
-  TASK = 'TASK',
-  ACTIVITY = 'ACTIVITY',
-  EVENT = 'EVENT',
+  TASK = "TASK",
+  ACTIVITY = "ACTIVITY",
+  EVENT = "EVENT",
 }
 
 export enum ActivityType {
-  TRAINING = 'TRAINING',
-  AWARENESS = 'AWARENESS',
-  DISTRIBUTION = 'DISTRIBUTION',
-  SURVEY = 'SURVEY',
-  MEETING = 'MEETING',
-  FIELD_VISIT = 'FIELD_VISIT',
-  DOCUMENTATION = 'DOCUMENTATION',
-  WORKSHOP = 'WORKSHOP',
-  SEMINAR = 'SEMINAR',
-  FUNDRAISING = 'FUNDRAISING',
-  VOLUNTEER_ACTIVITY = 'VOLUNTEER_ACTIVITY',
-  CONFERENCE = 'CONFERENCE',
-  EXHIBITION = 'EXHIBITION',
-  OTHER = 'OTHER',
+  TRAINING = "TRAINING",
+  AWARENESS = "AWARENESS",
+  DISTRIBUTION = "DISTRIBUTION",
+  SURVEY = "SURVEY",
+  MEETING = "MEETING",
+  FIELD_VISIT = "FIELD_VISIT",
+  DOCUMENTATION = "DOCUMENTATION",
+  WORKSHOP = "WORKSHOP",
+  SEMINAR = "SEMINAR",
+  FUNDRAISING = "FUNDRAISING",
+  VOLUNTEER_ACTIVITY = "VOLUNTEER_ACTIVITY",
+  CONFERENCE = "CONFERENCE",
+  EXHIBITION = "EXHIBITION",
+  OTHER = "OTHER",
 }
 
 export enum ActivityStatus {
-  PLANNED = 'PLANNED',
-  CONFIRMED = 'CONFIRMED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-  ON_HOLD = 'ON_HOLD',
+  PLANNED = "PLANNED",
+  CONFIRMED = "CONFIRMED",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+  CANCELLED = "CANCELLED",
+  ON_HOLD = "ON_HOLD",
 }
 
 export enum ActivityPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  URGENT = 'URGENT',
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+  URGENT = "URGENT",
 }
 
 export class ActivityFilterProps {
@@ -154,18 +154,22 @@ export class Activity extends AggregateRoot<string> {
 
   public static create(props: ActivityProps): Activity {
     if (!props.projectId || !props.name) {
-      throw new BusinessException('Project ID and name are required');
+      throw new BusinessException("Project ID and name are required");
     }
-    if (props.endDate && props.startDate && props.endDate.getTime() < props.startDate.getTime()) {
-      throw new BusinessException('End date must be after start date');
+    if (
+      props.endDate &&
+      props.startDate &&
+      props.endDate.getTime() < props.startDate.getTime()
+    ) {
+      throw new BusinessException("End date must be after start date");
     }
 
     if (props.scale === ActivityScale.EVENT && !props.organizerId) {
-      throw new BusinessException('Organizer ID is required for events');
+      throw new BusinessException("Organizer ID is required for events");
     }
 
     if (props.estimatedCost !== undefined && props.estimatedCost <= 0) {
-      throw new BusinessException('Estimated cost must be positive');
+      throw new BusinessException("Estimated cost must be positive");
     }
 
     if (props.parentActivityId) {
@@ -198,17 +202,15 @@ export class Activity extends AggregateRoot<string> {
       props.tags,
       undefined,
       undefined,
-      undefined
+      undefined,
     );
-
-
 
     return activity;
   }
 
   public update(props: Partial<ActivityProps>): void {
     if (this.#status === ActivityStatus.COMPLETED && props.name) {
-      throw new BusinessException('Cannot update completed activity');
+      throw new BusinessException("Cannot update completed activity");
     }
 
     if (props.name) this.#name = props.name;
@@ -219,27 +221,28 @@ export class Activity extends AggregateRoot<string> {
     if (props.venue !== undefined) this.#venue = props.venue;
     if (props.assignedTo !== undefined) this.#assignedTo = props.assignedTo;
     if (props.organizerId !== undefined) this.#organizerId = props.organizerId;
-    if (props.expectedParticipants !== undefined) this.#expectedParticipants = props.expectedParticipants;
+    if (props.expectedParticipants !== undefined)
+      this.#expectedParticipants = props.expectedParticipants;
     if (props.tags) this.#tags = props.tags;
     if (props.metadata) this.#metadata = props.metadata;
 
     if (props.startDate) {
       if (props.endDate && props.endDate <= props.startDate) {
-        throw new BusinessException('End date must be after start date');
+        throw new BusinessException("End date must be after start date");
       }
       this.#startDate = props.startDate;
     }
 
     if (props.endDate) {
       if (this.#startDate && props.endDate <= this.#startDate) {
-        throw new BusinessException('End date must be after start date');
+        throw new BusinessException("End date must be after start date");
       }
       this.#endDate = props.endDate;
     }
 
     if (props.estimatedCost !== undefined) {
       if (props.estimatedCost <= 0) {
-        throw new BusinessException('Estimated cost must be positive');
+        throw new BusinessException("Estimated cost must be positive");
       }
       this.#estimatedCost = props.estimatedCost;
     }
@@ -253,8 +256,13 @@ export class Activity extends AggregateRoot<string> {
   }
 
   public updateStatus(newStatus: ActivityStatus): void {
-    if (this.#status === ActivityStatus.COMPLETED || this.#status === ActivityStatus.CANCELLED) {
-      throw new BusinessException('Cannot change status of completed or cancelled activity');
+    if (
+      this.#status === ActivityStatus.COMPLETED ||
+      this.#status === ActivityStatus.CANCELLED
+    ) {
+      throw new BusinessException(
+        "Cannot change status of completed or cancelled activity",
+      );
     }
 
     this.#status = newStatus;
@@ -269,39 +277,83 @@ export class Activity extends AggregateRoot<string> {
     }
   }
 
-
-
   public updateActualParticipants(count: number): void {
     if (count < 0) {
-      throw new BusinessException('Participant count cannot be negative');
+      throw new BusinessException("Participant count cannot be negative");
     }
     this.#actualParticipants = count;
   }
 
   // Getters
-  get projectId(): string { return this.#projectId; }
-  get name(): string { return this.#name; }
-  get description(): string | undefined { return this.#description; }
-  get scale(): ActivityScale { return this.#scale; }
-  get type(): ActivityType { return this.#type; }
-  get status(): ActivityStatus { return this.#status; }
-  get priority(): ActivityPriority { return this.#priority; }
-  get startDate(): Date | undefined { return this.#startDate; }
-  get endDate(): Date | undefined { return this.#endDate; }
-  get actualStartDate(): Date | undefined { return this.#actualStartDate; }
-  get actualEndDate(): Date | undefined { return this.#actualEndDate; }
-  get location(): string | undefined { return this.#location; }
-  get venue(): string | undefined { return this.#venue; }
-  get assignedTo(): string | undefined { return this.#assignedTo; }
-  get organizerId(): string | undefined { return this.#organizerId; }
-  get parentActivityId(): string | undefined { return this.#parentActivityId; }
-  get expectedParticipants(): number | undefined { return this.#expectedParticipants; }
-  get actualParticipants(): number | undefined { return this.#actualParticipants; }
-  get estimatedCost(): number | undefined { return this.#estimatedCost; }
-  get actualCost(): number | undefined { return this.#actualCost; }
-  get currency(): string | undefined { return this.#currency; }
-  get tags(): string[] { return [...this.#tags]; }
-  get metadata(): Record<string, any> | undefined { return this.#metadata ? { ...this.#metadata } : undefined; }
+  get projectId(): string {
+    return this.#projectId;
+  }
+  get name(): string {
+    return this.#name;
+  }
+  get description(): string | undefined {
+    return this.#description;
+  }
+  get scale(): ActivityScale {
+    return this.#scale;
+  }
+  get type(): ActivityType {
+    return this.#type;
+  }
+  get status(): ActivityStatus {
+    return this.#status;
+  }
+  get priority(): ActivityPriority {
+    return this.#priority;
+  }
+  get startDate(): Date | undefined {
+    return this.#startDate;
+  }
+  get endDate(): Date | undefined {
+    return this.#endDate;
+  }
+  get actualStartDate(): Date | undefined {
+    return this.#actualStartDate;
+  }
+  get actualEndDate(): Date | undefined {
+    return this.#actualEndDate;
+  }
+  get location(): string | undefined {
+    return this.#location;
+  }
+  get venue(): string | undefined {
+    return this.#venue;
+  }
+  get assignedTo(): string | undefined {
+    return this.#assignedTo;
+  }
+  get organizerId(): string | undefined {
+    return this.#organizerId;
+  }
+  get parentActivityId(): string | undefined {
+    return this.#parentActivityId;
+  }
+  get expectedParticipants(): number | undefined {
+    return this.#expectedParticipants;
+  }
+  get actualParticipants(): number | undefined {
+    return this.#actualParticipants;
+  }
+  get estimatedCost(): number | undefined {
+    return this.#estimatedCost;
+  }
+  get actualCost(): number | undefined {
+    return this.#actualCost;
+  }
+  get currency(): string | undefined {
+    return this.#currency;
+  }
+  get tags(): string[] {
+    return [...this.#tags];
+  }
+  get metadata(): Record<string, any> | undefined {
+    return this.#metadata ? { ...this.#metadata } : undefined;
+  }
 
   public isCompleted(): boolean {
     return this.#status === ActivityStatus.COMPLETED;
@@ -322,19 +374,30 @@ export class Activity extends AggregateRoot<string> {
   get nextStatus(): ActivityStatus[] {
     switch (this.#status) {
       case ActivityStatus.PLANNED:
-        return [ActivityStatus.IN_PROGRESS, ActivityStatus.ON_HOLD, ActivityStatus.CANCELLED];
+        return [
+          ActivityStatus.IN_PROGRESS,
+          ActivityStatus.ON_HOLD,
+          ActivityStatus.CANCELLED,
+        ];
       case ActivityStatus.IN_PROGRESS:
-        return [ActivityStatus.COMPLETED, ActivityStatus.ON_HOLD, ActivityStatus.CANCELLED];
+        return [
+          ActivityStatus.COMPLETED,
+          ActivityStatus.ON_HOLD,
+          ActivityStatus.CANCELLED,
+        ];
       case ActivityStatus.ON_HOLD:
         return [ActivityStatus.IN_PROGRESS, ActivityStatus.CANCELLED];
       case ActivityStatus.COMPLETED:
       case ActivityStatus.CANCELLED:
         return [];
       case ActivityStatus.CONFIRMED:
-        return [ActivityStatus.IN_PROGRESS, ActivityStatus.ON_HOLD, ActivityStatus.CANCELLED];
+        return [
+          ActivityStatus.IN_PROGRESS,
+          ActivityStatus.ON_HOLD,
+          ActivityStatus.CANCELLED,
+        ];
       default:
         return [];
     }
   }
 }
-

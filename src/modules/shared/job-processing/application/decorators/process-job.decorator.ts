@@ -1,8 +1,7 @@
-import { SetMetadata } from '@nestjs/common';
-import { JobName } from 'src/shared/job-names';
+import { SetMetadata } from "@nestjs/common";
+import { JobName } from "src/shared/job-names";
 
-export const PROCESS_JOB_KEY = 'process_job';
-
+export const PROCESS_JOB_KEY = "process_job";
 
 export enum JobPriority {
   CRITICAL = 1,
@@ -28,7 +27,7 @@ export interface ProcessJobOptions {
    * Backoff strategy for retries.
    */
   backoff: {
-    type: 'fixed' | 'exponential' | 'linear';
+    type: "fixed" | "exponential" | "linear";
     delay: number;
   };
 

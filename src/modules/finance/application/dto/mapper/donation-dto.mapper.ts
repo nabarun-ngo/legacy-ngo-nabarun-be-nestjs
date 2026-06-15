@@ -1,9 +1,9 @@
-import { UserDtoMapper } from 'src/modules/user/application/dto/user-dto.mapper';
-import { Donation } from '../../../domain/model/donation.model';
-import { DonationDto } from '../donation.dto';
-import { AccountDtoMapper } from '../mapper/account-dto.mapper';
-import { User } from 'src/modules/user/domain/model/user.model';
-import { Account } from '../../../domain/model/account.model';
+import { UserDtoMapper } from "src/modules/user/application/dto/user-dto.mapper";
+import { User } from "src/modules/user/domain/model/user.model";
+import { Account } from "../../../domain/model/account.model";
+import { Donation } from "../../../domain/model/donation.model";
+import { DonationDto } from "../donation.dto";
+import { AccountDtoMapper } from "../mapper/account-dto.mapper";
 
 /**
  * Donation DTO Mapper
@@ -26,10 +26,17 @@ export class DonationDtoMapper {
       endDate: donation.endDate,
       raisedOn: donation.raisedOn,
       paidOn: donation.paidOn,
-      confirmedBy: donation.confirmedBy ? UserDtoMapper.toUserDTO(donation.confirmedBy as User) : undefined,
+      confirmedBy: donation.confirmedBy
+        ? UserDtoMapper.toUserDTO(donation.confirmedBy as User)
+        : undefined,
       confirmedOn: donation.confirmedOn,
       paymentMethod: donation.paymentMethod,
-      paidToAccount: donation.paidToAccount ? AccountDtoMapper.toDto(donation.paidToAccount as Account, { includeBankDetail: false, includeUpiDetail: false }) : undefined,
+      paidToAccount: donation.paidToAccount
+        ? AccountDtoMapper.toDto(donation.paidToAccount as Account, {
+            includeBankDetail: false,
+            includeUpiDetail: false,
+          })
+        : undefined,
       paidUsingUPI: donation.paidUsingUPI,
       isPaymentNotified: donation.isPaymentNotified,
       transactionRef: donation.transactionRef,
@@ -45,11 +52,6 @@ export class DonationDtoMapper {
 
   static toDomain(dto: DonationDto): Donation {
     // This is a simplified version - in practice, you'd use factory methods
-    throw new Error('Use factory methods to create domain entities');
+    throw new Error("Use factory methods to create domain entities");
   }
 }
-
-
-
-
-

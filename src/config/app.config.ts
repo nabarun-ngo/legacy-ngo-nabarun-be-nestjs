@@ -1,40 +1,60 @@
-import { INestApplication, LogLevel, NestInterceptor, RequestMethod, ValidationPipe } from "@nestjs/common";
+import {
+INestApplication,
+LogLevel,
+NestInterceptor,
+RequestMethod,
+ValidationPipe,
+} from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import * as bodyParser from "body-parser";
 import compression from "compression";
-import { configureSwagger } from "./swagger.config";
+import { NextFunction,Request,Response } from "express";
 import { Configkey } from "src/shared/config-keys";
 import { GlobalExceptionFilter } from "src/shared/filters/global-exception.filter";
-import * as bodyParser from 'body-parser';
 import { TimingInterceptor } from "src/shared/interceptors/timing.interceptor";
-import { resolveTraceId, traceStorage } from "src/shared/utilities/trace-context.util";
-import { Request, Response, NextFunction } from "express";
-import { EventEmitter2 } from "@nestjs/event-emitter";
+import {
+resolveTraceId,
+traceStorage,
+} from "src/shared/utilities/trace-context.util";
+import { configureSwagger } from "./swagger.config";
 
-const parseRetentionDays = (value: string | undefined, defaultValue: number): number => {
-  const parsed = parseInt(value || '', 10);
-  return Number.isFinite(parsed) ? Math.min(Math.max(parsed, 1), 365) : defaultValue;
+const parseRetentionDays = (
+  value: string | undefined,
+  defaultValue: number,
+): number => {
+  const parsed = parseInt(value || "", 10);
+  return Number.isFinite(parsed)
+    ? Math.min(Math.max(parsed, 1), 365)
+    : defaultValue;
 };
 
-const completedJobRetentionDays = parseRetentionDays(process.env[Configkey.PROP_COMPLETED_JOB_RETENTION_DAYS], 7);
-const failedJobRetentionDays = parseRetentionDays(process.env[Configkey.PROP_FAILED_JOB_RETENTION_DAYS], 30);
+const completedJobRetentionDays = parseRetentionDays(
+  process.env[Configkey.PROP_COMPLETED_JOB_RETENTION_DAYS],
+  7,
+);
+const failedJobRetentionDays = parseRetentionDays(
+  process.env[Configkey.PROP_FAILED_JOB_RETENTION_DAYS],
+  30,
+);
 
 export const config = {
   app: {
-    name: process.env[Configkey.APP_NAME] || '',
-    port: parseInt(process.env.PORT || '8080', 10) || 8080,
-    environment: process.env[Configkey.NODE_ENV] || 'development',
-    isProd: process.env[Configkey.NODE_ENV] === 'prod',
-    logLevel: (process.env[Configkey.LOG_LEVEL] || 'log') as LogLevel,
-    fileSize: '10mb'
+    name: process.env[Configkey.APP_NAME] || "",
+    port: parseInt(process.env.PORT || "8080", 10) || 8080,
+    environment: process.env[Configkey.NODE_ENV] || "development",
+    isProd: process.env[Configkey.NODE_ENV] === "prod",
+    logLevel: (process.env[Configkey.LOG_LEVEL] || "log") as LogLevel,
+    fileSize: "10mb",
   },
   database: {
     mongodbUrl: process.env[Configkey.MONGODB_URL],
     postgresUrl: process.env[Configkey.POSTGRES_URL],
     redisUrl: process.env[Configkey.REDIS_URL],
-    auditedModels: ['Account', 'Donation', 'Expense', 'Transaction', 'Earning'],
+    auditedModels: ["Account", "Donation", "Expense", "Transaction", "Earning"],
   },
 
   cors: {
-    origin: process.env[Configkey.CORS_ALLOWED_ORIGIN]?.split(','),
+    origin: process.env[Configkey.CORS_ALLOWED_ORIGIN]?.split(","),
     credentials: true,
   },
   validation: new ValidationPipe({
@@ -44,10 +64,10 @@ export const config = {
     transformOptions: {
       enableImplicitConversion: true,
     },
-    disableErrorMessages: process.env.NODE_ENV === 'prod',
+    disableErrorMessages: process.env.NODE_ENV === "prod",
   }),
   jobProcessing: {
-    queueName: 'default',
+    queueName: "default",
     removeOnComplete: {
       age: 3600 * 24 * completedJobRetentionDays,
       count: 500 * completedJobRetentionDays,
@@ -55,8 +75,8 @@ export const config = {
     removeOnFail: {
       age: 3600 * 24 * failedJobRetentionDays,
       count: 50 * failedJobRetentionDays,
-    }
-  }
+    },
+  },
 };
 
 export function applyConfig(app: INestApplication) {
@@ -64,17 +84,19 @@ export function applyConfig(app: INestApplication) {
   app.use((req: Request, res: Response, next: NextFunction) => {
     const traceId = resolveTraceId(req.headers);
     // Set traceId in response header for convenience
-    res.setHeader('x-trace-id', traceId);
-    traceStorage.run({
-      traceId,
-      user: {
-        userId: 'system', // Default if not authenticated
-        ipAddress: req.ip || req.socket.remoteAddress,
-        userAgent: req.headers['user-agent'],
-      }
-    }, () => next());
+    res.setHeader("x-trace-id", traceId);
+    traceStorage.run(
+      {
+        traceId,
+        user: {
+          userId: "system", // Default if not authenticated
+          ipAddress: req.ip || req.socket.remoteAddress,
+          userAgent: req.headers["user-agent"],
+        },
+      },
+      () => next(),
+    );
   });
-
 
   app.use(compression()); // Response compression
 
@@ -82,30 +104,34 @@ export function applyConfig(app: INestApplication) {
   app.useGlobalPipes(config.validation);
 
   // Set global prefix BEFORE configuring Swagger so it picks up the prefix
-  app.setGlobalPrefix('api', {
+  app.setGlobalPrefix("api", {
     exclude: [
       {
-        path: '/callback/oauth/:provider',
-        method: RequestMethod.GET
+        path: "/callback/oauth/:provider",
+        method: RequestMethod.GET,
       },
       {
-        path: '/webhooks/fathom',
-        method: RequestMethod.POST
-      }
-    ]
+        path: "/webhooks/fathom",
+        method: RequestMethod.POST,
+      },
+    ],
   });
 
   // File Size configuration
-  app.use(bodyParser.json({
-    limit: config.app.fileSize,
-    verify: (req: any, res, buf) => {
-      req.rawBody = buf;
-    }
-  }));
-  app.use(bodyParser.urlencoded({ limit: config.app.fileSize, extended: true }));
+  app.use(
+    bodyParser.json({
+      limit: config.app.fileSize,
+      verify: (req: any, res, buf) => {
+        req.rawBody = buf;
+      },
+    }),
+  );
+  app.use(
+    bodyParser.urlencoded({ limit: config.app.fileSize, extended: true }),
+  );
 
   // Global Interceptors
-  let interceptors: NestInterceptor<any, any>[] = [];
+  const interceptors: NestInterceptor<any, any>[] = [];
 
   if (!config.app.isProd) {
     configureSwagger(app);

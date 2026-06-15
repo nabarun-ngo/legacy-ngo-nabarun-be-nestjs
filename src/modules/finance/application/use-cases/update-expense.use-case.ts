@@ -1,19 +1,33 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IUseCase } from '../../../../shared/interfaces/use-case.interface';
-import { Expense, ExpenseItem, ExpenseStatus } from '../../domain/model/expense.model';
-import { EXPENSE_REPOSITORY } from '../../domain/repositories/expense.repository.interface';
-import type { IExpenseRepository } from '../../domain/repositories/expense.repository.interface';
-import { BusinessException } from '../../../../shared/exceptions/business-exception';
-import { UpdateExpenseDto } from '../dto/expense.dto';
+import { Inject,Injectable } from "@nestjs/common";
+import { BusinessException } from "../../../../shared/exceptions/business-exception";
+import { IUseCase } from "../../../../shared/interfaces/use-case.interface";
+import {
+Expense,
+ExpenseItem,
+ExpenseStatus,
+} from "../../domain/model/expense.model";
+import type { IExpenseRepository } from "../../domain/repositories/expense.repository.interface";
+import { EXPENSE_REPOSITORY } from "../../domain/repositories/expense.repository.interface";
+import { UpdateExpenseDto } from "../dto/expense.dto";
 
 @Injectable()
-export class UpdateExpenseUseCase implements IUseCase<{ id: string; dto: UpdateExpenseDto, updatedById: string }, Expense> {
+export class UpdateExpenseUseCase
+  implements
+    IUseCase<
+      { id: string; dto: UpdateExpenseDto; updatedById: string },
+      Expense
+    >
+{
   constructor(
     @Inject(EXPENSE_REPOSITORY)
     private readonly expenseRepository: IExpenseRepository,
-  ) { }
+  ) {}
 
-  async execute(request: { id: string; dto: UpdateExpenseDto, updatedById: string }): Promise<Expense> {
+  async execute(request: {
+    id: string;
+    dto: UpdateExpenseDto;
+    updatedById: string;
+  }): Promise<Expense> {
     const expense = await this.expenseRepository.findById(request.id);
     if (!expense) {
       throw new BusinessException(`Expense not found with id: ${request.id}`);
@@ -21,12 +35,8 @@ export class UpdateExpenseUseCase implements IUseCase<{ id: string; dto: UpdateE
 
     let expenseItems: ExpenseItem[] | undefined;
     if (request.dto.expenseItems) {
-      expenseItems = request.dto.expenseItems.map(item =>
-        new ExpenseItem(
-          item.itemName,
-          undefined,
-          item.amount,
-        )
+      expenseItems = request.dto.expenseItems.map(
+        (item) => new ExpenseItem(item.itemName, undefined, item.amount),
       );
     }
 
@@ -50,5 +60,3 @@ export class UpdateExpenseUseCase implements IUseCase<{ id: string; dto: UpdateE
     return await this.expenseRepository.update(request.id, expense);
   }
 }
-
-

@@ -1,18 +1,20 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IUseCase } from '../../../../shared/interfaces/use-case.interface';
-import { Donation } from '../../domain/model/donation.model';
-import { DONATION_REPOSITORY } from '../../domain/repositories/donation.repository.interface';
-import type { IDonationRepository } from '../../domain/repositories/donation.repository.interface';
-import { ACCOUNT_REPOSITORY } from '../../domain/repositories/account.repository.interface';
-import type { IAccountRepository } from '../../domain/repositories/account.repository.interface';
-import { BusinessException } from '../../../../shared/exceptions/business-exception';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ProcessDonationPaymentDto } from '../dto/donation.dto';
-import { TRANSACTION_REPOSITORY } from '../../domain/repositories/transaction.repository.interface';
-import type { ITransactionRepository } from '../../domain/repositories/transaction.repository.interface';
+import { Inject,Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { BusinessException } from "../../../../shared/exceptions/business-exception";
+import { IUseCase } from "../../../../shared/interfaces/use-case.interface";
+import { Donation } from "../../domain/model/donation.model";
+import type { IAccountRepository } from "../../domain/repositories/account.repository.interface";
+import { ACCOUNT_REPOSITORY } from "../../domain/repositories/account.repository.interface";
+import type { IDonationRepository } from "../../domain/repositories/donation.repository.interface";
+import { DONATION_REPOSITORY } from "../../domain/repositories/donation.repository.interface";
+import type { ITransactionRepository } from "../../domain/repositories/transaction.repository.interface";
+import { TRANSACTION_REPOSITORY } from "../../domain/repositories/transaction.repository.interface";
+import { ProcessDonationPaymentDto } from "../dto/donation.dto";
 
 @Injectable()
-export class ProcessDonationPaymentUseCase implements IUseCase<ProcessDonationPaymentDto, Donation> {
+export class ProcessDonationPaymentUseCase
+  implements IUseCase<ProcessDonationPaymentDto, Donation>
+{
   constructor(
     @Inject(DONATION_REPOSITORY)
     private readonly donationRepository: IDonationRepository,
@@ -21,16 +23,20 @@ export class ProcessDonationPaymentUseCase implements IUseCase<ProcessDonationPa
     @Inject(TRANSACTION_REPOSITORY)
     private readonly transactionRepository: ITransactionRepository,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   async execute(request: ProcessDonationPaymentDto): Promise<Donation> {
     const donation = await this.donationRepository.findById(request.donationId);
     if (!donation) {
-      throw new BusinessException(`Donation not found with id: ${request.donationId}`);
+      throw new BusinessException(
+        `Donation not found with id: ${request.donationId}`,
+      );
     }
 
     if (!donation.canBePaid()) {
-      throw new BusinessException(`Donation cannot be paid in current status: ${donation.status}`);
+      throw new BusinessException(
+        `Donation cannot be paid in current status: ${donation.status}`,
+      );
     }
 
     // Get account if provided
@@ -52,7 +58,7 @@ export class ProcessDonationPaymentUseCase implements IUseCase<ProcessDonationPa
     //   accountId: request.accountId || '',
     //   description: `Donation payment: ${donation.id || 'N/A'}`,
     //   referenceId: donation.id,
-    //   referenceType: 'DONATION' as any, 
+    //   referenceType: 'DONATION' as any,
     //   txnNumber: request.transactionRef,
     //   comment: request.remarks,
     //   transactionDate: request.paidOn,
@@ -80,7 +86,10 @@ export class ProcessDonationPaymentUseCase implements IUseCase<ProcessDonationPa
       donation.markPaymentNotified();
     }
 
-    const updatedDonation = await this.donationRepository.update(donation.id, donation);
+    const updatedDonation = await this.donationRepository.update(
+      donation.id,
+      donation,
+    );
 
     // Emit domain events
     for (const event of updatedDonation.domainEvents) {

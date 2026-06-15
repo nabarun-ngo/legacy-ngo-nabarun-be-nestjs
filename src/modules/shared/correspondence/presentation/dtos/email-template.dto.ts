@@ -1,7 +1,5 @@
 // EmailTemplateDTO.ts
 
-
-
 // 🔹 Details Section
 export interface DetailSection {
   heading: string;

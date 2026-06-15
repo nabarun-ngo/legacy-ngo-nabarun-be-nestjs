@@ -1,22 +1,22 @@
-import { BusinessException } from 'src/shared/exceptions/business-exception';
-import { BaseDomain } from 'src/shared/models/base-domain';
-import { generateUniqueNDigitNumber } from 'src/shared/utilities/password-util';
+import { BusinessException } from "src/shared/exceptions/business-exception";
+import { BaseDomain } from "src/shared/models/base-domain";
+import { generateUniqueNDigitNumber } from "src/shared/utilities/password-util";
 
 export enum TransactionType {
-  IN = 'IN',                  // Legacy: Money coming in
-  OUT = 'OUT',                // Legacy: Money going out
+  IN = "IN", // Legacy: Money coming in
+  OUT = "OUT", // Legacy: Money going out
 }
 
 export enum TransactionStatus {
-  SUCCESS = 'SUCCESS',        // Legacy: SUCCESS instead of COMPLETED
-  REVERSED = 'REVERSED',         // Legacy: REVERT instead of REVERSED
+  SUCCESS = "SUCCESS", // Legacy: SUCCESS instead of COMPLETED
+  REVERSED = "REVERSED", // Legacy: REVERT instead of REVERSED
 }
 
 export enum TransactionRefType {
-  DONATION = 'DONATION',
-  NONE = 'NONE',
-  EXPENSE = 'EXPENSE',
-  EARNING = 'EARNING',
+  DONATION = "DONATION",
+  NONE = "NONE",
+  EXPENSE = "EXPENSE",
+  EARNING = "EARNING",
   TXN_REVERSE = "TXN_REVERSE",
 }
 
@@ -108,16 +108,18 @@ export class Transaction extends BaseDomain<string> {
     metadata?: Record<string, any>;
   }): Transaction {
     if (!props.amount || props.amount <= 0) {
-      throw new BusinessException('Transaction amount must be greater than zero');
+      throw new BusinessException(
+        "Transaction amount must be greater than zero",
+      );
     }
     if (!props.currency) {
-      throw new BusinessException('Currency is required');
+      throw new BusinessException("Currency is required");
     }
     if (!props.accountId) {
-      throw new BusinessException('Account ID is required');
+      throw new BusinessException("Account ID is required");
     }
     if (!props.description) {
-      throw new BusinessException('Transaction description is required');
+      throw new BusinessException("Transaction description is required");
     }
 
     const transaction = new Transaction(
@@ -159,16 +161,18 @@ export class Transaction extends BaseDomain<string> {
     metadata?: Record<string, any>;
   }): Transaction {
     if (!props.amount || props.amount <= 0) {
-      throw new BusinessException('Transaction amount must be greater than zero');
+      throw new BusinessException(
+        "Transaction amount must be greater than zero",
+      );
     }
     if (!props.currency) {
-      throw new BusinessException('Currency is required');
+      throw new BusinessException("Currency is required");
     }
     if (!props.accountId) {
-      throw new BusinessException('Account ID is required');
+      throw new BusinessException("Account ID is required");
     }
     if (!props.description) {
-      throw new BusinessException('Transaction description is required');
+      throw new BusinessException("Transaction description is required");
     }
 
     const transaction = new Transaction(
@@ -185,7 +189,7 @@ export class Transaction extends BaseDomain<string> {
       props.transactionDate || new Date(),
       props.txnParticulars,
       props.accountId,
-      props.destAccountId
+      props.destAccountId,
     );
 
     return transaction;
@@ -197,30 +201,61 @@ export class Transaction extends BaseDomain<string> {
    */
   reverse(): void {
     if (this.#status !== TransactionStatus.SUCCESS) {
-      throw new BusinessException('Can only revert successful transactions');
+      throw new BusinessException("Can only revert successful transactions");
     }
     this.#status = TransactionStatus.REVERSED;
     this.touch();
   }
 
   get isEligibleForReverse(): boolean {
-    return this.#status === TransactionStatus.SUCCESS
-      && this.transactionDate >= new Date(new Date().setDate(new Date().getDate() - 10));
+    return (
+      this.#status === TransactionStatus.SUCCESS &&
+      this.transactionDate >=
+        new Date(new Date().setDate(new Date().getDate() - 10))
+    );
   }
 
   // Getters
-  get currency(): string { return this.#currency; }
-  get referenceId(): string | undefined { return this.#referenceId; }
-  get referenceType(): TransactionRefType | undefined { return this.#referenceType; }
-  get description(): string { return this.#description; }
-  get metadata(): Record<string, any> | undefined { return this.#metadata; }
-  get transactionDate(): Date { return this.#transactionDate; }
-  get amount(): number { return this.#amount; }
-  get type(): TransactionType { return this.#type; }
-  get status(): TransactionStatus { return this.#status; }
-  get particulars(): string | undefined { return this.#particulars; }
-  get transactionRef(): string { return this.#transactionRef; }
-  get accountId(): string | undefined { return this.#accountId; }
-  get refAccountId(): string | undefined { return this.#refAccountId; }
-  get balanceAfter(): number | undefined { return this.#balanceAfter; }
+  get currency(): string {
+    return this.#currency;
+  }
+  get referenceId(): string | undefined {
+    return this.#referenceId;
+  }
+  get referenceType(): TransactionRefType | undefined {
+    return this.#referenceType;
+  }
+  get description(): string {
+    return this.#description;
+  }
+  get metadata(): Record<string, any> | undefined {
+    return this.#metadata;
+  }
+  get transactionDate(): Date {
+    return this.#transactionDate;
+  }
+  get amount(): number {
+    return this.#amount;
+  }
+  get type(): TransactionType {
+    return this.#type;
+  }
+  get status(): TransactionStatus {
+    return this.#status;
+  }
+  get particulars(): string | undefined {
+    return this.#particulars;
+  }
+  get transactionRef(): string {
+    return this.#transactionRef;
+  }
+  get accountId(): string | undefined {
+    return this.#accountId;
+  }
+  get refAccountId(): string | undefined {
+    return this.#refAccountId;
+  }
+  get balanceAfter(): number | undefined {
+    return this.#balanceAfter;
+  }
 }

@@ -1,13 +1,12 @@
 import {
-  Injectable,
-  OnModuleInit,
-  OnApplicationShutdown,
-  Logger,
   Inject,
-} from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-import { prismaAuditExtension } from './extensions/prisma-audit.extension';
-
+  Injectable,
+  Logger,
+  OnApplicationShutdown,
+  OnModuleInit,
+} from "@nestjs/common";
+import { PrismaClient } from "@prisma/client";
+import { prismaAuditExtension } from "./extensions/prisma-audit.extension";
 
 @Injectable()
 export class PrismaPostgresService
@@ -15,21 +14,25 @@ export class PrismaPostgresService
   implements OnModuleInit, OnApplicationShutdown {
   private readonly logger = new Logger(PrismaPostgresService.name);
 
-  constructor(@Inject('POSTGRES_URL') dbUrl: string) {
+  constructor(@Inject("POSTGRES_URL") dbUrl: string) {
     super({
       datasources: {
         db: {
-          url: dbUrl!,
+          url: dbUrl,
         },
       },
-      log: ['error', 'warn'],
+      log: ["error", "warn"],
     });
 
     const extended = this.$extends(prismaAuditExtension);
 
     return new Proxy(this, {
       get(target, prop, receiver) {
-        return Reflect.get(prop in extended ? extended : target, prop, receiver);
+        return Reflect.get(
+          prop in extended ? extended : target,
+          prop,
+          receiver,
+        );
       },
     }) as any;
   }
@@ -37,11 +40,11 @@ export class PrismaPostgresService
   async onApplicationShutdown(signal?: string) {
     this.logger.log(`Application shutdown: ${signal}`);
     await this.$disconnect();
-    this.logger.debug('Database disconnected');
+    this.logger.debug("Database disconnected");
   }
 
   async onModuleInit() {
     await this.$connect();
-    this.logger.log(`Connected to Database`)
+    this.logger.log(`Connected to Database`);
   }
 }

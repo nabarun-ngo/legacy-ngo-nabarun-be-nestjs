@@ -1,26 +1,27 @@
-import { AggregateRoot } from '../../../../shared/models/aggregate-root';
-import { WorkflowStep } from './workflow-step.model';
-import { TaskDef, WorkflowDefinition } from '../vo/workflow-def.vo';
-import { User } from 'src/modules/user/domain/model/user.model';
-import { WorkflowCreatedEvent } from '../events/workflow-created.event';
-import { StepStartedEvent } from '../events/step-started.event';
-import { generateUniqueNDigitNumber } from 'src/shared/utilities/password-util';
-import { BusinessException } from 'src/shared/exceptions/business-exception';
-import { WorkflowTask, WorkflowTaskStatus } from './workflow-task.model';
-import { TaskCompletedEvent } from '../events/task-completed.event';
-import { StepCompletedEvent } from '../events/step-completed.event';
-import { TaskStartedEvent } from '../events/task-started.event';
-import { TaskFailedEvent } from '../events/task-failed.event';
-import { TaskAssignmentCreatedEvent } from '../events/task-assignment-created.event';
-import { TaskAssignment } from './task-assignment.model';
-import { evaluateCondition } from 'src/shared/utilities/common.util';
+import { User } from "src/modules/user/domain/model/user.model";
+import { BusinessException } from "src/shared/exceptions/business-exception";
+import { evaluateCondition } from "src/shared/utilities/common.util";
+import { generateUniqueNDigitNumber } from "src/shared/utilities/password-util";
+import { AggregateRoot } from "../../../../shared/models/aggregate-root";
+import { StepCompletedEvent } from "../events/step-completed.event";
+import { StepStartedEvent } from "../events/step-started.event";
+import { TaskAssignmentCreatedEvent } from "../events/task-assignment-created.event";
+import { TaskCancelledEvent } from "../events/task-cancelled.event";
+import { TaskCompletedEvent } from "../events/task-completed.event";
+import { TaskFailedEvent } from "../events/task-failed.event";
+import { TaskStartedEvent } from "../events/task-started.event";
+import { WorkflowCreatedEvent } from "../events/workflow-created.event";
+import { TaskDef,WorkflowDefinition } from "../vo/workflow-def.vo";
+import { TaskAssignment } from "./task-assignment.model";
+import { WorkflowStep } from "./workflow-step.model";
+import { WorkflowTask,WorkflowTaskStatus } from "./workflow-task.model";
 
 export enum WorkflowInstanceStatus {
-  PENDING = 'PENDING',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  CANCELLED = 'CANCELLED',
+  PENDING = "PENDING",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  CANCELLED = "CANCELLED",
 }
 
 // export enum WorkflowType {
@@ -39,9 +40,7 @@ export interface WorkflowFilter {
   readonly workflowId?: string;
 }
 
-
 export class WorkflowInstance extends AggregateRoot<string> {
-
   #type: string;
   #name: string;
   #description: string;
@@ -56,7 +55,6 @@ export class WorkflowInstance extends AggregateRoot<string> {
   #isExternalUser: boolean | undefined;
   #externalUserEmail: string | undefined;
   #context?: Record<string, any>;
-
 
   constructor(
     protected _id: string,
@@ -97,14 +95,13 @@ export class WorkflowInstance extends AggregateRoot<string> {
     type: string;
     definition: WorkflowDefinition;
     requestedBy: Partial<User>;
-    data?: Record<string, any>
+    data?: Record<string, any>;
     requestedFor?: Partial<User>;
     forExternalUser?: boolean;
     externalUserEmail?: string;
   }) {
-
     if (data.forExternalUser && !data.externalUserEmail) {
-      throw new BusinessException('External user email is required');
+      throw new BusinessException("External user email is required");
     }
     const instance = new WorkflowInstance(
       `NW${generateUniqueNDigitNumber(6)}`,
@@ -113,7 +110,8 @@ export class WorkflowInstance extends AggregateRoot<string> {
       data.definition.description,
       WorkflowInstanceStatus.PENDING,
       data.requestedBy,
-      data.requestedFor ?? (data.forExternalUser ? undefined : data.requestedBy),
+      data.requestedFor ??
+        (data.forExternalUser ? undefined : data.requestedBy),
       // If external user, then requestedFor will be undefined, need to be updated later if required
       data.data,
       data.data,
@@ -121,7 +119,7 @@ export class WorkflowInstance extends AggregateRoot<string> {
       data.externalUserEmail,
     );
 
-    data.definition.steps.forEach(step => {
+    data.definition.steps.forEach((step) => {
       instance.addSteps(WorkflowStep.create(step));
     });
 
@@ -136,15 +134,21 @@ export class WorkflowInstance extends AggregateRoot<string> {
 
   public start(): void {
     this.#status = WorkflowInstanceStatus.IN_PROGRESS;
-    this.#currentStepDefId = this.steps.find(s => s.orderIndex === 0)?.stepDefId;
-    const step = this.steps.find(s => s.stepDefId === this.#currentStepDefId);
+    this.#currentStepDefId = this.steps.find(
+      (s) => s.orderIndex === 0,
+    )?.stepDefId;
+    const step = this.steps.find((s) => s.stepDefId === this.#currentStepDefId);
     step?.start();
-    this.addDomainEvent(new StepStartedEvent(step?.id!, this.id, step?.id!, this));
+    this.addDomainEvent(
+      new StepStartedEvent(step?.id!, this.id, step?.id!, this),
+    );
     this.touch();
   }
 
   public moveToNextStep() {
-    const currentStep = this.#steps.find((s) => s.stepDefId === this.#currentStepDefId);
+    const currentStep = this.#steps.find(
+      (s) => s.stepDefId === this.#currentStepDefId,
+    );
 
     if (!currentStep) {
       throw new Error(`Current step not found: ${this.#currentStepDefId}`);
@@ -154,7 +158,10 @@ export class WorkflowInstance extends AggregateRoot<string> {
 
     // Evaluate transitions from the current step
     for (const transition of currentStep.transitions) {
-      const d = transition.condition === 'default' || !transition.condition || evaluateCondition(transition.condition, this.#context || {});
+      const d =
+        transition.condition === "default" ||
+        !transition.condition ||
+        evaluateCondition(transition.condition, this.#context || {});
       if (d) {
         nextStepId = transition.nextStepId;
         break;
@@ -171,7 +178,9 @@ export class WorkflowInstance extends AggregateRoot<string> {
 
     // Set the next step as the current step
     this.#currentStepDefId = nextStepId;
-    const nextStep = this.#steps.find((s) => s.stepDefId === this.#currentStepDefId);
+    const nextStep = this.#steps.find(
+      (s) => s.stepDefId === this.#currentStepDefId,
+    );
     if (!nextStep) {
       throw new Error(`Next step not found: ${this.#currentStepDefId}`);
     }
@@ -179,35 +188,49 @@ export class WorkflowInstance extends AggregateRoot<string> {
     // If the revisited step is already then handle it some way
     nextStep.currentOrderIndex = currentStep.orderIndex + 1;
     nextStep.start();
-    this.addDomainEvent(new StepStartedEvent(nextStep.id, this.id, nextStep.id, this));
+    this.addDomainEvent(
+      new StepStartedEvent(nextStep.id, this.id, nextStep.id, this),
+    );
     this.touch();
   }
 
   public initCurrentStepTasks(taskDefs: TaskDef[]): WorkflowTask[] {
-    const step = this.#steps.find(s => s.stepDefId === this.#currentStepDefId);
+    const step = this.#steps.find(
+      (s) => s.stepDefId === this.#currentStepDefId,
+    );
     if (!step) {
       throw new BusinessException(`Step not found: ${this.#currentStepDefId}`);
     }
-    const tasks = taskDefs.map(td => WorkflowTask.create(this.id, step, td));
+    const tasks = taskDefs.map((td) => WorkflowTask.create(this.id, step, td));
     step.setTasks(tasks);
     this.touch();
     return tasks;
   }
 
-  public assignTask(taskId: string, users: User[], roleCodes: string[], isReassign: boolean = false) {
-    const step = this.#steps.find(s => s.stepDefId === this.#currentStepDefId);
-    const task = step?.tasks?.find(t => t.id === taskId);
+  public assignTask(
+    taskId: string,
+    users: User[],
+    roleCodes: string[],
+    isReassign: boolean = false,
+  ) {
+    const step = this.#steps.find(
+      (s) => s.stepDefId === this.#currentStepDefId,
+    );
+    const task = step?.tasks?.find((t) => t.id === taskId);
     if (!task) {
       throw new BusinessException(`Task not found: ${taskId}`);
     }
 
-    const assignments = users.map(u => TaskAssignment.create({
-      taskId: task.id,
-      assignedTo: u,
-      roleName: (roleCodes && roleCodes.length > 0)
-        ? u.roles.find(r => roleCodes.includes(r.roleCode))?.roleCode!
-        : undefined
-    }));
+    const assignments = users.map((u) =>
+      TaskAssignment.create({
+        taskId: task.id,
+        assignedTo: u,
+        roleName:
+          roleCodes && roleCodes.length > 0
+            ? u.roles.find((r) => roleCodes.includes(r.roleCode))?.roleCode!
+            : undefined,
+      }),
+    );
     if (isReassign) {
       task.reassign(assignments);
     } else {
@@ -225,8 +248,8 @@ export class WorkflowInstance extends AggregateRoot<string> {
     remarks?: string,
     data?: Record<string, any>,
   ) {
-    const step = this.steps.find(s => s.stepDefId === this.#currentStepDefId);
-    const task = step?.tasks?.find(t => t.id === taskId);
+    const step = this.steps.find((s) => s.stepDefId === this.#currentStepDefId);
+    const task = step?.tasks?.find((t) => t.id === taskId);
 
     if (!task) {
       throw new BusinessException(`Task not found: ${taskId}`);
@@ -259,11 +282,10 @@ export class WorkflowInstance extends AggregateRoot<string> {
       }
     }
 
-
     if (step?.isAllTasksCompleted()) {
       step.complete();
       this.moveToNextStep();
-      this.addDomainEvent(new StepCompletedEvent(this.id, step?.id!, this));
+      this.addDomainEvent(new StepCompletedEvent(this.id, step?.id, this));
       return task;
     }
 
@@ -284,7 +306,9 @@ export class WorkflowInstance extends AggregateRoot<string> {
 
   public complete(): void {
     if (this.#status === WorkflowInstanceStatus.COMPLETED) {
-      throw new BusinessException(`Cannot complete workflow in status: ${this.#status}`);
+      throw new BusinessException(
+        `Cannot complete workflow in status: ${this.#status}`,
+      );
     }
     this.#status = WorkflowInstanceStatus.COMPLETED;
     this.#completedAt = new Date();
@@ -299,19 +323,27 @@ export class WorkflowInstance extends AggregateRoot<string> {
   }
 
   public cancel(reason: string, userId: string): void {
-    if (this.#status === WorkflowInstanceStatus.CANCELLED || this.#status === WorkflowInstanceStatus.COMPLETED) {
-      throw new BusinessException(`Cannot cancel workflow in status: ${this.#status}`);
+    if (
+      this.#status === WorkflowInstanceStatus.CANCELLED ||
+      this.#status === WorkflowInstanceStatus.COMPLETED
+    ) {
+      throw new BusinessException(
+        `Cannot cancel workflow in status: ${this.#status}`,
+      );
     }
 
     this.#status = WorkflowInstanceStatus.CANCELLED;
     this.#remarks = `User Cancelled due to : ${reason}`;
-    const step = this.steps.find(s => s.stepDefId === this.#currentStepDefId);
+    const step = this.steps.find((s) => s.stepDefId === this.#currentStepDefId);
     if (step) {
       step.complete();
-      step.tasks.forEach(task => {
-        if (task.status == WorkflowTaskStatus.IN_PROGRESS || task.status == WorkflowTaskStatus.PENDING) {
-          task.complete({ id: userId }, this.#remarks);
-          this.addDomainEvent(new TaskCompletedEvent(this.id, task));
+      step.tasks.forEach((task) => {
+        if (
+          task.status == WorkflowTaskStatus.IN_PROGRESS ||
+          task.status == WorkflowTaskStatus.PENDING
+        ) {
+          task.cancel(this.#remarks, { id: userId });
+          this.addDomainEvent(new TaskCancelledEvent(this.id, task));
         }
       });
       this.addDomainEvent(new StepCompletedEvent(this.id, step.id, this));
@@ -325,26 +357,37 @@ export class WorkflowInstance extends AggregateRoot<string> {
   }
 
   get isAllStepsCompleted(): boolean {
-    return this.#steps.length > 0 && this.#steps.every(s => s.isCompleted());
+    return this.#steps.length > 0 && this.#steps.every((s) => s.isCompleted());
   }
 
-
   // --- GETTERS (auto-picked by toJson) ---
-  get name(): string { return this.#name; }
+  get name(): string {
+    return this.#name;
+  }
 
-  get description(): string { return this.#description; }
+  get description(): string {
+    return this.#description;
+  }
 
-  get type(): string { return this.#type; }
+  get type(): string {
+    return this.#type;
+  }
 
-  get status(): WorkflowInstanceStatus { return this.#status; }
+  get status(): WorkflowInstanceStatus {
+    return this.#status;
+  }
 
   get requestData(): Record<string, string> {
     return this.#requestData ? { ...this.#requestData } : {};
   }
 
-  get currentStepDefId(): string | undefined { return this.#currentStepDefId; }
+  get currentStepDefId(): string | undefined {
+    return this.#currentStepDefId;
+  }
 
-  get steps(): ReadonlyArray<WorkflowStep> { return [...this.#steps]; }
+  get steps(): ReadonlyArray<WorkflowStep> {
+    return [...this.#steps];
+  }
 
   get actualSteps(): ReadonlyArray<WorkflowStep> {
     const actual: WorkflowStep[] = [];
@@ -353,21 +396,35 @@ export class WorkflowInstance extends AggregateRoot<string> {
     // Follow the steps that have actually been started or completed
     return this.#steps
       .filter((s) => s.orderIndex >= 0)
-      .sort((a, b) => (a.orderIndex) - (b.orderIndex));
+      .sort((a, b) => a.orderIndex - b.orderIndex);
   }
 
+  get initiatedBy(): Partial<User> | undefined {
+    return this.#initiatedBy;
+  }
 
-  get initiatedBy(): Partial<User> | undefined { return this.#initiatedBy; }
+  get initiatedFor(): Partial<User> | undefined {
+    return this.#initiatedFor;
+  }
 
-  get initiatedFor(): Partial<User> | undefined { return this.#initiatedFor; }
+  get completedAt(): Date | undefined {
+    return this.#completedAt;
+  }
 
-  get completedAt(): Date | undefined { return this.#completedAt; }
+  get remarks(): string | undefined {
+    return this.#remarks;
+  }
 
-  get remarks(): string | undefined { return this.#remarks; }
-
-  get isDelegated(): boolean { return this.#initiatedBy?.id !== this.#initiatedFor?.id; }
-  get isExternalUser(): boolean | undefined { return this.#isExternalUser; }
-  get externalUserEmail(): string | undefined { return this.#externalUserEmail; }
-  get context(): Record<string, any> | undefined { return this.#context; }
+  get isDelegated(): boolean {
+    return this.#initiatedBy?.id !== this.#initiatedFor?.id;
+  }
+  get isExternalUser(): boolean | undefined {
+    return this.#isExternalUser;
+  }
+  get externalUserEmail(): string | undefined {
+    return this.#externalUserEmail;
+  }
+  get context(): Record<string, any> | undefined {
+    return this.#context;
+  }
 }
-

@@ -1,17 +1,16 @@
-import { Role } from '../../domain/model/role.model';
-import { LoginMethod, User } from '../../domain/model/user.model';
+import { Address } from "../../domain/model/address.model";
+import { Link } from "../../domain/model/link.model";
+import { PhoneNumber } from "../../domain/model/phone-number.model";
+import { Role } from "../../domain/model/role.model";
+import { LoginMethod,User } from "../../domain/model/user.model";
 import {
-  AddressDto,
-  LinkDto,
-  PhoneNumberDto,
-  RoleDto,
-  RoleHistoryDto,
-  UserDto,
-} from './user.dto';
-import { PhoneNumber } from '../../domain/model/phone-number.model';
-import { Address } from '../../domain/model/address.model';
-import { Link } from '../../domain/model/link.model';
-
+AddressDto,
+LinkDto,
+PhoneNumberDto,
+RoleDto,
+RoleHistoryDto,
+UserDto,
+} from "./user.dto";
 
 export class UserDtoMapper {
   static toUserDTO(user: User): UserDto {
@@ -24,7 +23,8 @@ export class UserDtoMapper {
       blocked: false,
       status: user.status,
       createdOn: user.createdAt,
-      roles: user.getCurrentRoles()
+      roles: user
+        .getCurrentRoles()
         .filter((role) => role != null)
         .map((role) => UserDtoMapper.toRoleDTO(role)),
       roleHistory: UserDtoMapper.mapToRoleHistory(user.getRoleHistory()),
@@ -43,7 +43,9 @@ export class UserDtoMapper {
       secondaryNumber: UserDtoMapper.toPhoneNumberDTO(user.secondaryNumber!),
       //profileCompleted: user.isProfileCompleted,
       title: user.title,
-      socialMediaLinks: user.socialMediaLinks.map((link) => UserDtoMapper.toLinkDTO(link)),
+      socialMediaLinks: user.socialMediaLinks.map((link) =>
+        UserDtoMapper.toLinkDTO(link),
+      ),
       publicProfile: user.isPublic,
     };
   }
@@ -69,7 +71,7 @@ export class UserDtoMapper {
       zipCode: address.zipCode,
       country: address.country,
       district: address.district,
-      landmark: '',
+      landmark: "",
       state: address.state,
     };
   }
@@ -90,15 +92,15 @@ export class UserDtoMapper {
   }
 
   private static mapToRoleHistory(
-    input: Record<string, Role[]>
+    input: Record<string, Role[]>,
   ): RoleHistoryDto[] {
     const roleHistory: RoleHistoryDto[] = [];
     Object.entries(input).forEach(([key, roles], index) => {
       //if (index !== 0) {
       roleHistory.push({
         period: key,
-        roleNames: roles.map(m => m.roleName),
-        roles: roles.map(UserDtoMapper.toRoleDTO)
+        roleNames: roles.map((m) => m.roleName),
+        roles: roles.map(UserDtoMapper.toRoleDTO),
       });
       // }
     });

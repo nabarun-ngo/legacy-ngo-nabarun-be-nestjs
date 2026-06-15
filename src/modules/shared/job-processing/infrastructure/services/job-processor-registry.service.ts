@@ -1,27 +1,46 @@
-import { Injectable, Logger, OnModuleDestroy, OnApplicationBootstrap } from '@nestjs/common';
-import { ModuleRef, Reflector } from '@nestjs/core';
-import { InjectQueue } from '@nestjs/bullmq';
-import { Queue, Worker, Job as BullJob, WaitingChildrenError } from 'bullmq';
-import { ProcessJobOptions, PROCESS_JOB_KEY } from '../../application/decorators/process-job.decorator';
-import { JobName } from 'src/shared/job-names';
-import { JobProcessor, Job, JobExecutionContext, JobOptions } from '../../presentation/dto/job.dto';
-import { config } from 'src/config/app.config';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { AppTechnicalError } from 'src/shared/exceptions/app-tech-error';
+import { InjectQueue } from "@nestjs/bullmq";
+import {
+Injectable,
+Logger,
+OnApplicationBootstrap,
+OnModuleDestroy,
+} from "@nestjs/common";
+import { ModuleRef,Reflector } from "@nestjs/core";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { Job as BullJob,Queue,WaitingChildrenError,Worker } from "bullmq";
+import { config } from "src/config/app.config";
+import { AppTechnicalError } from "src/modules/shared/observability/application/events/app-technical-error.event";
+import { JobName } from "src/shared/job-names";
+import {
+PROCESS_JOB_KEY,
+ProcessJobOptions,
+} from "../../application/decorators/process-job.decorator";
+import {
+Job,
+JobExecutionContext,
+JobOptions,
+JobProcessor,
+} from "../../presentation/dto/job.dto";
 
 @Injectable()
-export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBootstrap {
+export class JobProcessorRegistry
+  implements OnModuleDestroy, OnApplicationBootstrap
+{
   private readonly logger = new Logger(JobProcessorRegistry.name);
-  private readonly processors = new Map<string, { processor: JobProcessor; options: ProcessJobOptions }>();
+  private readonly processors = new Map<
+    string,
+    { processor: JobProcessor; options: ProcessJobOptions }
+  >();
   private worker: Worker | null = null;
   private isShuttingDown = false;
 
   constructor(
-    @InjectQueue(config.jobProcessing.queueName) private readonly defaultQueue: Queue,
+    @InjectQueue(config.jobProcessing.queueName)
+    private readonly defaultQueue: Queue,
     private readonly moduleRef: ModuleRef,
     private readonly reflector: Reflector,
     private readonly eventBus: EventEmitter2,
-  ) { }
+  ) {}
 
   async onApplicationBootstrap() {
     // All modules are loaded now, discover processors
@@ -35,20 +54,23 @@ export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBoots
   }
 
   /**
-    * Discover and register all processors with @ProcessJob decorator
-    */
+   * Discover and register all processors with @ProcessJob decorator
+   */
   private async discoverAndRegisterProcessors() {
     const startTime = Date.now();
-    const modules = this.moduleRef['container'].getModules();
+    const modules = this.moduleRef["container"].getModules();
     let processorsFound = 0;
 
-    this.logger.log(`Starting processor discovery... (${modules.size} modules found)`);
+    this.logger.log(
+      `Starting processor discovery... (${modules.size} modules found)`,
+    );
 
     for (const [moduleName, module] of modules) {
       this.logger.debug(`Scanning module: ${moduleName}`);
 
       for (const [providerName, provider] of module.providers) {
-        if (!provider?.instance || typeof provider.instance !== 'object') continue;
+        if (!provider?.instance || typeof provider.instance !== "object")
+          continue;
 
         const instance = provider.instance;
         const prototype = Object.getPrototypeOf(instance);
@@ -58,7 +80,10 @@ export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBoots
         const methods = Object.getOwnPropertyNames(prototype);
 
         for (const methodName of methods) {
-          if (typeof instance[methodName] !== 'function' || methodName === 'constructor') {
+          if (
+            typeof instance[methodName] !== "function" ||
+            methodName === "constructor"
+          ) {
             continue;
           }
 
@@ -71,8 +96,13 @@ export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBoots
             );
 
             if (options) {
-              this.logger.log(`✓ Found processor: ${options.name} in ${className}.${methodName}`);
-              this.registerProcessor(options, instance[methodName].bind(instance));
+              this.logger.log(
+                `✓ Found processor: ${options.name} in ${className}.${methodName}`,
+              );
+              this.registerProcessor(
+                options,
+                instance[methodName].bind(instance),
+              );
               processorsFound++;
             }
           }
@@ -81,23 +111,27 @@ export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBoots
     }
 
     this.logger.log(
-      `Discovered ${processorsFound} processors in ${Date.now() - startTime}ms`
+      `Discovered ${processorsFound} processors in ${Date.now() - startTime}ms`,
     );
 
     if (processorsFound === 0) {
-      this.logger.warn('⚠️  No processors found! Make sure:');
-      this.logger.warn('   1. Services with @ProcessJob are in module providers');
-      this.logger.warn('   2. Modules are imported in AppModule');
-      this.logger.warn('   3. Decorator uses PROCESS_JOB_KEY symbol');
+      this.logger.warn("⚠️  No processors found! Make sure:");
+      this.logger.warn(
+        "   1. Services with @ProcessJob are in module providers",
+      );
+      this.logger.warn("   2. Modules are imported in AppModule");
+      this.logger.warn("   3. Decorator uses PROCESS_JOB_KEY symbol");
     }
   }
-
 
   /**
    * Register a processor with its options
    */
   private registerProcessor(options: ProcessJobOptions, method: Function) {
-    const processor: JobProcessor = async (job: Job, ctx: JobExecutionContext) => {
+    const processor: JobProcessor = async (
+      job: Job,
+      ctx: JobExecutionContext,
+    ) => {
       return await method(job, ctx);
     };
 
@@ -120,24 +154,23 @@ export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBoots
         lockRenewTime: 15000, // Renew every 15 seconds
         stalledInterval: 60000, // OPTIMIZED: Increased from 30s to 60s to reduce Redis polling
         maxStalledCount: 2,
-        settings: {
-        },
+        settings: {},
         // Aggressive cleanup for in-process workers
         removeOnComplete: config.jobProcessing.removeOnComplete,
-        removeOnFail: config.jobProcessing.removeOnFail
+        removeOnFail: config.jobProcessing.removeOnFail,
       },
     );
 
     // Event handlers with minimal overhead
-    this.worker.on('completed', (job) => {
+    this.worker.on("completed", (job) => {
       this.logger.log(`✓ Completed: ${job.name}:${job.id}`);
     });
 
-    this.worker.on('failed', (job, error) => {
+    this.worker.on("failed", (job, error) => {
       this.logger.error(`✗ ${job?.name}:${job?.id} - ${error.message}`);
     });
 
-    this.worker.on('error', (error) => {
+    this.worker.on("error", (error) => {
       this.logger.error(`Worker error: ${error.message}`);
     });
 
@@ -149,12 +182,14 @@ export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBoots
    */
   private async processJob(job: BullJob, token?: string): Promise<any> {
     if (this.isShuttingDown) {
-      throw new Error('Worker is shutting down');
+      throw new Error("Worker is shutting down");
     }
 
     // Auto-completion for jobs that have awakened from a waiting-children state
     if (job.data._internal_isWaitingOnChildren) {
-      this.logger.log(`Job ${job.id} resumed after waiting for children. Auto-completing parent job.`);
+      this.logger.log(
+        `Job ${job.id} resumed after waiting for children. Auto-completing parent job.`,
+      );
       const cleanData = { ...job.data };
       delete cleanData._internal_isWaitingOnChildren;
       await job.updateData(cleanData);
@@ -173,17 +208,24 @@ export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBoots
     const maxAttempts = job.opts.attempts || 3;
 
     // Buffer for dynamic child jobs
-    const childrenToSpawn: { name: string; data: any; options?: JobOptions }[] = [];
+    const childrenToSpawn: { name: string; data: any; options?: JobOptions }[] =
+      [];
     const ctx: JobExecutionContext = {
-      addChildJob: <T = Record<string, any>>(name: JobName, data: T, options?: JobOptions): string => {
+      addChildJob: <T = Record<string, any>>(
+        name: JobName,
+        data: T,
+        options?: JobOptions,
+      ): string => {
         const jobId = options?.jobId || `${job.id}-C${childrenToSpawn.length}`;
         childrenToSpawn.push({ name, data, options: { ...options, jobId } });
         return jobId;
-      }
+      },
     };
 
     try {
-      job.log(`Starting Processing: ${job.name}:${job.id} (attempt ${attemptNumber}/${maxAttempts})`);
+      job.log(
+        `Starting Processing: ${job.name}:${job.id} (attempt ${attemptNumber}/${maxAttempts})`,
+      );
 
       // Apply timeout if configured
       const timeout = processorData.options.timeout;
@@ -202,20 +244,29 @@ export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBoots
       const duration = Date.now() - startTime;
       job.log(`[SUCCESS] Completed: ${job.name}:${job.id} after ${duration}ms`);
 
-      // Process buffered child jobs and properly suspend the parent 
+      // Process buffered child jobs and properly suspend the parent
       if (childrenToSpawn.length > 0) {
-        this.logger.log(`Job ${job.id} spawning ${childrenToSpawn.length} children and entering waiting state.`);
+        this.logger.log(
+          `Job ${job.id} spawning ${childrenToSpawn.length} children and entering waiting state.`,
+        );
 
         // Save state to auto-skip the processor logic when awakening next time
-        await job.updateData({ ...job.data, _internal_isWaitingOnChildren: true });
+        await job.updateData({
+          ...job.data,
+          _internal_isWaitingOnChildren: true,
+        });
 
         for (const child of childrenToSpawn) {
           const childOpts = {
             ...child.options,
             parent: {
               id: job.id!,
-              queue: job.queueQualifiedName || await this.defaultQueue.waitUntilReady().then(() => this.defaultQueue.qualifiedName)
-            }
+              queue:
+                job.queueQualifiedName ||
+                (await this.defaultQueue
+                  .waitUntilReady()
+                  .then(() => this.defaultQueue.qualifiedName)),
+            },
           };
           await this.defaultQueue.add(child.name, child.data, childOpts);
         }
@@ -228,7 +279,9 @@ export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBoots
           const cleanData = { ...job.data };
           delete cleanData._internal_isWaitingOnChildren;
           await job.updateData(cleanData);
-          this.logger.log(`Job ${job.id} did not transition into waiting state (children might have completed instantly)`);
+          this.logger.log(
+            `Job ${job.id} did not transition into waiting state (children might have completed instantly)`,
+          );
         }
       }
 
@@ -239,14 +292,20 @@ export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBoots
       }
 
       const duration = Date.now() - startTime;
-      job.log(`[ERROR] Failed: ${job.name}:${job.id} after ${duration}ms - ${attemptNumber}:${error.message}`);
+      job.log(
+        `[ERROR] Failed: ${job.name}:${job.id} after ${duration}ms - ${attemptNumber}:${error.message}`,
+      );
       this.eventBus.emit(AppTechnicalError.name, new AppTechnicalError(error));
       // Call retry/failed callbacks
       if (processorData.options.onRetry && attemptNumber < maxAttempts) {
-        try { await processorData.options.onRetry(attemptNumber, error); } catch { }
+        try {
+          await processorData.options.onRetry(attemptNumber, error);
+        } catch {}
       }
       if (processorData.options.onFailed && attemptNumber >= maxAttempts) {
-        try { await processorData.options.onFailed(error, attemptNumber); } catch { }
+        try {
+          await processorData.options.onFailed(error, attemptNumber);
+        } catch {}
       }
 
       throw error;
@@ -265,9 +324,10 @@ export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBoots
       promise,
       new Promise<T>((_, reject) =>
         setTimeout(
-          () => reject(new Error(`Job ${jobName} timed out after ${timeoutMs}ms`)),
-          timeoutMs
-        )
+          () =>
+            reject(new Error(`Job ${jobName} timed out after ${timeoutMs}ms`)),
+          timeoutMs,
+        ),
       ),
     ]);
   }
@@ -328,7 +388,7 @@ export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBoots
    * Graceful shutdown
    */
   private async shutdown() {
-    this.logger.log('Shutting down worker...');
+    this.logger.log("Shutting down worker...");
 
     if (this.worker) {
       try {
@@ -337,14 +397,13 @@ export class JobProcessorRegistry implements OnModuleDestroy, OnApplicationBoots
           this.worker.close(),
           new Promise((resolve) => setTimeout(resolve, 30000)),
         ]);
-        this.logger.log('Worker closed gracefully');
+        this.logger.log("Worker closed gracefully");
       } catch (error) {
-        this.logger.error('Error closing worker:', error);
+        this.logger.error("Error closing worker:", error);
       }
       this.worker = null;
     }
 
     this.processors.clear();
   }
-
 }

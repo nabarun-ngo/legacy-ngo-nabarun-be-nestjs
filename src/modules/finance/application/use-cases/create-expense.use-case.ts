@@ -1,11 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IUseCase } from '../../../../shared/interfaces/use-case.interface';
-import { Expense, ExpenseItem, ExpenseRefType } from '../../domain/model/expense.model';
-import { EXPENSE_REPOSITORY } from '../../domain/repositories/expense.repository.interface';
-import type { IExpenseRepository } from '../../domain/repositories/expense.repository.interface';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { ExpenseItemDetailDto } from '../dto/expense.dto';
-
+import { Inject,Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { IUseCase } from "../../../../shared/interfaces/use-case.interface";
+import {
+Expense,
+ExpenseItem,
+ExpenseRefType,
+} from "../../domain/model/expense.model";
+import type { IExpenseRepository } from "../../domain/repositories/expense.repository.interface";
+import { EXPENSE_REPOSITORY } from "../../domain/repositories/expense.repository.interface";
+import { ExpenseItemDetailDto } from "../dto/expense.dto";
 
 class CreateExpense {
   name: string;
@@ -25,23 +28,19 @@ export class CreateExpenseUseCase implements IUseCase<CreateExpense, Expense> {
     @Inject(EXPENSE_REPOSITORY)
     private readonly expenseRepository: IExpenseRepository,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   async execute(request: CreateExpense): Promise<Expense> {
     let expenseItems: ExpenseItem[] = [];
     if (request.expenseItems && request.expenseItems.length > 0) {
-      expenseItems = request.expenseItems.map(item =>
-        new ExpenseItem(
-          item.itemName,
-          undefined,
-          item.amount,
-        )
+      expenseItems = request.expenseItems.map(
+        (item) => new ExpenseItem(item.itemName, undefined, item.amount),
       );
     }
 
     const expense = Expense.create({
       name: request.name,
-      description: request.description || '',
+      description: request.description || "",
       requestedBy: { id: request.requestedById },
       paidBy: { id: request.paidById },
       referenceId: request.expenseRefId,
@@ -62,5 +61,3 @@ export class CreateExpenseUseCase implements IUseCase<CreateExpense, Expense> {
     return savedExpense;
   }
 }
-
-

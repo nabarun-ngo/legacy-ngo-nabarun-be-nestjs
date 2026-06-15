@@ -1,8 +1,16 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsEnum, ValidateNested, IsDate, IsArray } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
-import { AccountStatus, AccountType } from '../../domain/model/account.model';
-import { KeyValueDto } from 'src/shared/dto/KeyValue.dto';
+import { ApiProperty,ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform,Type } from "class-transformer";
+import {
+IsArray,
+IsDate,
+IsEnum,
+IsNumber,
+IsOptional,
+IsString,
+ValidateNested,
+} from "class-validator";
+import { KeyValueDto } from "src/shared/dto/KeyValue.dto";
+import { AccountStatus,AccountType } from "../../domain/model/account.model";
 
 /**
  * Bank Detail DTO - matches legacy system
@@ -83,7 +91,7 @@ export class AccountDetailDto {
   @ApiProperty({ enum: AccountStatus })
   accountStatus: AccountStatus;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   activatedOn?: Date;
 
   @ApiProperty({ enum: AccountType })
@@ -109,14 +117,14 @@ export class AccountDetailFilterDto {
   @ApiPropertyOptional({ enum: AccountStatus, isArray: true })
   @IsOptional()
   @Transform(({ value }) =>
-    Array.isArray(value) ? value : value ? [value] : undefined
+    Array.isArray(value) ? value : value ? [value] : undefined,
   )
   status?: AccountStatus[];
 
   @ApiPropertyOptional({ enum: AccountType, isArray: true })
   @IsOptional()
   @Transform(({ value }) =>
-    Array.isArray(value) ? value : value ? [value] : undefined
+    Array.isArray(value) ? value : value ? [value] : undefined,
   )
   type?: AccountType[];
 
@@ -130,15 +138,15 @@ export class AccountDetailFilterDto {
   @IsString()
   accountHolderName?: string;
 
-  @ApiPropertyOptional({ enum: ['Y', 'N'] })
+  @ApiPropertyOptional({ enum: ["Y", "N"] })
   @IsOptional()
-  @IsEnum(['Y', 'N'])
-  includePaymentDetail?: 'Y' | 'N';
+  @IsEnum(["Y", "N"])
+  includePaymentDetail?: "Y" | "N";
 
-  @ApiPropertyOptional({ enum: ['Y', 'N'] })
+  @ApiPropertyOptional({ enum: ["Y", "N"] })
   @IsOptional()
-  @IsEnum(['Y', 'N'])
-  includeBalance?: 'Y' | 'N';
+  @IsEnum(["Y", "N"])
+  includeBalance?: "Y" | "N";
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -173,14 +181,10 @@ export class CreateAccountDto {
   accountHolderId: string;
 }
 
-
-
-
 /**
  * Update Account DTO
  */
 export class UpdateAccountSelfDto {
-
   @ApiPropertyOptional({ type: BankDetailDto })
   @IsOptional()
   @ValidateNested()
@@ -231,7 +235,6 @@ export class UpdateAccountDto {
   upiDetail?: UPIDetailDto;
 }
 
-
 export class TransferDto {
   @ApiProperty()
   @IsString()
@@ -248,7 +251,6 @@ export class TransferDto {
   @ApiProperty()
   @IsDate()
   transferDate: Date;
-
 }
 
 export class AccountRefDataDto {
@@ -260,11 +262,9 @@ export class AccountRefDataDto {
 
   @ApiProperty()
   transactionRefTypes?: KeyValueDto[];
-
 }
 
 export class AddFundDto {
-
   @ApiProperty()
   @IsNumber()
   amount: number;
@@ -276,7 +276,6 @@ export class AddFundDto {
   @ApiProperty()
   @IsDate()
   transferDate: Date;
-
 }
 
 export class FixTransactionDto {
@@ -284,14 +283,11 @@ export class FixTransactionDto {
   @IsArray()
   itemIds: string[];
 
-  @ApiProperty({ enum: ['EXPENSE', 'DONATION'] })
-  @IsEnum(['EXPENSE', 'DONATION'])
-  itemType: 'EXPENSE' | 'DONATION';
+  @ApiProperty({ enum: ["EXPENSE", "DONATION"] })
+  @IsEnum(["EXPENSE", "DONATION"])
+  itemType: "EXPENSE" | "DONATION";
 
   @ApiProperty()
   @IsString()
   newAccountId: string;
 }
-
-
-

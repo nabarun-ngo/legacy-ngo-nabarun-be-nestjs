@@ -1,17 +1,23 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IUseCase } from '../../../../shared/interfaces/use-case.interface';
-import { Expense } from '../../domain/model/expense.model';
-import { EXPENSE_REPOSITORY } from '../../domain/repositories/expense.repository.interface';
-import type { IExpenseRepository } from '../../domain/repositories/expense.repository.interface';
-import { ACCOUNT_REPOSITORY } from '../../domain/repositories/account.repository.interface';
-import type { IAccountRepository } from '../../domain/repositories/account.repository.interface';
-import { BusinessException } from '../../../../shared/exceptions/business-exception';
-import { TransactionRefType, TransactionType } from '../../domain/model/transaction.model';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { CreateTransactionUseCase } from './create-transaction.use-case';
+import { Inject,Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { BusinessException } from "../../../../shared/exceptions/business-exception";
+import { IUseCase } from "../../../../shared/interfaces/use-case.interface";
+import { Expense } from "../../domain/model/expense.model";
+import {
+TransactionRefType,
+TransactionType,
+} from "../../domain/model/transaction.model";
+import type { IAccountRepository } from "../../domain/repositories/account.repository.interface";
+import { ACCOUNT_REPOSITORY } from "../../domain/repositories/account.repository.interface";
+import type { IExpenseRepository } from "../../domain/repositories/expense.repository.interface";
+import { EXPENSE_REPOSITORY } from "../../domain/repositories/expense.repository.interface";
+import { CreateTransactionUseCase } from "./create-transaction.use-case";
 
 @Injectable()
-export class SettleExpenseUseCase implements IUseCase<{ id: string; accountId: string; settledById: string }, Expense> {
+export class SettleExpenseUseCase
+  implements
+    IUseCase<{ id: string; accountId: string; settledById: string }, Expense>
+{
   constructor(
     @Inject(EXPENSE_REPOSITORY)
     private readonly expenseRepository: IExpenseRepository,
@@ -19,25 +25,33 @@ export class SettleExpenseUseCase implements IUseCase<{ id: string; accountId: s
     private readonly accountRepository: IAccountRepository,
     private readonly eventEmitter: EventEmitter2,
     private readonly transactionUseCase: CreateTransactionUseCase,
-  ) { }
+  ) {}
 
-  async execute(request: { id: string; accountId: string; settledById: string }): Promise<Expense> {
+  async execute(request: {
+    id: string;
+    accountId: string;
+    settledById: string;
+  }): Promise<Expense> {
     const expense = await this.expenseRepository.findById(request.id);
     if (!expense) {
       throw new BusinessException(`Expense not found with id: ${request.id}`);
     }
 
     if (!expense.isPayable()) {
-      throw new BusinessException(`Expense cannot be settled in current status: ${expense.status}`);
+      throw new BusinessException(
+        `Expense cannot be settled in current status: ${expense.status}`,
+      );
     }
 
     const account = await this.accountRepository.findById(request.accountId);
     if (!account) {
-      throw new BusinessException(`Account not found with id: ${request.accountId}`);
+      throw new BusinessException(
+        `Account not found with id: ${request.accountId}`,
+      );
     }
 
     if (!account.hasSufficientFunds(expense.amount)) {
-      throw new BusinessException('Insufficient account balance');
+      throw new BusinessException("Insufficient account balance");
     }
 
     const transaction = await this.transactionUseCase.execute({
@@ -58,7 +72,10 @@ export class SettleExpenseUseCase implements IUseCase<{ id: string; accountId: s
       transactionId: transaction,
     });
 
-    const updatedExpense = await this.expenseRepository.update(expense.id, expense);
+    const updatedExpense = await this.expenseRepository.update(
+      expense.id,
+      expense,
+    );
 
     // Emit domain events
     for (const event of updatedExpense.domainEvents) {
@@ -69,5 +86,3 @@ export class SettleExpenseUseCase implements IUseCase<{ id: string; accountId: s
     return updatedExpense;
   }
 }
-
-

@@ -1,5 +1,5 @@
-import { DomainEvent } from '../../../../shared/models/domain-event';
-import { WorkflowInstance } from '../model/workflow-instance.model';
+import { DomainEvent } from "../../../../shared/models/domain-event";
+import { WorkflowInstance } from "../model/workflow-instance.model";
 
 export class StepCompletedEvent extends DomainEvent {
   constructor(
@@ -10,4 +10,3 @@ export class StepCompletedEvent extends DomainEvent {
     super(aggregateId, domain);
   }
 }
-

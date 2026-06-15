@@ -1,15 +1,15 @@
-import { randomUUID } from 'crypto';
-import { BaseDomain } from '../../../../shared/models/base-domain';
-import { WorkflowTask } from './workflow-task.model';
-import { StepDef, StepTransitionsDef } from '../vo/workflow-def.vo';
-import { BusinessException } from 'src/shared/exceptions/business-exception';
+import { randomUUID } from "crypto";
+import { BusinessException } from "src/shared/exceptions/business-exception";
+import { BaseDomain } from "../../../../shared/models/base-domain";
+import { StepDef,StepTransitionsDef } from "../vo/workflow-def.vo";
+import { WorkflowTask } from "./workflow-task.model";
 
 export enum WorkflowStepStatus {
-  PENDING = 'PENDING',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  SKIPPED = 'SKIPPED'
+  PENDING = "PENDING",
+  IN_PROGRESS = "IN_PROGRESS",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  SKIPPED = "SKIPPED",
 }
 
 export class WorkflowStep extends BaseDomain<string> {
@@ -20,7 +20,6 @@ export class WorkflowStep extends BaseDomain<string> {
   #status: WorkflowStepStatus;
   #orderIndex: number;
   #transitions: StepTransitionsDef[] = [];
-
 
   #completedAt?: Date;
   #remarks?: string;
@@ -78,7 +77,6 @@ export class WorkflowStep extends BaseDomain<string> {
   //        Private methods
   // -----------------------------------
 
-
   // -----------------------------------
   //        Mutators
   // -----------------------------------
@@ -89,8 +87,13 @@ export class WorkflowStep extends BaseDomain<string> {
   }
 
   start() {
-    if (this.#status === WorkflowStepStatus.COMPLETED || this.#status === WorkflowStepStatus.FAILED) {
-      throw new BusinessException(`Cannot start step in status: ${this.#status}`);
+    if (
+      this.#status === WorkflowStepStatus.COMPLETED ||
+      this.#status === WorkflowStepStatus.FAILED
+    ) {
+      throw new BusinessException(
+        `Cannot start step in status: ${this.#status}`,
+      );
     }
     this.#status = WorkflowStepStatus.IN_PROGRESS;
     this.#startedAt = new Date();
@@ -104,12 +107,14 @@ export class WorkflowStep extends BaseDomain<string> {
 
   complete() {
     if (this.#status !== WorkflowStepStatus.IN_PROGRESS) {
-      throw new BusinessException(`Cannot complete step in status: ${this.#status}`);
+      throw new BusinessException(
+        `Cannot complete step in status: ${this.#status}`,
+      );
     }
     this.#status = WorkflowStepStatus.COMPLETED;
     this.#completedAt = new Date();
     this.touch();
-    //Updating All Task level context here 
+    //Updating All Task level context here
     // return this.#onSuccessStepId;
   }
 
@@ -182,6 +187,6 @@ export class WorkflowStep extends BaseDomain<string> {
   }
 
   isAllTasksCompleted() {
-    return this.#tasks.length > 0 && this.#tasks.every(t => t.isCompleted());
+    return this.#tasks.length > 0 && this.#tasks.every((t) => t.isCompleted());
   }
 }

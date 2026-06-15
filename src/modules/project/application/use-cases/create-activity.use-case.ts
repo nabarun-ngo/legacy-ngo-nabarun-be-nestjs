@@ -1,16 +1,21 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IUseCase } from '../../../../shared/interfaces/use-case.interface';
-import { Activity, ActivityPriority, ActivityScale, ActivityType } from '../../domain/model/activity.model';
-import { ACTIVITY_REPOSITORY } from '../../domain/repositories/activity.repository.interface';
-import type { IActivityRepository } from '../../domain/repositories/activity.repository.interface';
-import { PROJECT_REPOSITORY } from '../../domain/repositories/project.repository.interface';
-import type { IProjectRepository } from '../../domain/repositories/project.repository.interface';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { BusinessException } from '../../../../shared/exceptions/business-exception';
+import { Inject,Injectable } from "@nestjs/common";
+import { EventEmitter2 } from "@nestjs/event-emitter";
+import { BusinessException } from "../../../../shared/exceptions/business-exception";
+import { IUseCase } from "../../../../shared/interfaces/use-case.interface";
+import {
+Activity,
+ActivityPriority,
+ActivityScale,
+ActivityType,
+} from "../../domain/model/activity.model";
+import type { IActivityRepository } from "../../domain/repositories/activity.repository.interface";
+import { ACTIVITY_REPOSITORY } from "../../domain/repositories/activity.repository.interface";
+import type { IProjectRepository } from "../../domain/repositories/project.repository.interface";
+import { PROJECT_REPOSITORY } from "../../domain/repositories/project.repository.interface";
 
 export interface CreateActivity {
   projectId: string;
-  name: string
+  name: string;
   description?: string;
   scale: ActivityScale;
   type: ActivityType;
@@ -30,33 +35,39 @@ export interface CreateActivity {
 }
 
 @Injectable()
-export class CreateActivityUseCase implements IUseCase<CreateActivity, Activity> {
+export class CreateActivityUseCase
+  implements IUseCase<CreateActivity, Activity>
+{
   constructor(
     @Inject(ACTIVITY_REPOSITORY)
     private readonly activityRepository: IActivityRepository,
     @Inject(PROJECT_REPOSITORY)
     private readonly projectRepository: IProjectRepository,
     private readonly eventEmitter: EventEmitter2,
-  ) { }
+  ) {}
 
   async execute(request: CreateActivity): Promise<Activity> {
     // Verify project exists and is active
     const project = await this.projectRepository.findById(request.projectId);
     if (!project) {
-      throw new BusinessException('Project not found');
+      throw new BusinessException("Project not found");
     }
     if (!project.isActive()) {
-      throw new BusinessException('Cannot add activity to inactive project');
+      throw new BusinessException("Cannot add activity to inactive project");
     }
 
     // Verify parent activity if provided
     if (request.parentActivityId) {
-      const parentActivity = await this.activityRepository.findById(request.parentActivityId);
+      const parentActivity = await this.activityRepository.findById(
+        request.parentActivityId,
+      );
       if (!parentActivity) {
-        throw new BusinessException('Parent activity not found');
+        throw new BusinessException("Parent activity not found");
       }
       if (parentActivity.projectId !== request.projectId) {
-        throw new BusinessException('Parent activity must belong to the same project');
+        throw new BusinessException(
+          "Parent activity must belong to the same project",
+        );
       }
     }
 
@@ -94,4 +105,3 @@ export class CreateActivityUseCase implements IUseCase<CreateActivity, Activity>
     return savedActivity;
   }
 }
-

@@ -1,8 +1,19 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsNumber, IsEnum, IsDate, Min } from 'class-validator';
-import { Transform, Type } from 'class-transformer';
-import { AccountDetailDto } from './account.dto';
-import { TransactionRefType, TransactionStatus, TransactionType } from '../../domain/model/transaction.model';
+import { ApiProperty,ApiPropertyOptional } from "@nestjs/swagger";
+import { Transform,Type } from "class-transformer";
+import {
+IsDate,
+IsEnum,
+IsNumber,
+IsOptional,
+IsString,
+Min,
+} from "class-validator";
+import {
+TransactionRefType,
+TransactionStatus,
+TransactionType,
+} from "../../domain/model/transaction.model";
+import { AccountDetailDto } from "./account.dto";
 
 /**
  * Transaction Detail DTO - matches legacy TransactionDetail
@@ -17,7 +28,7 @@ export class TransactionDetailDto {
   @IsString()
   txnNumber?: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   @IsDate()
   @Type(() => Date)
   txnDate: Date;
@@ -97,7 +108,7 @@ export class TransactionDetailFilterDto {
   @IsOptional()
   @IsEnum(TransactionType, { each: true })
   @Transform(({ value }) =>
-    Array.isArray(value) ? value : value ? [value] : undefined
+    Array.isArray(value) ? value : value ? [value] : undefined,
   )
   txnType?: TransactionType[];
 
@@ -105,7 +116,7 @@ export class TransactionDetailFilterDto {
   @IsOptional()
   @IsEnum(TransactionStatus, { each: true })
   @Transform(({ value }) =>
-    Array.isArray(value) ? value : value ? [value] : undefined
+    Array.isArray(value) ? value : value ? [value] : undefined,
   )
   txnStatus?: TransactionStatus[];
 
@@ -114,13 +125,13 @@ export class TransactionDetailFilterDto {
   @IsString()
   transactionRef?: string;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   @IsOptional()
   @IsDate()
   @Type(() => Date)
   startDate?: Date;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   @IsOptional()
   @IsDate()
   @Type(() => Date)
@@ -167,13 +178,12 @@ export class CreateTransactionDto {
   @IsEnum(TransactionRefType)
   txnRefType?: TransactionRefType;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   @IsOptional()
   @IsDate()
   @Type(() => Date)
   txnDate?: Date;
 }
-
 
 export class ReverseTransactionDto {
   @ApiProperty()

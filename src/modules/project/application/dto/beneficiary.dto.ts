@@ -1,7 +1,20 @@
-import { IsString, IsOptional, IsDate, IsArray, IsEnum, Min, IsEmail, IsInt } from 'class-validator';
-import { Type } from 'class-transformer';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { BeneficiaryType, BeneficiaryGender, BeneficiaryStatus } from '../../domain/model/beneficiary.model';
+import { ApiProperty,ApiPropertyOptional } from "@nestjs/swagger";
+import { Type } from "class-transformer";
+import {
+IsArray,
+IsDate,
+IsEmail,
+IsEnum,
+IsInt,
+IsOptional,
+IsString,
+Min,
+} from "class-validator";
+import {
+BeneficiaryGender,
+BeneficiaryStatus,
+BeneficiaryType,
+} from "../../domain/model/beneficiary.model";
 
 export class CreateBeneficiaryDto {
   @IsString()
@@ -30,7 +43,7 @@ export class CreateBeneficiaryDto {
   @IsOptional()
   @IsDate()
   @Type(() => Date)
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   dateOfBirth?: Date;
 
   @IsOptional()
@@ -60,7 +73,7 @@ export class CreateBeneficiaryDto {
 
   @IsDate()
   @Type(() => Date)
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   enrollmentDate: Date;
 
   @IsOptional()
@@ -99,7 +112,7 @@ export class UpdateBeneficiaryDto {
   @IsOptional()
   @IsDate()
   @Type(() => Date)
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   dateOfBirth?: Date;
 
   @IsOptional()
@@ -151,7 +164,7 @@ export class UpdateBeneficiaryStatusDto {
   @IsOptional()
   @IsDate()
   @Type(() => Date)
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   exitDate?: Date;
 }
 
@@ -174,7 +187,7 @@ export class BeneficiaryDetailDto {
   @ApiPropertyOptional()
   age?: number;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   dateOfBirth?: Date;
 
   @ApiPropertyOptional()
@@ -192,10 +205,10 @@ export class BeneficiaryDetailDto {
   @ApiPropertyOptional()
   category?: string;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   enrollmentDate: Date;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
+  @ApiPropertyOptional({ type: String, format: "date-time" })
   exitDate?: Date;
 
   @ApiProperty({ enum: BeneficiaryStatus })
@@ -210,10 +223,10 @@ export class BeneficiaryDetailDto {
   @ApiPropertyOptional()
   metadata?: Record<string, any>;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   createdAt: Date;
 
-  @ApiProperty({ type: String, format: 'date-time' })
+  @ApiProperty({ type: String, format: "date-time" })
   updatedAt: Date;
 }
 
@@ -238,4 +251,3 @@ export class BeneficiaryDetailFilterDto {
   @ApiPropertyOptional()
   category?: string;
 }
-
