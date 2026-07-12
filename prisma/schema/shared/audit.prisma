@@ -1,0 +1,24 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared schema fragment — Audit extension (DatabaseModule)
+// Synced into <prisma-schema-dir>/shared/ by: npx nestjs-shared-sync-schema
+// DO NOT edit — overwritten on every sync. After syncing, run `prisma migrate`.
+//
+// Only required when you pass auditedModels: [...] to DatabaseModule.forRoot().
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  entityType String
+  entityId   String
+  action     String
+  userId     String
+  userName   String
+  oldValues  Json     @default("{}")
+  newValues  Json     @default("{}")
+  ipAddress  String?
+  userAgent  String?
+  traceId    String?
+  createdAt  DateTime @default(now())
+
+  @@map("AuditLog")
+}

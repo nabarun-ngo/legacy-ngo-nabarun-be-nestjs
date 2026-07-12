@@ -1,0 +1,49 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared schema fragment — CustomFieldsModule
+// Synced into <prisma-schema-dir>/shared/ by: npx nestjs-shared-sync-schema
+// DO NOT edit — overwritten on every sync. After syncing, run `prisma migrate`.
+//
+// EAV (entity-attribute-value) pair: CustomFieldDefinition describes the
+// fields available for a given entityType (admin/config-time concern);
+// CustomFieldValue stores the actual value for one (entityType, entityId)
+// record against one definition (runtime concern). Both models are fully
+// entity-agnostic — entityType/entityId are plain strings, no relation to
+// any other model in this schema, so CustomFieldsModule attaches to any
+// host entity (donation, task, meeting, ...) without a migration per entity.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model CustomFieldDefinition {
+  id           String             @id @default(cuid())
+  entityType   String
+  key          String
+  label        String
+  fieldType    String
+  mandatory    Boolean            @default(false)
+  fieldOptions String[]
+  isHidden     Boolean            @default(false)
+  isEncrypted  Boolean            @default(false)
+  active       Boolean            @default(true)
+  sortOrder    Int                @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  values       CustomFieldValue[]
+
+  @@unique([entityType, key])
+  @@index([entityType, active])
+  @@map("CustomFieldDefinition")
+}
+
+model CustomFieldValue {
+  id         String                @id @default(cuid())
+  entityType String
+  entityId   String
+  fieldDefId String
+  value      String?
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  definition CustomFieldDefinition @relation(fields: [fieldDefId], references: [id], onDelete: Cascade)
+
+  @@unique([entityType, entityId, fieldDefId])
+  @@index([entityType, entityId])
+  @@map("CustomFieldValue")
+}

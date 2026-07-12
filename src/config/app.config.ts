@@ -12,12 +12,10 @@ import { NextFunction, Request, Response } from "express";
 import { Configkey } from "src/shared/config-keys";
 import { GlobalExceptionFilter } from "src/shared/filters/global-exception.filter";
 import { TimingInterceptor } from "src/shared/interceptors/timing.interceptor";
-import {
-  resolveTraceId,
-  traceStorage,
-} from "src/shared/utilities/trace-context.util";
+
 import { configureSwagger } from "./swagger.config";
 import * as dotenv from 'dotenv';
+import { resolveTraceId, traceStorage } from "nestjs-shared/core";
 dotenv.config();
 
 const parseRetentionDays = (

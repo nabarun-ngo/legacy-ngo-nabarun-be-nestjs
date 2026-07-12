@@ -1,0 +1,124 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared schema fragment — CorrespondenceModule
+// Synced into <prisma-schema-dir>/shared/ by: npx nestjs-shared-sync-schema
+// DO NOT edit — overwritten on every sync. After syncing, run `prisma migrate`.
+//
+// Relation assumptions:
+//   - UserNotification.user   → your app's User model (id, firstName, lastName, email)
+//   - UserFcmToken.user       → your app's User model (id, firstName, lastName, email)
+//   Adjust the @relation target if your user model has a different name.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Notification {
+  id              String             @id @default(cuid())
+  title           String
+  body            String
+  type            String
+  category        String
+  priority        String
+  actionUrl       String?
+  actionType      String?
+  actionData      Json?
+  referenceId     String?
+  referenceType   String?
+  imageUrl        String?
+  icon            String?
+  metadata        Json?
+  expiresAt       DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  userNotifications UserNotification[]
+
+  @@index([type], name: "notification_type_idx")
+  @@index([category], name: "notification_category_idx")
+  @@index([createdAt], name: "notification_createdAt_idx")
+  // CORR-021: composite index for the common referenceId+referenceType filter
+  @@index([referenceId, referenceType], name: "notification_ref_idx")
+  @@map("Notification")
+}
+
+model UserNotification {
+  id             String       @id @default(cuid())
+  notificationId String
+  userId         String
+  isRead         Boolean      @default(false)
+  readAt         DateTime?
+  isArchived     Boolean      @default(false)
+  archivedAt     DateTime?
+  isPushSent     Boolean      @default(false)
+  pushSentAt     DateTime?
+  pushDelivered  Boolean      @default(false)
+  pushError      String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "userNotification_userId_idx")
+  @@index([notificationId], name: "userNotification_notificationId_idx")
+  @@index([userId, isRead], name: "userNotification_userId_isRead_idx")
+  @@index([userId, isArchived], name: "userNotification_userId_isArchived_idx")
+  @@index([createdAt], name: "userNotification_createdAt_idx")
+  // CORR-021: composite indexes for the two most common combined query patterns
+  @@index([userId, createdAt], name: "userNotification_userId_createdAt_idx")
+  @@index([notificationId, userId], name: "userNotification_notificationId_userId_idx")
+  @@map("UserNotification")
+}
+
+model ResourceSubscription {
+  id             String               @id @default(cuid())
+  subscriberType String
+  userId         String?
+  userEmail      String?
+  userName       String?
+  roleName       String?
+  resourceType   String
+  resourceId     String?
+  subscribedVia  String
+  isActive       Boolean              @default(true)
+  channels       SubscriptionChannel[]
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+
+  @@unique([subscriberType, userId, roleName, resourceType, resourceId], name: "subscriberType_userId_roleName_resourceType_resourceId")
+  @@index([resourceType, resourceId, isActive], name: "subscription_resource_active_idx")
+  @@index([userId, isActive], name: "subscription_userId_active_idx")
+  @@index([roleName, isActive], name: "subscription_roleName_active_idx")
+  @@index([isActive, updatedAt], name: "subscription_isActive_updatedAt_idx")
+  @@map("ResourceSubscription")
+}
+
+model SubscriptionChannel {
+  id             String               @id @default(cuid())
+  subscriptionId String
+  channel        String
+  enabled        Boolean              @default(true)
+  emailRole      String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  subscription   ResourceSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, channel], name: "subscriptionId_channel")
+  @@index([subscriptionId], name: "subscriptionChannel_subscriptionId_idx")
+  @@map("SubscriptionChannel")
+}
+
+model UserFcmToken {
+  id         String    @id @default(cuid())
+  userId     String
+  token      String    @unique
+  deviceType String?
+  deviceName String?
+  browser    String?
+  os         String?
+  isActive   Boolean   @default(true)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], name: "fcmToken_userId_idx")
+  @@index([userId, isActive], name: "fcmToken_userId_active_idx")
+  @@index([isActive, lastUsedAt], name: "fcmToken_active_lastUsed_idx")
+  @@map("UserFcmToken")
+}

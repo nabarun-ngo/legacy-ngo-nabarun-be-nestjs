@@ -11,7 +11,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { BusinessException } from '../exceptions/business-exception';
 import { ErrorResponse } from '../models/response-model';
 import { config } from '../../config/app.config';
-import { getTraceId, resolveTraceId } from '../utilities/trace-context.util';
+import { getTraceId, resolveTraceId } from 'nestjs-shared/core';
 import { AppTechnicalError } from '../exceptions/app-tech-error';
 import { NotificationError } from '../exceptions/notification-failure';
 

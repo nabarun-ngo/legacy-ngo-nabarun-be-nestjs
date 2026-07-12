@@ -1,17 +1,17 @@
 import {
-CanActivate,
-ExecutionContext,
-Injectable,
-UnauthorizedException,
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  UnauthorizedException,
 } from "@nestjs/common";
 import { Reflector } from "@nestjs/core";
-import { traceStorage } from "src/shared/utilities/trace-context.util";
 import { IGNORE_CAPTCHA } from "../decorators/ignore-captcha.decorator";
 import { IS_PUBLIC_KEY } from "../decorators/public.decorator";
 import { USE_API_KEY } from "../decorators/use-api-key.decorator";
 import { ApiKeyService } from "../services/api-key.service";
 import { RecaptchaService } from "../services/google-recaptcha.service";
 import { JwtAuthService } from "../services/jwt-auth.service";
+import { traceStorage } from "nestjs-shared/core";
 
 @Injectable()
 export class UnifiedAuthGuard implements CanActivate {
@@ -20,7 +20,7 @@ export class UnifiedAuthGuard implements CanActivate {
     private apiKeyService: ApiKeyService,
     private recaptchaService: RecaptchaService,
     private reflector: Reflector,
-  ) {}
+  ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // Check if route is public

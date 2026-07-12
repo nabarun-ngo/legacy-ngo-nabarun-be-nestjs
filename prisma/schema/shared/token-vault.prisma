@@ -1,0 +1,53 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared schema fragment — TokenVaultModule
+// Synced into <prisma-schema-dir>/shared/ by: npx nestjs-shared-sync-schema
+// DO NOT edit — overwritten on every sync. After syncing, run `prisma migrate`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model OAuthAccount {
+  id         String       @id @default(cuid())
+  provider   String
+  email      String
+  // Provider-issued stable subject/object id (Google `sub`, Microsoft object `id`).
+  // Not the uniqueness key — legacy data backfilled from OAuthToken rows may not
+  // have it yet, so (provider, email) remains the canonical natural key.
+  externalId String?
+  name       String?
+  givenName  String?
+  familyName String?
+  pictureUrl String?
+  locale     String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  tokens     OAuthToken[]
+
+  // One profile row per external identity per provider.
+  @@unique([provider, email])
+  @@index([externalId])
+  @@map("OAuthAccount")
+}
+
+model OAuthToken {
+  id           String       @id @default(cuid())
+  accountId    String
+  account      OAuthAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  clientId     String
+  provider     String
+  email        String
+  ownerSub     String?
+  accessToken  String
+  refreshToken String?
+  tokenType    String?
+  expiresAt    DateTime?
+  scope        String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  // One stored credential per (account, clientId) — prevents duplicate rows
+  // racing on re-authentication and lets the DB enforce the upsert key. This
+  // replaces the previous @@unique([email, provider, clientId]) now that
+  // email/provider are reachable through the account relation.
+  @@unique([accountId, clientId])
+  @@index([ownerSub])
+  @@map("OAuthToken")
+}

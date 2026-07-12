@@ -1,0 +1,40 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared schema fragment — CommentsModule
+// Synced into <prisma-schema-dir>/shared/ by: npx nestjs-shared-sync-schema
+// DO NOT edit — overwritten on every sync. After syncing, run `prisma migrate`.
+//
+// Relation assumptions:
+//   - Comment.author          → your app's UserProfile model (id, firstName, middleName, lastName)
+//   - CommentMention.mentionedUser → same UserProfile model
+//   Adjust the @relation target if your user profile model has a different name.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Comment {
+  id         String           @id @default(cuid())
+  content    String
+  authorId   String
+  entityType String
+  entityId   String
+  parentId   String?
+  deletedAt  DateTime?
+  version    Int              @default(0)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  author     UserProfile?     @relation("CommentAuthor", fields: [authorId], references: [id])
+  parent     Comment?         @relation("CommentReplies", fields: [parentId], references: [id])
+  replies    Comment[]        @relation("CommentReplies")
+  mentions   CommentMention[]
+
+  @@map("Comment")
+}
+
+model CommentMention {
+  commentId       String
+  mentionedUserId String
+  createdAt       DateTime    @default(now())
+  comment         Comment     @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  mentionedUser   UserProfile @relation("CommentMentions", fields: [mentionedUserId], references: [id])
+
+  @@id([commentId, mentionedUserId])
+  @@map("CommentMention")
+}

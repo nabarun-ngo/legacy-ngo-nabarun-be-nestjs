@@ -1,0 +1,33 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared schema fragment — MeetingModule
+// Synced into <prisma-schema-dir>/shared/ by: npx nestjs-shared-sync-schema
+// DO NOT edit — overwritten on every sync. After syncing, run `prisma migrate`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Meeting {
+  id                     String    @id @default(cuid())
+  extMeetingId           String    @unique
+  attendees              String
+  meetingSummary         String?
+  meetingDescription     String?
+  meetingAgenda          String?
+  meetingLocation        String?
+  meetingStartTime       DateTime
+  meetingEndTime         DateTime?
+  meetingType            String?
+  status                 String
+  extVideoConferenceLink String?
+  extHtmlLink            String?
+  creatorEmail           String?
+  createdById            String?
+  meetingNotes           String?
+  meetingTranscript      String?
+  meetingRecordingUrl    String?
+  meetingActionItems     String?
+  meetingOutcomes        String?
+  deletedAt              DateTime?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@map("Meeting")
+}

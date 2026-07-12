@@ -1,10 +1,6 @@
 import { Prisma } from "@prisma/client";
-import {
-getTraceId,
-getUserContext,
-} from "src/shared/utilities/trace-context.util";
-
 import { config } from "src/config/app.config";
+import { getTraceId, getUserContext } from "nestjs-shared/core";
 
 export const prismaAuditExtension = Prisma.defineExtension((client) => {
   const auditedModels = config.database.auditedModels;

@@ -1,0 +1,33 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared schema fragment — DmsModule
+// Synced into <prisma-schema-dir>/shared/ by: npx nestjs-shared-sync-schema
+// DO NOT edit — overwritten on every sync. After syncing, run `prisma migrate`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model DocumentReference {
+  id               String            @id @default(cuid())
+  fileName         String
+  remotePath       String
+  publicToken      String?
+  contentType      String
+  fileSize         Int?
+  isPublic         Boolean           @default(false)
+  uploadedById     String?
+  /// Owning account (e.g. Google `sub`) for per-user storage providers such as Google Drive. Unused by Firebase.
+  storageOwnerSub  String?
+  createdAt        DateTime          @default(now())
+  mappings         DocumentMapping[]
+
+  @@map("DocumentReference")
+}
+
+model DocumentMapping {
+  id                  String            @id @default(cuid())
+  documentReferenceId String
+  entityId            String
+  entityType          String
+  createdAt           DateTime          @default(now())
+  document            DocumentReference @relation(fields: [documentReferenceId], references: [id], onDelete: Cascade)
+
+  @@map("DocumentMapping")
+}

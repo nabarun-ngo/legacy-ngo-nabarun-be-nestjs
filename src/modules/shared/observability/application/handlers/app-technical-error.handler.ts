@@ -1,21 +1,21 @@
-import { Inject,Injectable,Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { OnEvent } from "@nestjs/event-emitter";
 import { NotificationService } from "src/modules/shared/correspondence/application/services/notification.service";
 import {
-NotificationCategory,
-NotificationPriority,
-NotificationType,
+  NotificationCategory,
+  NotificationPriority,
+  NotificationType,
 } from "src/modules/shared/correspondence/domain/models/notification.model";
 import { Role } from "src/modules/user/domain/model/role.model";
 import {
-type IUserRepository,
-USER_REPOSITORY,
+  type IUserRepository,
+  USER_REPOSITORY,
 } from "src/modules/user/domain/repositories/user.repository.interface";
 import { ApplyTryCatch } from "src/shared/decorators/apply-try-catch.decorator";
 import { ErrorResponse } from "src/shared/models/response-model";
-import { getTraceId } from "src/shared/utilities/trace-context.util";
 import { SlackAlertService } from "../../infrastructure/external/slack-alert.service";
 import { AppTechnicalError } from "../events/app-technical-error.event";
+import { getTraceId } from "nestjs-shared/core";
 
 @Injectable()
 export class AppTechnicalErrorHandler {
@@ -26,7 +26,7 @@ export class AppTechnicalErrorHandler {
     private readonly userRepository: IUserRepository,
     private readonly slackAlertService: SlackAlertService,
     private readonly notificationService: NotificationService,
-  ) {}
+  ) { }
 
   @OnEvent(AppTechnicalError.name, { async: true })
   @ApplyTryCatch()

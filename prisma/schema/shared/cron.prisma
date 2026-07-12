@@ -1,0 +1,23 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared schema fragment — CronModule
+// Synced into <prisma-schema-dir>/shared/ by: npx nestjs-shared-sync-schema
+// DO NOT edit — overwritten on every sync. After syncing, run `prisma migrate`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Default, built-in job registry used by CronModule when the consumer does not
+// supply a custom `jobsProvider`. Managed entirely through the /cron/jobs CRUD
+// endpoints — rows here are read by the default jobsProvider on every trigger
+// evaluation and listing.
+model CronJobDefinition {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  expression  String
+  handler     String
+  enabled     Boolean  @default(true)
+  inputData   Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("CronJobDefinition")
+}

@@ -1,0 +1,112 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared schema fragment — AuthModule
+// Synced into <prisma-schema-dir>/shared/ by: npx nestjs-shared-sync-schema
+// DO NOT edit — overwritten on every sync. After syncing, run `prisma migrate`.
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ApiKey {
+  id         String    @id @default(cuid())
+  name       String
+  apiKey     String
+  apiKeyId   String    @unique
+  permissions String
+  createdBy  String?
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@map("ApiKey")
+}
+
+model Permission {
+  id              String           @id @default(cuid())
+  key             String           @unique
+  description     String?
+  deletedAt       DateTime?
+  createdAt       DateTime         @default(now())
+  rolePermissions RolePermission[]
+
+  @@map("Permission")
+}
+
+model Role {
+  id             String          @id @default(cuid())
+  key            String          @unique
+  description    String?
+  deletedAt      DateTime?
+  createdAt      DateTime        @default(now())
+  permissions    RolePermission[]
+  userRoles      UserRole[]
+  roleGroupRoles RoleGroupRole[]
+
+  @@map("Role")
+}
+
+model RolePermission {
+  roleId       String
+  permissionId String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("RolePermission")
+}
+
+model RoleGroup {
+  id             String          @id @default(cuid())
+  key            String          @unique
+  description    String?
+  deletedAt      DateTime?
+  createdAt      DateTime        @default(now())
+  roles          RoleGroupRole[]
+  userGroups     UserRoleGroup[]
+  userRoleGroups UserRole[]      @relation("UserRoleSourceGroup")
+
+  @@map("RoleGroup")
+}
+
+model RoleGroupRole {
+  groupId String
+  roleId  String
+  group   RoleGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  role    Role      @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, roleId])
+  @@map("RoleGroupRole")
+}
+
+model UserRole {
+  id            String     @id @default(cuid())
+  userSub       String
+  appUserId     String?
+  roleId        String
+  sourceGroupId String?
+  grantedAt     DateTime   @default(now())
+  revokedAt     DateTime?
+  grantedBy     String?
+  revokedBy     String?
+  note          String?
+  role          Role       @relation(fields: [roleId], references: [id])
+  sourceGroup   RoleGroup? @relation("UserRoleSourceGroup", fields: [sourceGroupId], references: [id])
+
+  @@index([userSub])
+  @@index([userSub, roleId])
+  @@map("UserRole")
+}
+
+model UserRoleGroup {
+  id        String    @id @default(cuid())
+  userSub   String
+  appUserId String?
+  groupId   String
+  grantedAt DateTime  @default(now())
+  revokedAt DateTime?
+  grantedBy String?
+  revokedBy String?
+  note      String?
+  group     RoleGroup @relation(fields: [groupId], references: [id])
+
+  @@index([userSub])
+  @@map("UserRoleGroup")
+}
